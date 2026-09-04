@@ -11,6 +11,7 @@ import { MissionThreadModule } from '@/components/platform/mission-thread'
 import { ScenarioWorkspaceModule } from '@/components/platform/scenario-workspace'
 import { VvaModule } from '@/components/platform/vva'
 import { EvidenceGateModule } from '@/components/platform/evidence-gate'
+import { ChinaTeGovernanceModule } from '@/components/platform/china-te-governance'
 import { DecisionProvenanceModule } from '@/components/platform/decision-provenance'
 import { ResourcesModule } from '@/components/platform/resources'
 import { DatasetsModule } from '@/components/platform/datasets'
@@ -42,6 +43,7 @@ export default function Home() {
       {module === 'scenarioWorkspace' && <ScenarioWorkspaceModule />}
       {module === 'vva' && <VvaModule />}
       {module === 'evidenceGate' && <EvidenceGateModule />}
+      {module === 'governance' && <ChinaTeGovernanceModule onNavigate={navigate} />}
       {module === 'decisionProvenance' && <DecisionProvenanceModule onNavigate={navigate} />}
       {module === 'resources' && <ResourcesModule onNavigate={navigate} />}
       {module === 'datasets' && <DatasetsModule onNavigate={navigate} />}
