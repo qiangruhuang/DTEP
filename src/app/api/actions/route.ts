@@ -6,9 +6,6 @@ import { authorizationResponse, authorizeOntologyAction } from '@/lib/security/o
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const { actionTypeId, objectPk, parameters } = body
-  if ('performedBy' in body) {
-    return NextResponse.json({ error: 'performedBy 由认证身份在服务端生成，客户端不得自报' }, { status: 400 })
-  }
 
   const at = await db.actionType.findUnique({ where: { id: actionTypeId } })
   if (!at) return NextResponse.json({ error: '动作类型不存在' }, { status: 404 })
@@ -21,6 +18,8 @@ export async function POST(req: NextRequest) {
     if (auth) return NextResponse.json(auth.body, { status: auth.status })
     return NextResponse.json({ error: error instanceof Error ? error.message : '身份认证失败' }, { status: 401 })
   }
+  // Compatibility: legacy clients may still send performedBy, but it is never
+  // trusted or used. The auditable actor is derived exclusively from OIDC.
   const performedBy = actor.actorId
 
   const defs: any[] = JSON.parse(at.parametersJson || '[]')
