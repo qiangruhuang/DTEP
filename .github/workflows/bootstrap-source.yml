@@ -5,6 +5,7 @@ on:
     branches: [engineering/v2.1.2]
     paths:
       - 'bootstrap/dtep_core_source_v2.1.2.tar.gz'
+      - '.github/workflows/bootstrap-source.yml'
   workflow_dispatch:
 
 permissions:
@@ -22,18 +23,22 @@ jobs:
           fetch-depth: 0
       - name: Verify bootstrap archive exists
         run: test -f bootstrap/dtep_core_source_v2.1.2.tar.gz
-      - name: Expand reviewed source archive
+      - name: Expand reviewed source archive without mutating workflow files
         shell: bash
         run: |
           set -euo pipefail
+          rm -rf /tmp/dtep-workflows
+          cp -a .github/workflows /tmp/dtep-workflows
           tar -xzf bootstrap/dtep_core_source_v2.1.2.tar.gz -C .
           rm -rf bootstrap
-          rm -f .github/workflows/bootstrap-source.yml
+          rm -rf .github/workflows
+          cp -a /tmp/dtep-workflows .github/workflows
           test -f package.json
           test -f bun.lock
           test -f src/app/page.tsx
           test -f scripts/restore_db.py
           test -f db/custom.sql
+          git diff --exit-code HEAD -- .github/workflows
       - name: Commit expanded source tree
         shell: bash
         run: |
