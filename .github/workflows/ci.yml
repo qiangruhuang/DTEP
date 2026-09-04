@@ -37,6 +37,10 @@ jobs:
         run: python scripts/restore_db.py --force
       - name: Prisma generate
         run: bunx prisma generate
+      - name: Ontology graph / SysML v2 projection validation
+        env:
+          DATABASE_URL: file:${{ github.workspace }}/db/custom.db
+        run: bun scripts/validate_v22.ts
       - name: Frozen architecture / evidence audit
         run: python scripts/validate_v21.py
       - name: TypeScript typecheck
