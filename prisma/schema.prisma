@@ -113,24 +113,47 @@ model PropertyDef {
 }
 
 model LinkType {
-  id          String  @id @default(cuid())
-  apiName     String
-  displayName String
+  id           String      @id @default(cuid())
+  apiName      String
+  displayName  String
   sourceTypeId String
   targetTypeId String
-  cardinality String  @default("一对多")
+  cardinality  String      @default("一对多")
+  entries      LinkEntry[]
+}
+
+// 链接实例：Ontology 图中的一等关系，避免把业务关系继续隐藏在 dataJson 中。
+model LinkEntry {
+  id             String      @id @default(cuid())
+  linkTypeId     String
+  linkType       LinkType    @relation(fields: [linkTypeId], references: [id], onDelete: Cascade)
+  sourceObjectId String
+  sourceObject   ObjectEntry @relation("SourceLinks", fields: [sourceObjectId], references: [id], onDelete: Cascade)
+  targetObjectId String
+  targetObject   ObjectEntry @relation("TargetLinks", fields: [targetObjectId], references: [id], onDelete: Cascade)
+  propertiesJson String      @default("{}")
+  sourceSystem   String      @default("dtep")
+  sourceRef      String      @default("")
+  validFrom      DateTime?
+  validTo        DateTime?
+  createdAt      DateTime    @default(now())
+
+  @@unique([linkTypeId, sourceObjectId, targetObjectId, sourceRef])
+  @@index([sourceObjectId])
+  @@index([targetObjectId])
+  @@index([linkTypeId])
 }
 
 // 动作类型（试验指挥写回操作）
 model ActionType {
-  id            String  @id @default(cuid())
-  apiName       String
-  displayName   String
-  objectTypeId  String
-  parametersJson String @default("[]")
-  description   String  @default("")
-  status        String  @default("active")
-  logs          ActionLog[]
+  id             String   @id @default(cuid())
+  apiName        String
+  displayName    String
+  objectTypeId   String
+  parametersJson String   @default("[]")
+  description    String   @default("")
+  status         String   @default("active")
+  logs           ActionLog[]
 }
 
 model ObjectEntry {
@@ -141,45 +164,49 @@ model ObjectEntry {
   title        String
   dataJson     String   @default("{}")
   updatedAt    DateTime @default(now()) @updatedAt
+  sourceLinks  LinkEntry[] @relation("SourceLinks")
+  targetLinks  LinkEntry[] @relation("TargetLinks")
+
+  @@unique([objectTypeId, pk])
 }
 
 model ActionLog {
-  id            String   @id @default(cuid())
-  actionTypeId String
-  actionType   ActionType @relation(fields: [actionTypeId], references: [id])
-  objectPk     String
-  parametersJson String @default("{}")
-  status       String   @default("succeeded")
-  performedBy  String   @default("试验总师")
-  createdAt    DateTime @default(now())
+  id             String   @id @default(cuid())
+  actionTypeId   String
+  actionType     ActionType @relation(fields: [actionTypeId], references: [id])
+  objectPk       String
+  parametersJson String   @default("{}")
+  status         String   @default("succeeded")
+  performedBy    String   @default("试验总师")
+  createdAt      DateTime @default(now())
 }
 
 // ============ 试验自动化层 ============
 
 model Automation {
-  id          String   @id @default(cuid())
-  name        String
-  description String   @default("")
-  enabled     Boolean  @default(true)
-  triggerType String // objectSet | time | event
-  triggerLabel String  @default("")
-  triggerConfigJson String @default("{}")
-  effectsJson String   @default("[]")
-  runCount    Int      @default(0)
-  lastRunAt   DateTime?
-  runs        AutomationRun[]
-  createdAt   DateTime @default(now())
+  id                String   @id @default(cuid())
+  name              String
+  description       String   @default("")
+  enabled           Boolean  @default(true)
+  triggerType       String // objectSet | time | event
+  triggerLabel      String   @default("")
+  triggerConfigJson String   @default("{}")
+  effectsJson       String   @default("[]")
+  runCount          Int      @default(0)
+  lastRunAt         DateTime?
+  runs              AutomationRun[]
+  createdAt         DateTime @default(now())
 }
 
 model AutomationRun {
-  id           String   @id @default(cuid())
-  automationId String
-  automation   Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
-  status       String   @default("succeeded")
-  startedAt    DateTime @default(now())
-  finishedAt   DateTime?
-  objectsAffected Int   @default(0)
-  detailJson   String   @default("{}")
+  id              String   @id @default(cuid())
+  automationId    String
+  automation      Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  status          String   @default("succeeded")
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+  objectsAffected Int      @default(0)
+  detailJson      String   @default("{}")
 }
 
 // ============ 遥测时序与试验告警 ============
