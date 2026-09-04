@@ -16,9 +16,18 @@ function headers() {
   return out
 }
 
-async function getPage(path: string, params: Record<string, string | number | undefined> = {}) {
+function resolveRequestUrl(pathOrUrl: string) {
   const base = configuredBaseUrl()
-  const url = new URL(`${base.pathname}${path}`, base.origin)
+  if (/^https?:\/\//i.test(pathOrUrl)) {
+    const absolute = new URL(pathOrUrl)
+    if (absolute.origin !== base.origin) throw new Error('SysML v2 request changed origin')
+    return absolute
+  }
+  return new URL(`${base.pathname}${pathOrUrl}`, base.origin)
+}
+
+async function getPage(pathOrUrl: string, params: Record<string, string | number | undefined> = {}) {
+  const url = resolveRequestUrl(pathOrUrl)
   for (const [key, value] of Object.entries(params)) if (value !== undefined) url.searchParams.set(key, String(value))
   const controller = new AbortController()
   const timer = setTimeout(() => controller.abort(), 20000)
@@ -27,7 +36,7 @@ async function getPage(path: string, params: Record<string, string | number | un
     const text = await res.text()
     if (!res.ok) throw new Error(`SysML v2 API ${res.status}: ${text.slice(0, 500)}`)
     const data = text ? JSON.parse(text) : null
-    return { data, link: res.headers.get('link'), origin: base.origin }
+    return { data, link: res.headers.get('link'), origin: url.origin }
   } finally {
     clearTimeout(timer)
   }
@@ -40,7 +49,7 @@ function nextLink(link: string | null, origin: string): string | null {
     if (!match) continue
     const url = new URL(match[1], origin)
     if (url.origin !== origin) throw new Error('SysML v2 pagination next link changed origin')
-    return `${url.pathname}${url.search}`
+    return url.toString()
   }
   return null
 }
