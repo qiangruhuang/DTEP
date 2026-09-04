@@ -19,6 +19,10 @@ columns are parsed as UTC/ISO timestamps and rewritten to the same instant as
 Unix epoch milliseconds. Existing integer values are preserved byte-for-byte.
 Business objects, hashes stored inside dataJson, rule-set content and evidence
 semantics are not changed.
+
+The v2.2 ontology graph hardening migration is then applied idempotently. It
+adds LinkEntry and the ObjectEntry (objectTypeId, pk) uniqueness constraint;
+it aborts on duplicate object keys instead of rewriting frozen business data.
 """
 from __future__ import annotations
 
@@ -26,6 +30,8 @@ import argparse
 import sqlite3
 from datetime import datetime, timezone
 from pathlib import Path
+
+from migrate_v22 import migrate_connection
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SQL = ROOT / "db" / "custom.sql"
@@ -99,15 +105,20 @@ def restore(sql_path: Path, db_path: Path, force: bool = False) -> None:
     script = sql_path.read_text(encoding="utf-8")
     con = sqlite3.connect(db_path)
     try:
+        con.execute("PRAGMA foreign_keys=ON")
         con.executescript(script)
         converted = normalize_legacy_datetime_cells(con)
+        migrate_connection(con)
         row = con.execute("PRAGMA integrity_check").fetchone()
         if not row or row[0] != "ok":
             raise RuntimeError(f"sqlite integrity_check failed: {row}")
         con.commit()
     finally:
         con.close()
-    print(f"restored {db_path} from {sql_path}; normalized {converted} textual DATETIME cells to epoch milliseconds")
+    print(
+        f"restored {db_path} from {sql_path}; normalized {converted} textual DATETIME cells "
+        "to epoch milliseconds; applied v2.2 ontology graph hardening"
+    )
 
 
 if __name__ == "__main__":
