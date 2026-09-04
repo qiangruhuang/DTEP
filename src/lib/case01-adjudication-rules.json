@@ -1,0 +1,103 @@
+{
+  "schema": "dtep/event-to-measure-rules/v2.0g",
+  "code": "ARS-CASE01-E2M-v1",
+  "caseId": "CASE-01",
+  "version": "v1",
+  "status": "已发布/冻结",
+  "missionThreadRef": "MT-01",
+  "rules": [
+    {
+      "id": "AR-M03-LINK-RANGE",
+      "stepId": "live-retest",
+      "measureRef": "M-03",
+      "measureName": "数据链作用距离",
+      "missionStepRefs": [
+        "S3"
+      ],
+      "selector": {
+        "eventType": "Link.RangeAchieved",
+        "attribute": "rangeKm"
+      },
+      "aggregation": "single-event / rangeKm",
+      "formula": "rangeKm",
+      "direction": ">=",
+      "unit": "km",
+      "confidence": 0.98,
+      "rationale": "由正式 Live 复试遥测中的 Link.RangeAchieved 事件直接形成作用距离观测值。"
+    },
+    {
+      "id": "AR-M08-INTEL-LATENCY",
+      "stepId": "lvc-anchor",
+      "measureRef": "M-08",
+      "measureName": "情报分发时效",
+      "missionStepRefs": [
+        "S1",
+        "S3"
+      ],
+      "selector": {
+        "fromEventType": "Sensor.Track",
+        "toEventType": "Intel.Distributed"
+      },
+      "aggregation": "paired-event latency",
+      "formula": "(Intel.Distributed.alignedTimeMs - Sensor.Track.alignedTimeMs) / 1000",
+      "direction": "<=",
+      "unit": "s",
+      "confidence": 0.97,
+      "rationale": "在统一 Run Epoch 上，以目标航迹形成到情报分发完成的事件差计算时效。"
+    },
+    {
+      "id": "AR-M13-MISSION-SUCCESS",
+      "stepId": "digital-5000",
+      "measureRef": "M-13",
+      "measureName": "数字化任务成功率（蒙特卡洛 5000 次）",
+      "missionStepRefs": [
+        "S1",
+        "S3",
+        "S4",
+        "S5",
+        "S6"
+      ],
+      "selector": {
+        "eventType": "Batch.MissionOutcome",
+        "attributes": [
+          "successCount",
+          "totalCount",
+          "successRatePct",
+          "ci95LowerPct",
+          "ci95UpperPct"
+        ]
+      },
+      "aggregation": "batch proportion",
+      "formula": "successCount / totalCount * 100",
+      "direction": ">=",
+      "unit": "%",
+      "confidence": 0.99,
+      "rationale": "由正式数字 Run 批量任务结局汇总事件形成任务成功率及 Wilson 95% CI。"
+    },
+    {
+      "id": "AR-M14-TWIN-NRMSE",
+      "stepId": "digital-5000",
+      "measureRef": "M-14",
+      "measureName": "孪生-实测一致性 NRMSE",
+      "missionStepRefs": [],
+      "selector": {
+        "eventType": "Twin.ErrorSummary",
+        "attribute": "nrmsePct"
+      },
+      "aggregation": "batch error summary",
+      "formula": "nrmsePct",
+      "direction": "<=",
+      "unit": "%",
+      "confidence": 0.99,
+      "rationale": "由冻结 Live/LVC 锚点与数字样机输出比较产生的 NRMSE 汇总事件形成模型一致性观测。"
+    }
+  ],
+  "manualOverridePolicy": {
+    "allowed": true,
+    "defaultMode": "no-override",
+    "requirement": "人工覆核不得修改冻结规则；如需更改测量逻辑必须发布新规则版本。覆核只能标记接受/争议，或以带理由的新判读记录覆盖显示，不改写原始自动结果。"
+  },
+  "publishedAt": "D+00",
+  "publishedBy": "试验总师 · 周衡",
+  "immutable": true
+}

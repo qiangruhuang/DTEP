@@ -1,0 +1,72 @@
+services:
+  app:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.app
+    ports: ["3000:3000"]
+    environment:
+      DATABASE_URL: file:/data/custom.db
+      DTEP_AUTH_MODE: oidc
+      DTEP_ALLOW_DEMO_ROLE_SWITCH: "false"
+      DTEP_OIDC_ISSUER: http://oidc:8091
+      DTEP_OIDC_AUDIENCE: dtep-engineering
+      DTEP_OIDC_JWKS_URI: http://oidc:8091/jwks
+      DTEP_SIGNING_MODE: remote-http
+      DTEP_SIGNER_URL: http://signer:8092
+      DTEP_SIGNER_API_TOKEN: engineering-only-token
+      DTEP_ADAPTER_DAEMON_URL: http://adapters:8093
+    volumes:
+      - dtep_db:/data
+    depends_on:
+      oidc: { condition: service_healthy }
+      signer: { condition: service_healthy }
+      adapters: { condition: service_healthy }
+    healthcheck:
+      test: ["CMD","node","-e","fetch('http://127.0.0.1:3000/api/engineering/health').then(r=>{if(!r.ok)process.exit(1)})"]
+      interval: 10s
+      timeout: 3s
+      retries: 12
+
+  oidc:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.engineering-services
+    command: ["python","engineering/services/oidc_idp.py","--serve","--host","0.0.0.0","--port","8091"]
+    environment:
+      DTEP_TEST_OIDC_ISSUER: http://oidc:8091
+      DTEP_TEST_OIDC_AUDIENCE: dtep-engineering
+    healthcheck:
+      test: ["CMD","python","-c","import urllib.request;urllib.request.urlopen('http://127.0.0.1:8091/health')"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  signer:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.engineering-services
+    command: ["sh","-c","python scripts/bootstrap_engineering_pki.py && python engineering/services/signing_service.py --host 0.0.0.0 --port 8092"]
+    environment:
+      DTEP_SIGNER_API_TOKEN: engineering-only-token
+    volumes:
+      - dtep_pki:/work/.runtime/pki
+    healthcheck:
+      test: ["CMD","python","-c","import urllib.request;urllib.request.urlopen('http://127.0.0.1:8092/health')"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+  adapters:
+    build:
+      context: ..
+      dockerfile: deploy/Dockerfile.engineering-services
+    command: ["python","engineering/services/adapter_daemon.py","--host","0.0.0.0","--port","8093"]
+    healthcheck:
+      test: ["CMD","python","-c","import urllib.request;urllib.request.urlopen('http://127.0.0.1:8093/health')"]
+      interval: 5s
+      timeout: 2s
+      retries: 10
+
+volumes:
+  dtep_db:
+  dtep_pki:

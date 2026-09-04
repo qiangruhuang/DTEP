@@ -1,0 +1,240 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============ 试验资源与数据采集层 ============
+// 对应美军 MRTFB（主要靶场与试验设施基地）与 JMETC（联合任务环境试验能力）理念
+
+// 试验资源：靶场 / 测控站 / 仿真节点 / 威胁模拟器 / 实验室
+model TestResource {
+  id                String   @id @default(cuid())
+  code              String   @unique // R-01
+  name              String
+  kind              String // range 靶场 | tracking 测控 | telemetry 遥测 | sim 仿真节点 | threat 威胁模拟 | lab 实验室
+  site              String   @default("") // 驻地
+  description       String   @default("")
+  status            String   @default("online") // online | busy | maintenance | offline
+  utilization       Int      @default(0) // 资源利用率 %
+  lastHeartbeat     DateTime?
+  dataVolume        Int      @default(0) // 累计采集数据点
+  heartbeatInterval String   @default("每 5 秒") // 心跳/状态上报周期
+  createdAt         DateTime @default(now())
+  datasets          TestDataset[]
+}
+
+// 试验数据集：遥测 / 光测 / 雷测 / 仿真输出 / 判读结果 / 环境数据
+model TestDataset {
+  id            String   @id @default(cuid())
+  name          String
+  path          String // raw/telemetry/F-2207
+  description   String   @default("")
+  domain        String   @default("telemetry") // telemetry | optical | radar | simulation | evaluation | environment
+  origin        String   @default("raw") // raw | derived
+  status        String   @default("ready") // ready | building | error
+  rowCount      Int      @default(0)
+  sizeMb        Float    @default(0)
+  qualityScore  Int      @default(100) // 数据质量分（完整性/时统精度）
+  schemaJson    String   @default("[]")
+  lastBuiltAt   DateTime?
+  testResourceId String?
+  testResource  TestResource? @relation(fields: [testResourceId], references: [id])
+  createdAt     DateTime @default(now())
+}
+
+// 判读处理管道：原始试验数据 → 时统校正 → 参数提取 → 融合 → 指标计算 → 评估输出
+model TestPipeline {
+  id               String   @id @default(cuid())
+  name             String
+  description      String   @default("")
+  status           String   @default("healthy") // healthy | warning | failing
+  schedule         String   @default("数据就绪触发")
+  lastBuildStatus  String   @default("succeeded")
+  lastBuildAt      DateTime?
+  nodes            TestPipelineNode[]
+  builds           TestBuild[]
+  createdAt        DateTime @default(now())
+}
+
+// 管道节点（低代码判读步骤）
+model TestPipelineNode {
+  id          String  @id @default(cuid())
+  pipelineId  String
+  pipeline    TestPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  nodeType    String // source | timeAlign | extract | join | expression | aggregate | output
+  label       String
+  configJson  String  @default("{}")
+  x           Float   @default(0)
+  y           Float   @default(0)
+  order       Int     @default(0)
+}
+
+// 管道运行（判读作业）
+model TestBuild {
+  id            String   @id @default(cuid())
+  pipelineId    String
+  pipeline      TestPipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  status        String   @default("succeeded") // running | succeeded | failed | cancelled
+  startedAt     DateTime @default(now())
+  finishedAt    DateTime?
+  rowsProcessed Int      @default(0)
+  durationSec   Int      @default(0)
+  logsJson      String   @default("[]")
+}
+
+// ============ 试验本体层（Ontology） ============
+// 试验鉴定领域概念模型：任务 / 被试系统 / 试验事件 / 鉴定指标 / 缺陷 / 报告 / 数字模型
+
+model ObjectType {
+  id          String   @id @default(cuid())
+  apiName     String   @unique // TestProgram / TestEvent / Measure ...
+  displayName String
+  description String   @default("")
+  icon        String   @default("box")
+  objectCount Int      @default(0)
+  properties  PropertyDef[]
+  entries     ObjectEntry[]
+  createdAt   DateTime @default(now())
+}
+
+model PropertyDef {
+  id           String  @id @default(cuid())
+  objectTypeId String
+  objectType   ObjectType @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  apiName      String
+  displayName  String
+  dataType     String // string | integer | decimal | boolean | timestamp | json
+  description  String  @default("")
+  isDerived    Boolean @default(false)
+}
+
+model LinkType {
+  id           String      @id @default(cuid())
+  apiName      String
+  displayName  String
+  sourceTypeId String
+  targetTypeId String
+  cardinality  String      @default("一对多")
+  entries      LinkEntry[]
+}
+
+// 链接实例：Ontology 图中的一等关系，避免把业务关系继续隐藏在 dataJson 中。
+model LinkEntry {
+  id             String      @id @default(cuid())
+  linkTypeId     String
+  linkType       LinkType    @relation(fields: [linkTypeId], references: [id], onDelete: Cascade)
+  sourceObjectId String
+  sourceObject   ObjectEntry @relation("SourceLinks", fields: [sourceObjectId], references: [id], onDelete: Cascade)
+  targetObjectId String
+  targetObject   ObjectEntry @relation("TargetLinks", fields: [targetObjectId], references: [id], onDelete: Cascade)
+  propertiesJson String      @default("{}")
+  sourceSystem   String      @default("dtep")
+  sourceRef      String      @default("")
+  validFrom      DateTime?
+  validTo        DateTime?
+  createdAt      DateTime    @default(now())
+
+  @@unique([linkTypeId, sourceObjectId, targetObjectId, sourceRef])
+  @@index([sourceObjectId])
+  @@index([targetObjectId])
+  @@index([linkTypeId])
+}
+
+// 动作类型（试验指挥写回操作）
+model ActionType {
+  id             String   @id @default(cuid())
+  apiName        String
+  displayName    String
+  objectTypeId   String
+  parametersJson String   @default("[]")
+  description    String   @default("")
+  status         String   @default("active")
+  logs           ActionLog[]
+}
+
+model ObjectEntry {
+  id           String   @id @default(cuid())
+  objectTypeId String
+  objectType   ObjectType @relation(fields: [objectTypeId], references: [id], onDelete: Cascade)
+  pk           String
+  title        String
+  dataJson     String   @default("{}")
+  updatedAt    DateTime @default(now()) @updatedAt
+  sourceLinks  LinkEntry[] @relation("SourceLinks")
+  targetLinks  LinkEntry[] @relation("TargetLinks")
+
+  @@unique([objectTypeId, pk])
+}
+
+model ActionLog {
+  id             String   @id @default(cuid())
+  actionTypeId   String
+  actionType     ActionType @relation(fields: [actionTypeId], references: [id])
+  objectPk       String
+  parametersJson String   @default("{}")
+  status         String   @default("succeeded")
+  performedBy    String   @default("试验总师")
+  createdAt      DateTime @default(now())
+}
+
+// ============ 试验自动化层 ============
+
+model Automation {
+  id                String   @id @default(cuid())
+  name              String
+  description       String   @default("")
+  enabled           Boolean  @default(true)
+  triggerType       String // objectSet | time | event
+  triggerLabel      String   @default("")
+  triggerConfigJson String   @default("{}")
+  effectsJson       String   @default("[]")
+  runCount          Int      @default(0)
+  lastRunAt         DateTime?
+  runs              AutomationRun[]
+  createdAt         DateTime @default(now())
+}
+
+model AutomationRun {
+  id              String   @id @default(cuid())
+  automationId    String
+  automation      Automation @relation(fields: [automationId], references: [id], onDelete: Cascade)
+  status          String   @default("succeeded")
+  startedAt       DateTime @default(now())
+  finishedAt      DateTime?
+  objectsAffected Int      @default(0)
+  detailJson      String   @default("{}")
+}
+
+// ============ 遥测时序与试验告警 ============
+
+model TelemetryReading {
+  id        String   @id @default(cuid())
+  runId     String // 架次号 F-2207
+  parameter String // altitude | speed | deviation | linkQuality
+  value     Float
+  ts        DateTime
+}
+
+model TestAlert {
+  id        String   @id @default(cuid())
+  runId     String
+  parameter String
+  severity  String   @default("warning") // critical | warning | info
+  message   String
+  status    String   @default("open") // open | acknowledged | resolved
+  raisedAt  DateTime @default(now())
+}
+
+// ============ 平台活动 ============
+
+model ActivityEvent {
+  id        String   @id @default(cuid())
+  actor     String   @default("系统")
+  module    String
+  message   String
+  createdAt DateTime @default(now())
+}
