@@ -74,9 +74,12 @@ jobs:
               for _ in range(60):
                   try:
                       with urllib.request.urlopen(url, timeout=2) as r:
-                          if r.status == 200: break
-                  except Exception: time.sleep(.5)
-              else: raise SystemExit(f'service not healthy: {url}')
+                          if r.status == 200:
+                              break
+                  except Exception:
+                      time.sleep(.5)
+              else:
+                  raise SystemExit(f'service not healthy: {url}')
           PY
       - name: Run real Chromium engineering integration E2E
         run: python scripts/e2e/browser_engineering_v211.py
@@ -87,13 +90,16 @@ jobs:
           nohup bun run start > /tmp/dtep-app.log 2>&1 &
           python - <<'PY'
           import time, urllib.request
-          url='http://127.0.0.1:3000/api/engineering/health'
+          url = 'http://127.0.0.1:3000/api/engineering/health'
           for _ in range(120):
               try:
                   with urllib.request.urlopen(url, timeout=2) as r:
-                      if r.status == 200: break
-                  except Exception: time.sleep(.5)
-          else: raise SystemExit('DTEP app not healthy')
+                      if r.status == 200:
+                          break
+              except Exception:
+                  time.sleep(.5)
+          else:
+              raise SystemExit('DTEP app not healthy')
           PY
       - name: Run real Next.js product browser smoke in OIDC mode
         run: python scripts/e2e/github_product_smoke_v211.py
