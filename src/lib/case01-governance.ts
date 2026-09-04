@@ -126,9 +126,16 @@ async function ensureType(apiName: string, displayName: string, description: str
 async function upsertObject(apiName: string, pk: string, title: string, data: Record<string, unknown>) {
   const t = await db.objectType.findUnique({ where: { apiName } })
   if (!t) throw new Error(`${apiName} 治理对象类型未初始化`)
+  const dataJson = JSON.stringify(data)
   const existing = await db.objectEntry.findFirst({ where: { objectTypeId: t.id, pk } })
-  if (existing) return db.objectEntry.update({ where: { id: existing.id }, data: { title, dataJson: JSON.stringify(data) } })
-  const created = await db.objectEntry.create({ data: { objectTypeId: t.id, pk, title, dataJson: JSON.stringify(data) } })
+  if (existing) {
+    // Governance bootstrap runs on read paths as a defensive compatibility
+    // measure. Avoid turning every GET into a write when the static principal
+    // projection is already identical to the frozen runtime representation.
+    if (existing.title === title && existing.dataJson === dataJson) return existing
+    return db.objectEntry.update({ where: { id: existing.id }, data: { title, dataJson } })
+  }
+  const created = await db.objectEntry.create({ data: { objectTypeId: t.id, pk, title, dataJson } })
   await db.objectType.update({ where: { id: t.id }, data: { objectCount: { increment: 1 } } })
   return created
 }
@@ -170,16 +177,26 @@ export function getStepPolicy(stepId: string) {
   return policy
 }
 
+let governanceOntologyReady: Promise<void> | null = null
+
 export async function ensureCase01GovernanceOntology() {
-  await ensureType('WorkflowPrincipal', '工作流人员与角色', 'CASE-01 岗位身份与单一职责角色映射；工程模式支持OIDC认证映射，生产部署应接组织身份目录与强认证。', 'users')
-  await ensureType('ApprovalRecord', '审批记录', '受控状态迁移动作的申请、独立审批与职责分离记录。', 'badge-check')
-  await ensureType('SignatureRecord', '签署记录', '受控动作的不可变签署记录；v2.1.x工程模式使用Ed25519 detached signature并保存公钥指纹，生产可替换为远程PKI/密码服务适配器。', 'signature')
-  for (const actor of CASE01_ACTORS) {
-    await upsertObject('WorkflowPrincipal', actor.id, `${actor.title} · ${actor.name}`, {
-      code: actor.id, caseId: 'CASE-01', name: actor.name, title: actor.title, roleId: actor.roleId, roleName: actor.roleName,
-      active: true, identityAssurance: (process.env.DTEP_AUTH_MODE || 'demo') === 'oidc' ? 'OIDC VERIFIED / ROLE MAPPED' : 'ENGINEERING LOCAL IDENTITY / ROLE SWITCH FALLBACK',
+  if (!governanceOntologyReady) {
+    governanceOntologyReady = (async () => {
+      await ensureType('WorkflowPrincipal', '工作流人员与角色', 'CASE-01 岗位身份与单一职责角色映射；工程模式支持OIDC认证映射，生产部署应接组织身份目录与强认证。', 'users')
+      await ensureType('ApprovalRecord', '审批记录', '受控状态迁移动作的申请、独立审批与职责分离记录。', 'badge-check')
+      await ensureType('SignatureRecord', '签署记录', '受控动作的不可变签署记录；v2.1.x工程模式使用Ed25519 detached signature并保存公钥指纹，生产可替换为远程PKI/密码服务适配器。', 'signature')
+      for (const actor of CASE01_ACTORS) {
+        await upsertObject('WorkflowPrincipal', actor.id, `${actor.title} · ${actor.name}`, {
+          code: actor.id, caseId: 'CASE-01', name: actor.name, title: actor.title, roleId: actor.roleId, roleName: actor.roleName,
+          active: true, identityAssurance: (process.env.DTEP_AUTH_MODE || 'demo') === 'oidc' ? 'OIDC VERIFIED / ROLE MAPPED' : 'ENGINEERING LOCAL IDENTITY / ROLE SWITCH FALLBACK',
+        })
+      }
+    })().catch((error) => {
+      governanceOntologyReady = null
+      throw error
     })
   }
+  return governanceOntologyReady
 }
 
 function approvalPk(stepId: string) { return `APR-CASE01-${stepId}` }
