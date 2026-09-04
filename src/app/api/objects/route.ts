@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authorizationResponse, authorizeObjectWrite } from '@/lib/security/ontology-policy'
 
 // 对象实例查询（对象检索模块数据源）
 export async function GET(req: NextRequest) {
@@ -22,16 +23,29 @@ export async function GET(req: NextRequest) {
   })
 }
 
-// 更新对象（写回示例）
+// 更新对象：actor 只能来自服务端认证身份，且必须通过 Object policy。
 export async function PATCH(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
   const { id, data } = body
-  const entry = await db.objectEntry.findUnique({ where: { id } })
+  const entry = await db.objectEntry.findUnique({ where: { id }, include: { objectType: true } })
   if (!entry) return NextResponse.json({ error: '对象不存在' }, { status: 404 })
+
+  let actor
+  try {
+    actor = await authorizeObjectWrite(req, entry.objectType.apiName)
+  } catch (error) {
+    const auth = authorizationResponse(error)
+    if (auth) return NextResponse.json(auth.body, { status: auth.status })
+    return NextResponse.json({ error: error instanceof Error ? error.message : '身份认证失败' }, { status: 401 })
+  }
+
+  if (!data || typeof data !== 'object' || Array.isArray(data)) {
+    return NextResponse.json({ error: 'data 必须为对象' }, { status: 400 })
+  }
   const merged = { ...JSON.parse(entry.dataJson || '{}'), ...data }
   await db.objectEntry.update({ where: { id }, data: { dataJson: JSON.stringify(merged), updatedAt: new Date() } })
   await db.activityEvent.create({
-    data: { actor: '系统管理员', module: 'Ontology', message: `对象 ${entry.pk} 属性已更新（${Object.keys(data).join(', ')}）` },
+    data: { actor: actor.actorId, module: 'Ontology', message: `对象 ${entry.pk} 属性已更新（${Object.keys(data).join(', ')}）` },
   })
-  return NextResponse.json({ ok: true, data: merged })
+  return NextResponse.json({ ok: true, data: merged, performedBy: actor.actorId })
 }
