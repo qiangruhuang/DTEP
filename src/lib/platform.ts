@@ -52,7 +52,12 @@ export async function api<T>(path: string, init?: RequestInit): Promise<T> {
 }
 
 export function post<T>(path: string, body: unknown): Promise<T> {
-  return api<T>(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
+  let payload = body
+  if (path === '/api/actions' && body && typeof body === 'object' && !Array.isArray(body)) {
+    const { performedBy: _legacyPerformedBy, ...rest } = body as Record<string, unknown>
+    payload = rest
+  }
+  return api<T>(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) })
 }
 export function patch<T>(path: string, body: unknown): Promise<T> {
   return api<T>(path, { method: 'PATCH', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })
