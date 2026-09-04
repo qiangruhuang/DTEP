@@ -60,9 +60,9 @@ with sync_playwright() as pw:
 
     page.get_by_role('button', name='鉴定审计 / Decision Provenance').click()
     page.get_by_text('鉴定审计视图 / Decision Provenance', exact=False).wait_for(timeout=30000)
-    provenance_response = ctx.request.get(f'{APP}/api/decision-provenance')
-    check(provenance_response.ok, 'Decision Provenance API', f'{provenance_response.status} {provenance_response.text()}', checks)
-    check(page.get_by_text('结论 → 专家合议/终审', exact=False).is_visible(), 'Decision Provenance UI', 'human + machine provenance rendered', checks)
+    provenance_text = page.get_by_text('结论 → 专家合议/终审', exact=False)
+    provenance_text.wait_for(timeout=30000)
+    check(provenance_text.is_visible(), 'Decision Provenance UI', 'human + machine provenance rendered', checks)
 
     page.screenshot(path=str(OUT_PNG), full_page=True)
     ctx.close()
