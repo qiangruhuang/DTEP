@@ -144,7 +144,8 @@ with sync_playwright() as pw:
     object_centered.wait_for(timeout=30000)
     check(object_centered.is_visible(), 'China T&E governance workspace', 'object-centered governance view rendered', checks)
     check(page.get_by_text('中国试验鉴定全寿命业务链', exact=False).is_visible(), 'China T&E lifecycle UI', 'five-stage lifecycle rendered', checks)
-    check(page.get_by_text('8 项专项评估', exact=False).is_visible(), 'Fielding finalization special assessments', 'eight-assessment structure rendered', checks)
+    assessment_heading = page.get_by_role('paragraph').filter(has_text='8 项专项评估')
+    check(assessment_heading.is_visible(), 'Fielding finalization special assessments', 'eight-assessment panel rendered', checks)
     check(page.get_by_text('数据采信入口', exact=False).is_visible(), 'Data acceptance UI', 'four legal data-acceptance paths exposed', checks)
     blocked_action = page.get_by_role('button', name='当前不可提交').first
     check(blocked_action.is_visible() and blocked_action.is_disabled(), 'Governed action submission criteria UI', 'blocked business action is explained and disabled', checks)
