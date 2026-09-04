@@ -61,7 +61,7 @@ export async function ensureTestModelAssemblyOntology() {
     ['scenarioUsesAssembly', '试验场景—模型装配', 'TestScenario', 'TestModelAssembly'],
     ['runUsesAssembly', '试验Run—模型装配', 'TestRun', 'TestModelAssembly'],
     ['runUsesPrototypeBaseline', '试验Run—数字样机基地基线', 'TestRun', 'ModelBaseline'],
-  ] as const) await link(...spec)
+  ] as const) await link(spec[0], spec[1], spec[2], spec[3])
 }
 
 function modelIdFromSnapshot(value: string) { return value.split('@')[0] }

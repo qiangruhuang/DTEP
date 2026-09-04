@@ -63,7 +63,7 @@ export async function ensureTestEnvironmentOntology() {
     ['runUsesEnvironment', '试验Run—试验环境装配', 'TestRun', 'TestEnvironmentAssembly'],
     ['runUsesFederation', '试验Run—LVC联邦配置', 'TestRun', 'LVCFederationConfiguration'],
     ['federationUsesContract', 'LVC联邦配置—接口契约', 'LVCFederationConfiguration', 'InterfaceContract'],
-  ] as const) await link(...spec)
+  ] as const) await link(spec[0], spec[1], spec[2], spec[3])
 }
 
 function resourceCode(snapshot: unknown) { return String(snapshot ?? '').split('@')[0] }
@@ -177,7 +177,7 @@ async function buildFederation(pk: string, title: string, scenarioRef: string, m
     notice: 'DEMO/SYNTHETIC：协议节点和时统阈值仅用于原型演示，不代表具体基地实际网络/设备配置。',
   }
   const federationHash = sha256(manifest)
-  const data = { code: pk, caseId: 'CASE-01', scenarioRef, modelAssemblyRef, modelAssemblyHash: assembly.data.assemblyHash, revision, status, ...manifest, federationHash, mutable: !status.startsWith('已冻结') }
+  const data = { code: pk, status, ...manifest, federationHash, mutable: !status.startsWith('已冻结') }
   await upsert('LVCFederationConfiguration', pk, title, data)
   return data
 }
@@ -245,7 +245,7 @@ async function buildEnvironment(pk: string, title: string, scenarioRef: string, 
     readinessChecks,
   }
   const environmentHash = sha256(manifest)
-  const data = { code: pk, caseId: 'CASE-01', scenarioRef, revision, status, readiness, ...manifest, environmentHash, mutable: !status.startsWith('已冻结'), provenancePolicy: 'Scenario引用当前Environment Assembly；Run创建时冻结环境与联邦快照，后续网关、网络或模型升级不追溯改写历史Run。' }
+  const data = { code: pk, status, readiness, ...manifest, environmentHash, mutable: !status.startsWith('已冻结'), provenancePolicy: 'Scenario引用当前Environment Assembly；Run创建时冻结环境与联邦快照，后续网关、网络或模型升级不追溯改写历史Run。' }
   await upsert('TestEnvironmentAssembly', pk, title, data)
   await patch('TestScenario', scenarioRef, {
     testEnvironmentAssemblyRef: pk,

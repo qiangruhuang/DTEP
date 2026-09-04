@@ -48,7 +48,7 @@ async function entry(apiName: string, pk: string) {
 async function entries(apiName: string) {
   const t = await db.objectType.findUnique({ where: { apiName } })
   if (!t) return []
-  const rows = await db.objectEntry.findMany({ where: { objectTypeId: t.id }, orderBy: { createdAt: 'asc' } })
+  const rows = await db.objectEntry.findMany({ where: { objectTypeId: t.id }, orderBy: { updatedAt: 'asc' } })
   return rows.map((row) => ({ ...row, data: JSON.parse(row.dataJson || '{}') as Record<string, any> }))
 }
 async function createEntry(apiName: string, pk: string, title: string, data: Record<string, any>) {
@@ -80,7 +80,7 @@ export async function ensureRunDataQualityOntology() {
     ['qualityActionTargetsReconstruction', '数据质量动作—事件重建', 'RunDataQualityAction', 'RunEventReconstruction'],
     ['runUsesEventReconstruction', '试验Run—事件重建', 'TestRun', 'RunEventReconstruction'],
     ['runUsesDataQualityAssessment', '试验Run—数据质量评估', 'TestRun', 'RunDataQualityAssessment'],
-  ] as const) await ensureLink(...spec)
+  ] as const) await ensureLink(spec[0], spec[1], spec[2], spec[3])
 }
 
 async function latestRunControlSession(stepId: RunDataQualityStepId) {
@@ -351,6 +351,7 @@ export async function bindRunToDataQuality(runData: Record<string, any>, stepId:
   const actionRows = await actions(sessionRef)
   const reconstruction = state.latestReconstruction
   const assessment = state.latestAssessment
+  if (!reconstruction || !assessment) throw new Error('Run Data Quality状态缺少冻结重建/评估')
   const manifest = { schema: 'dtep/run-data-quality-provenance/v2.0f', caseId: 'CASE-01', stepId, sessionRef, reconstruction, assessment, actions: actionRows.map((x) => x.data) }
   return {
     ...runData,
@@ -373,16 +374,19 @@ export async function finalizeRunDataQuality(stepId: string, executionSignature:
   if (!runDataQualityRequiredForStep(stepId)) return
   const state = await assertRunDataQualityReadyForEvidence(stepId)
   if (!state) return
+  const reconstruction = state.latestReconstruction
+  const assessment = state.latestAssessment
+  if (!reconstruction || !assessment) throw new Error('Run Data Quality状态缺少冻结重建/评估')
   const finalPayload = {
     schema: 'dtep/run-data-quality-final/v2.0f', caseId: 'CASE-01', stepId, runRef: PROFILES[stepId].runRef,
-    reconstructionRef: state.latestReconstruction.code, reconstructionHash: state.latestReconstruction.reconstructionHash,
-    assessmentRef: state.latestAssessment.code, assessmentHash: state.latestAssessment.assessmentHash,
+    reconstructionRef: reconstruction.code, reconstructionHash: reconstruction.reconstructionHash,
+    assessmentRef: assessment.code, assessmentHash: assessment.assessmentHash,
     executionSignatureRef: executionSignature.code, executionSignatureHash: executionSignature.signatureHash,
   }
   const finalHash = sha256(finalPayload)
-  await patchEntry('RunDataQualityAssessment', state.latestAssessment.code, { finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash })
+  await patchEntry('RunDataQualityAssessment', assessment.code, { finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash })
   const run = await entry('TestRun', PROFILES[stepId].runRef)
-  if (run) await patchEntry('TestRun', run.pk, { runDataQualityFinalHash: finalHash, runDataQualityFinalExecutionSignatureRef: executionSignature.code, runDataQualityFinalExecutionSignatureHash: executionSignature.signatureHash, dataQualityAssessmentSnapshot: { ...state.latestAssessment, finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash } })
+  if (run) await patchEntry('TestRun', run.pk, { runDataQualityFinalHash: finalHash, runDataQualityFinalExecutionSignatureRef: executionSignature.code, runDataQualityFinalExecutionSignatureHash: executionSignature.signatureHash, dataQualityAssessmentSnapshot: { ...assessment, finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash } })
 }
 
 export async function clearCase01RunDataQualityRecords() {

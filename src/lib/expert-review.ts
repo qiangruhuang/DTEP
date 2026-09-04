@@ -80,7 +80,7 @@ export async function ensureExpertReviewOntology() {
     ['finalDecisionBelongsToPanel', '最终判定—合议', 'FinalAdjudicationDecision', 'ReviewPanelSession'],
     ['finalDecisionReviewsEvidencePackage', '最终判定—证据包', 'FinalAdjudicationDecision', 'EvidencePackage'],
     ['evidenceRequestBelongsToPanel', '补证请求—合议', 'EvidenceRequest', 'ReviewPanelSession'],
-  ] as const) await ensureLink(...spec)
+  ] as const) await ensureLink(spec[0], spec[1], spec[2], spec[3])
 }
 
 async function formalMachineFindings() {

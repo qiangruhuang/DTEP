@@ -290,6 +290,7 @@ export async function executeCase01Step(stepId: Case01StepId, actorId: string) {
     executionLog = await logTransition(stepId, detail, actorLabel)
     return executionLog
   }
+  const getExecutionLog = () => executionLog as Awaited<ReturnType<typeof logTransition>> | null
 
   if (stepId === 'live-retest') {
     await ensureDataset('raw/telemetry/F-2206-R2')
@@ -349,10 +350,11 @@ export async function executeCase01Step(stepId: Case01StepId, actorId: string) {
     await stepLog({ finalEvidencePackage: 'EP-CASE01-M13-V0.4', gateDecision: '通过', performanceDecision: humanReview.finalPerformanceDecision ?? '未达到要求', humanFinalAdjudicationRef: humanReview.code, humanReviewHash: humanReview.humanReviewHash, panelDisposition: humanReview.panelDisposition, result: '专家合议、人类最终判定、正式批准与适用边界已冻结' })
   }
 
-  if (!executionLog) throw new Error('状态迁移动作未生成 Action Log')
+  const finalizedExecutionLog = getExecutionLog()
+  if (!finalizedExecutionLog) throw new Error('状态迁移动作未生成 Action Log')
   const executionSignature = await recordStepExecutionSignature(stepId, actorId, {
-    caseId: 'CASE-01', stepId, actionLogId: executionLog.id, performedBy: executionLog.performedBy,
-    createdAt: executionLog.createdAt.toISOString(), parameters: JSON.parse(executionLog.parametersJson || '{}'),
+    caseId: 'CASE-01', stepId, actionLogId: finalizedExecutionLog.id, performedBy: finalizedExecutionLog.performedBy,
+    createdAt: finalizedExecutionLog.createdAt.toISOString(), parameters: JSON.parse(finalizedExecutionLog.parametersJson || '{}'),
   })
   await attachReadinessExecutionSignature(stepId, executionSignature)
   await finalizeRunControlSession(stepId, executionSignature)

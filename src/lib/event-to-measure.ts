@@ -108,7 +108,7 @@ export async function ensureAutomatedAdjudicationOntology() {
     ['runMeasureResultUsesObservation', 'Run指标判读—观测', 'RunMeasureResult', 'MeasureObservation'],
     ['runUsesMeasureResult', '试验Run—指标判读', 'TestRun', 'RunMeasureResult'],
     ['runUsesAdjudicationDecision', '试验Run—自动判读决定', 'TestRun', 'RunAdjudicationDecision'],
-  ] as const) await ensureLink(...spec)
+  ] as const) await ensureLink(spec[0], spec[1], spec[2], spec[3])
   return upsertRuleSet()
 }
 
@@ -303,6 +303,7 @@ export async function bindRunToAutomatedAdjudication(runData: Record<string, any
   const state = await assertAutomatedAdjudicationReadyForRunSignoff(stepId)
   if (!state) return runData
   const decision = state.latestDecision
+  if (!decision) throw new Error('自动判读状态缺少冻结决定')
   const manifest = { schema: 'dtep/event-to-measure-provenance/v2.0g', caseId: 'CASE-01', stepId, decision, missionStepObservations: state.missionStepObservations, measureObservations: state.measureObservations, runMeasureResults: state.runMeasureResults, ruleSet: state.ruleSet, actions: state.actions }
   return {
     ...runData,
@@ -331,6 +332,7 @@ export async function finalizeAutomatedAdjudication(stepId: string, executionSig
   const state = await assertAutomatedAdjudicationReadyForRunSignoff(stepId)
   if (!state) return
   const decision = state.latestDecision
+  if (!decision) throw new Error('自动判读状态缺少冻结决定')
   const finalPayload = {
     schema: 'dtep/automated-adjudication-final/v2.0g', caseId: 'CASE-01', stepId, runRef: PROFILES[stepId].runRef,
     decisionRef: decision.code, decisionHash: decision.decisionHash, ruleSetRef: state.ruleSet?.code, ruleSetHash: state.ruleSet?.publishedHash,

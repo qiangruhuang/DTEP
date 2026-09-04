@@ -61,7 +61,7 @@ async function entry(apiName: string, pk: string) {
 async function entries(apiName: string) {
   const t = await db.objectType.findUnique({ where: { apiName } })
   if (!t) return []
-  const rows = await db.objectEntry.findMany({ where: { objectTypeId: t.id }, orderBy: { createdAt: 'asc' } })
+  const rows = await db.objectEntry.findMany({ where: { objectTypeId: t.id }, orderBy: { updatedAt: 'asc' } })
   return rows.map((row) => ({ ...row, data: JSON.parse(row.dataJson || '{}') as Record<string, any> }))
 }
 async function createEntry(apiName: string, pk: string, title: string, data: Record<string, any>) {

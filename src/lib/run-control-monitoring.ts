@@ -47,7 +47,7 @@ async function entry(apiName: string, pk: string) {
 async function entries(apiName: string) {
   const t = await db.objectType.findUnique({ where: { apiName } })
   if (!t) return []
-  const rows = await db.objectEntry.findMany({ where: { objectTypeId: t.id }, orderBy: { createdAt: 'asc' } })
+  const rows = await db.objectEntry.findMany({ where: { objectTypeId: t.id }, orderBy: { updatedAt: 'asc' } })
   return rows.map((row) => ({ ...row, data: JSON.parse(row.dataJson || '{}') as Record<string, any> }))
 }
 async function createEntry(apiName: string, pk: string, title: string, data: Record<string, any>) {
@@ -79,7 +79,7 @@ export async function ensureRunControlOntology() {
     ['runControlHasHealthSnapshot', '运行控制—健康快照', 'RunControlSession', 'RunHealthSnapshot'],
     ['runControlHasAction', '运行控制—控制动作', 'RunControlSession', 'RunControlAction'],
     ['runUsesControlSession', '试验Run—运行控制会话', 'TestRun', 'RunControlSession'],
-  ] as const) await ensureLink(...spec)
+  ] as const) await ensureLink(spec[0], spec[1], spec[2], spec[3])
 }
 
 async function currentSession(stepId: RunControlStepId) {
