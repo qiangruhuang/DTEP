@@ -55,6 +55,57 @@ with sync_playwright() as pw:
     graph = graph_response.json()
     check(graph.get('root', {}).get('pk') == 'CASE-01' and isinstance(graph.get('links'), list), 'Ontology graph root resolution', 'compound object key + LinkEntry traversal contract rendered', checks)
 
+    # Ontology Action security: the client cannot choose the audit actor, and
+    # the successful write must use the signed OIDC actor mapped by the server.
+    ontology_response = page.request.get(f'{APP}/api/ontology', timeout=30000)
+    check(ontology_response.status == 200, 'Ontology action catalog', f'HTTP {ontology_response.status}', checks)
+    action_types = ontology_response.json().get('actionTypes', [])
+    issue_order = next((a for a in action_types if a.get('apiName') == 'issueTestOrder'), None)
+    live_fire = next((a for a in action_types if a.get('apiName') == 'authorizeLiveFire'), None)
+    check(issue_order is not None and live_fire is not None, 'Ontology action types', 'issueTestOrder + authorizeLiveFire present', checks)
+
+    events_response = page.request.get(f'{APP}/api/objects?type=TestEvent', timeout=30000)
+    check(events_response.status == 200, 'Ontology action target set', f'HTTP {events_response.status}', checks)
+    events = events_response.json().get('objects', [])
+    check(bool(events), 'Ontology action target', 'at least one TestEvent available', checks)
+    target_pk = events[0]['pk']
+
+    forged = page.request.post(
+        f'{APP}/api/actions',
+        data={
+            'actionTypeId': issue_order['id'],
+            'objectPk': target_pk,
+            'parameters': {'orderNo': 'E2E-FORGED-ACTOR'},
+            'performedBy': 'FORGED-ACTOR',
+        },
+        timeout=30000,
+    )
+    check(forged.status == 400, 'Client-supplied performedBy rejected', f'HTTP {forged.status}', checks)
+
+    unauthorized = page.request.post(
+        f'{APP}/api/actions',
+        data={
+            'actionTypeId': live_fire['id'],
+            'objectPk': target_pk,
+            'parameters': {},
+        },
+        timeout=30000,
+    )
+    check(unauthorized.status == 403, 'Ontology action role policy', f'ACT-LIN denied authorizeLiveFire with HTTP {unauthorized.status}', checks)
+
+    authorized = page.request.post(
+        f'{APP}/api/actions',
+        data={
+            'actionTypeId': issue_order['id'],
+            'objectPk': target_pk,
+            'parameters': {'orderNo': 'E2E-OIDC-ACTOR', 'window': '本周内待令', 'priority': '常规'},
+        },
+        timeout=30000,
+    )
+    check(authorized.status == 200, 'OIDC authorized ontology action', f'HTTP {authorized.status}', checks)
+    authorized_body = authorized.json()
+    check(authorized_body.get('performedBy') == 'ACT-LIN', 'OIDC actor controls audit identity', f"performedBy={authorized_body.get('performedBy')}", checks)
+
     page.get_by_role('button', name='Scenario 场景沙箱').click()
     page.get_by_text('Test Model Assembly · 场景模型装配与3.0来源', exact=False).wait_for(timeout=30000)
     check(page.get_by_text('Test Environment Assembly · LVC Federation Configuration', exact=False).is_visible(), 'Scenario model/environment provenance', 'assembly and federation UI rendered', checks)
