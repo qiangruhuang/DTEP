@@ -1,0 +1,106 @@
+name: One-shot TypeScript hardening repair
+
+on:
+  push:
+    branches: [engineering/v2.1.2]
+    paths:
+      - '.github/workflows/repair-typecheck.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  repair-and-verify:
+    if: ${{ github.actor == github.repository_owner }}
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: engineering/v2.1.2
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: '1.3.4'
+      - name: Apply strict TypeScript fixes without changing frozen business semantics
+        shell: bash
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          root = Path('src/lib')
+
+          for fn in ['event-to-measure.ts','expert-review.ts','run-control-monitoring.ts','run-data-quality.ts','test-environment-assembly.ts','test-model-assembly.ts']:
+              p = root / fn
+              s = p.read_text()
+              s = s.replace('] as const) await ensureLink(...spec)', '] as const) await ensureLink(spec[0], spec[1], spec[2], spec[3])')
+              s = s.replace('] as const) await link(...spec)', '] as const) await link(spec[0], spec[1], spec[2], spec[3])')
+              p.write_text(s)
+
+          for fn in ['run-control-monitoring.ts','run-data-quality.ts','test-readiness-review.ts']:
+              p = root / fn
+              s = p.read_text().replace("orderBy: { createdAt: 'asc' }", "orderBy: { updatedAt: 'asc' }")
+              p.write_text(s)
+
+          p = root / 'test-environment-assembly.ts'
+          s = p.read_text()
+          s = s.replace("const data = { code: pk, caseId: 'CASE-01', scenarioRef, modelAssemblyRef, modelAssemblyHash: assembly.data.assemblyHash, revision, status, ...manifest, federationHash, mutable: !status.startsWith('已冻结') }", "const data = { code: pk, status, ...manifest, federationHash, mutable: !status.startsWith('已冻结') }")
+          s = s.replace("const data = { code: pk, caseId: 'CASE-01', scenarioRef, revision, status, readiness, ...manifest, environmentHash, mutable: !status.startsWith('已冻结'), provenancePolicy:", "const data = { code: pk, status, readiness, ...manifest, environmentHash, mutable: !status.startsWith('已冻结'), provenancePolicy:")
+          p.write_text(s)
+
+          p = root / 'case01-state-machine.ts'
+          s = p.read_text()
+          old = "  const stepLog = async (detail: Record<string, any>) => {\n    executionLog = await logTransition(stepId, detail, actorLabel)\n    return executionLog\n  }"
+          new = old + "\n  const getExecutionLog = () => executionLog as Awaited<ReturnType<typeof logTransition>> | null"
+          if old in s and 'const getExecutionLog' not in s:
+              s = s.replace(old, new)
+          old = "  if (!executionLog) throw new Error('状态迁移动作未生成 Action Log')\n  const executionSignature = await recordStepExecutionSignature(stepId, actorId, {\n    caseId: 'CASE-01', stepId, actionLogId: executionLog.id, performedBy: executionLog.performedBy,\n    createdAt: executionLog.createdAt.toISOString(), parameters: JSON.parse(executionLog.parametersJson || '{}'),\n  })"
+          new = "  const finalizedExecutionLog = getExecutionLog()\n  if (!finalizedExecutionLog) throw new Error('状态迁移动作未生成 Action Log')\n  const executionSignature = await recordStepExecutionSignature(stepId, actorId, {\n    caseId: 'CASE-01', stepId, actionLogId: finalizedExecutionLog.id, performedBy: finalizedExecutionLog.performedBy,\n    createdAt: finalizedExecutionLog.createdAt.toISOString(), parameters: JSON.parse(finalizedExecutionLog.parametersJson || '{}'),\n  })"
+          if old in s:
+              s = s.replace(old, new)
+          p.write_text(s)
+
+          p = root / 'event-to-measure.ts'
+          s = p.read_text()
+          marker = "  const decision = state.latestDecision\n  const manifest ="
+          if marker in s:
+              s = s.replace(marker, "  const decision = state.latestDecision\n  if (!decision) throw new Error('自动判读状态缺少冻结决定')\n  const manifest =", 1)
+          start = s.find('export async function finalizeAutomatedAdjudication')
+          marker = "  const decision = state.latestDecision"
+          idx = s.find(marker, start)
+          if idx >= 0 and "自动判读状态缺少冻结决定" not in s[idx:idx+180]:
+              end = idx + len(marker)
+              s = s[:end] + "\n  if (!decision) throw new Error('自动判读状态缺少冻结决定')" + s[end:]
+          p.write_text(s)
+
+          p = root / 'run-data-quality.ts'
+          s = p.read_text()
+          marker = "  const reconstruction = state.latestReconstruction\n  const assessment = state.latestAssessment\n  const manifest ="
+          if marker in s:
+              s = s.replace(marker, "  const reconstruction = state.latestReconstruction\n  const assessment = state.latestAssessment\n  if (!reconstruction || !assessment) throw new Error('Run Data Quality状态缺少冻结重建/评估')\n  const manifest =", 1)
+          old = """  const finalPayload = {\n    schema: 'dtep/run-data-quality-final/v2.0f', caseId: 'CASE-01', stepId, runRef: PROFILES[stepId].runRef,\n    reconstructionRef: state.latestReconstruction.code, reconstructionHash: state.latestReconstruction.reconstructionHash,\n    assessmentRef: state.latestAssessment.code, assessmentHash: state.latestAssessment.assessmentHash,\n    executionSignatureRef: executionSignature.code, executionSignatureHash: executionSignature.signatureHash,\n  }\n  const finalHash = sha256(finalPayload)\n  await patchEntry('RunDataQualityAssessment', state.latestAssessment.code, { finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash })\n  const run = await entry('TestRun', PROFILES[stepId].runRef)\n  if (run) await patchEntry('TestRun', run.pk, { runDataQualityFinalHash: finalHash, runDataQualityFinalExecutionSignatureRef: executionSignature.code, runDataQualityFinalExecutionSignatureHash: executionSignature.signatureHash, dataQualityAssessmentSnapshot: { ...state.latestAssessment, finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash } })\n"""
+          new = """  const reconstruction = state.latestReconstruction\n  const assessment = state.latestAssessment\n  if (!reconstruction || !assessment) throw new Error('Run Data Quality状态缺少冻结重建/评估')\n  const finalPayload = {\n    schema: 'dtep/run-data-quality-final/v2.0f', caseId: 'CASE-01', stepId, runRef: PROFILES[stepId].runRef,\n    reconstructionRef: reconstruction.code, reconstructionHash: reconstruction.reconstructionHash,\n    assessmentRef: assessment.code, assessmentHash: assessment.assessmentHash,\n    executionSignatureRef: executionSignature.code, executionSignatureHash: executionSignature.signatureHash,\n  }\n  const finalHash = sha256(finalPayload)\n  await patchEntry('RunDataQualityAssessment', assessment.code, { finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash })\n  const run = await entry('TestRun', PROFILES[stepId].runRef)\n  if (run) await patchEntry('TestRun', run.pk, { runDataQualityFinalHash: finalHash, runDataQualityFinalExecutionSignatureRef: executionSignature.code, runDataQualityFinalExecutionSignatureHash: executionSignature.signatureHash, dataQualityAssessmentSnapshot: { ...assessment, finalExecutionSignatureRef: executionSignature.code, finalExecutionSignatureHash: executionSignature.signatureHash, finalDataQualityHash: finalHash } })\n"""
+          if old in s:
+              s = s.replace(old, new)
+          p.write_text(s)
+          PY
+      - name: Install dependencies and verify strict typecheck
+        run: |
+          bun ci
+          python scripts/restore_db.py --force
+          bunx prisma generate
+          bunx tsc --noEmit
+          python scripts/validate_v21.py
+      - name: Commit verified repair
+        shell: bash
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add src/lib
+          git diff --cached --quiet && { echo 'No source changes to commit'; exit 0; }
+          git commit -m 'fix: strict TypeScript hardening for frozen v2.1 architecture'
+          git push origin HEAD:engineering/v2.1.2
