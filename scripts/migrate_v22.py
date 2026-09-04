@@ -48,7 +48,7 @@ def migrate_connection(con: sqlite3.Connection) -> None:
           "sourceRef" TEXT NOT NULL DEFAULT '',
           "validFrom" DATETIME,
           "validTo" DATETIME,
-          "createdAt" DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+          "createdAt" DATETIME NOT NULL DEFAULT (CAST(strftime('%s','now') AS INTEGER) * 1000),
           CONSTRAINT "LinkEntry_linkTypeId_fkey" FOREIGN KEY ("linkTypeId") REFERENCES "LinkType" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
           CONSTRAINT "LinkEntry_sourceObjectId_fkey" FOREIGN KEY ("sourceObjectId") REFERENCES "ObjectEntry" ("id") ON DELETE CASCADE ON UPDATE CASCADE,
           CONSTRAINT "LinkEntry_targetObjectId_fkey" FOREIGN KEY ("targetObjectId") REFERENCES "ObjectEntry" ("id") ON DELETE CASCADE ON UPDATE CASCADE
