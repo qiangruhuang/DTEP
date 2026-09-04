@@ -50,6 +50,11 @@ with sync_playwright() as pw:
     check(page.get_by_text('CASE-01 GOVERNED STATE MACHINE · v2.1 FROZEN', exact=False).is_visible(), 'CASE-01 governed state machine', 'frozen state machine rendered', checks)
     check('ACT-LIN' in page.locator('body').inner_text(), 'CASE identity mapping', 'ACT-LIN visible in product UI', checks)
 
+    graph_response = page.request.get(f'{APP}/api/links?type=DigitalTestCase&pk=CASE-01&depth=1', timeout=30000)
+    check(graph_response.status == 200, 'Ontology graph traversal API', f'HTTP {graph_response.status}', checks)
+    graph = graph_response.json()
+    check(graph.get('root', {}).get('pk') == 'CASE-01' and isinstance(graph.get('links'), list), 'Ontology graph root resolution', 'compound object key + LinkEntry traversal contract rendered', checks)
+
     page.get_by_role('button', name='Scenario 场景沙箱').click()
     page.get_by_text('Test Model Assembly · 场景模型装配与3.0来源', exact=False).wait_for(timeout=30000)
     check(page.get_by_text('Test Environment Assembly · LVC Federation Configuration', exact=False).is_visible(), 'Scenario model/environment provenance', 'assembly and federation UI rendered', checks)
