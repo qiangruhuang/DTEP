@@ -1,0 +1,573 @@
+{
+  "schema": "dtep/case01-v03-baseline/v1",
+  "entries": [
+    {
+      "apiName": "DigitalTestCase",
+      "pk": "CASE-01",
+      "title": "强电磁压制下 X9A 察打一体任务效能数字化试验鉴定",
+      "data": {
+        "code": "CASE-01",
+        "name": "强电磁压制下 X9A 察打一体任务效能数字化试验鉴定",
+        "programId": "TP-25-01",
+        "question": "X9A 在强电磁压制、高威胁条件下，能否完成搜索—识别—情报分发—指挥决策—突防交战—毁伤评估的端到端任务闭环？",
+        "missionThread": "MT-01",
+        "baselineScenario": "SC-BASE",
+        "stressScenario": "SC-COA-01",
+        "eventPlan": [
+          "TE-25-002",
+          "TE-25-004",
+          "TE-25-006",
+          "TE-25-009"
+        ],
+        "measures": [
+          "M-03",
+          "M-05",
+          "M-07",
+          "M-08",
+          "M-13",
+          "M-14"
+        ],
+        "models": [
+          "MD-01",
+          "MD-02",
+          "MD-03",
+          "MD-05",
+          "MD-07",
+          "MD-08"
+        ],
+        "evidenceGates": [
+          "EG-M03",
+          "EG-M13"
+        ],
+        "status": "证据闭环中",
+        "decision": "现有证据不足以形成高威胁/强电磁压制条件下任务效能达标的正式鉴定结论；基线与中等威胁条件可形成阶段性判断。",
+        "nextActions": [
+          "完成 TE-25-002 强干扰复试",
+          "补齐 TE-25-004 LVC 任务线程证据",
+          "扩展 MD-07/MD-08 高压验证域并完成认可",
+          "冻结配置后重跑 5000 次数字试验",
+          "Evidence Gate 复评后冻结结论"
+        ],
+        "owner": "试验总师 · 周衡",
+        "runs": [
+          "RUN-LIVE-002-01",
+          "RUN-LVC-004-REH-01",
+          "RUN-DOT-B-01",
+          "RUN-DOT-S-01",
+          "RUN-DOT-S-02"
+        ],
+        "evidencePackages": [
+          "EP-CASE01-M03-V0.2",
+          "EP-CASE01-M13-V0.2",
+          "EP-CASE01-M13-V0.3"
+        ],
+        "gateRuleSet": "GRS-CASE01-STRICT-V1"
+      }
+    },
+    {
+      "apiName": "ModelAsset",
+      "pk": "MD-02",
+      "title": "数据链信道与干扰模型",
+      "data": {
+        "code": "MD-02",
+        "name": "数据链信道与干扰模型",
+        "kind": "仿真模型",
+        "vvaStatus": "验证中",
+        "syncRate": null,
+        "usedIn": [
+          "TE-25-002",
+          "TE-25-004"
+        ],
+        "developer": "试验鉴定中心二所",
+        "version": "CH-3.4",
+        "verification": "通过",
+        "validation": "验证中",
+        "accreditation": "待认可",
+        "accreditingAuthority": "试验鉴定 VV&A 评审组",
+        "intendedUse": "用于复杂电磁环境下链路可用性/失锁概率评估",
+        "validationDomain": "链路20–180km；J/S 0–18dB；3类已测干扰",
+        "limitations": [
+          "180km以上缺少实测锚点",
+          "认知干扰未验证"
+        ],
+        "liveDataRefs": [
+          "TE-25-002/F-2206"
+        ],
+        "uncertainty": "按关键响应量和适用域记录模型不确定性",
+        "criticality": "关键",
+        "lastReviewed": "D+57"
+      }
+    },
+    {
+      "apiName": "ModelAsset",
+      "pk": "MD-07",
+      "title": "数字战场威胁环境模型（类 JSE）",
+      "data": {
+        "code": "MD-07",
+        "name": "数字战场威胁环境模型（类 JSE）",
+        "kind": "环境模型",
+        "vvaStatus": "验证中",
+        "syncRate": null,
+        "usedIn": [
+          "TE-25-009"
+        ],
+        "developer": "试验鉴定中心三所",
+        "version": "DE-4.0",
+        "verification": "通过",
+        "validation": "验证中",
+        "accreditation": "待认可",
+        "accreditingAuthority": "试验鉴定 VV&A 评审组",
+        "intendedUse": "用于纯数字 OT&E 威胁网和交战环境生成",
+        "validationDomain": "威胁构型V4.0；威胁密度1–3级；固定规则交战",
+        "limitations": [
+          "威胁密度4–5级验证不足"
+        ],
+        "liveDataRefs": [
+          "TE-25-004/LVC-AAR"
+        ],
+        "uncertainty": "按关键响应量和适用域记录模型不确定性",
+        "criticality": "关键",
+        "lastReviewed": "D+57"
+      }
+    },
+    {
+      "apiName": "ModelAsset",
+      "pk": "MD-08",
+      "title": "X9A 作战任务数字孪生体",
+      "data": {
+        "code": "MD-08",
+        "name": "X9A 作战任务数字孪生体",
+        "kind": "数字孪生",
+        "vvaStatus": "验证中",
+        "syncRate": 87,
+        "usedIn": [
+          "TE-25-009"
+        ],
+        "developer": "承制单位 · 总体室",
+        "version": "MT-1.2",
+        "verification": "通过",
+        "validation": "验证中",
+        "accreditation": "待认可",
+        "accreditingAuthority": "试验鉴定 VV&A 评审组",
+        "intendedUse": "用于 MT-01 蒙特卡洛任务成功率估计并形成 live-test-refine-predict 闭环",
+        "validationDomain": "MT-01；威胁1–3级；EW≤60%；兵力比0.9–1.2",
+        "limitations": [
+          "候选EW=75%超出验证域",
+          "威胁4级以上未验证"
+        ],
+        "liveDataRefs": [
+          "TE-25-004/LVC-AAR",
+          "TE-25-006/F-2208"
+        ],
+        "uncertainty": "按关键响应量和适用域记录模型不确定性",
+        "criticality": "关键",
+        "lastReviewed": "D+57"
+      }
+    },
+    {
+      "apiName": "TestEvent",
+      "pk": "TE-25-002",
+      "title": "数据链抗干扰试验",
+      "data": {
+        "code": "TE-25-002",
+        "name": "数据链抗干扰试验",
+        "phase": "DT",
+        "type": "研制试验",
+        "window": "D+13 ~ D+24",
+        "range": "西北综合试验场 · 阵地 5 号",
+        "status": "暂停",
+        "liveCount": 2,
+        "virtualCount": 4,
+        "constructiveCount": 12,
+        "assesses": [
+          "M-03",
+          "M-07"
+        ],
+        "produces": [
+          "raw/telemetry/F-2206",
+          "raw/environment/range-A"
+        ],
+        "progress": 58,
+        "lead": "现场指挥 · 高工 林晓东",
+        "anomalyScore": 0.86
+      }
+    },
+    {
+      "apiName": "TestEvent",
+      "pk": "TE-25-004",
+      "title": "LVC 联合对抗试验",
+      "data": {
+        "code": "TE-25-004",
+        "name": "LVC 联合对抗试验",
+        "phase": "OT",
+        "type": "LVC联合试验",
+        "window": "D+30 ~ D+40",
+        "range": "分布式（场区 + 仿真节点集群）",
+        "status": "待执行",
+        "liveCount": 2,
+        "virtualCount": 4,
+        "constructiveCount": 128,
+        "assesses": [
+          "M-05",
+          "M-07",
+          "M-08"
+        ],
+        "produces": [
+          "raw/simulation/lvc-01",
+          "stg/evaluation/lvc-score"
+        ],
+        "progress": 12,
+        "lead": "试验总师 · 研究员 周衡",
+        "anomalyScore": 0.05
+      }
+    },
+    {
+      "apiName": "TestEvent",
+      "pk": "TE-25-009",
+      "title": "纯数字化作战试验（纯数字化 OT&E）",
+      "data": {
+        "code": "TE-25-009",
+        "name": "纯数字化作战试验（纯数字化 OT&E）",
+        "phase": "DOT",
+        "type": "纯数字化OT&E",
+        "window": "D+52 ~ D+58",
+        "range": "数字靶场环境集群（类 JSE）· 零真实装备",
+        "status": "执行中",
+        "liveCount": 0,
+        "virtualCount": 6,
+        "constructiveCount": 256,
+        "assesses": [
+          "M-13",
+          "M-14"
+        ],
+        "produces": [
+          "raw/simulation/dot-01",
+          "stg/evaluation/metrics"
+        ],
+        "progress": 38,
+        "lead": "试验总师 · 研究员 周衡",
+        "anomalyScore": 0.09
+      }
+    },
+    {
+      "apiName": "TestScenario",
+      "pk": "SC-COA-01",
+      "title": "高威胁/强电磁压制候选场景",
+      "data": {
+        "code": "SC-COA-01",
+        "name": "高威胁/强电磁压制候选场景",
+        "kind": "候选",
+        "status": "沙箱评估",
+        "missionThread": "MT-01",
+        "threatLevel": 4,
+        "ewIntensity": 75,
+        "forceRatio": 0.85,
+        "weather": "恶劣",
+        "deception": 60,
+        "models": [
+          "MD-01@FC-7.2",
+          "MD-02@CH-3.4",
+          "MD-07@DE-4.0",
+          "MD-08@MT-1.2"
+        ],
+        "linkedEvents": [
+          "TE-25-009"
+        ],
+        "assumptions": [
+          "不修改正式基线",
+          "MD-08 在 EW>60% 条件下属于验证域外使用"
+        ],
+        "runCount": 500,
+        "author": "试验总师 · 周衡"
+      }
+    },
+    {
+      "apiName": "Measure",
+      "pk": "M-13",
+      "title": "数字化任务成功率（蒙特卡洛 5000 次）",
+      "data": {
+        "code": "M-13",
+        "name": "数字化任务成功率（蒙特卡洛 5000 次）",
+        "category": "作战效能",
+        "unit": "%",
+        "threshold": 85,
+        "objective": 92,
+        "measured": 82.4,
+        "status": "统计中",
+        "programId": "TP-25-01",
+        "coveredBy": [
+          "TE-25-009"
+        ],
+        "confidence": 0.93
+      }
+    },
+    {
+      "apiName": "Measure",
+      "pk": "M-14",
+      "title": "孪生-实测一致性 NRMSE",
+      "data": {
+        "code": "M-14",
+        "name": "孪生-实测一致性 NRMSE",
+        "category": "模型有效性指标",
+        "unit": "%",
+        "threshold": 8,
+        "objective": 5,
+        "measured": 6.2,
+        "status": "达标",
+        "programId": "TP-25-01",
+        "coveredBy": [
+          "TE-25-009"
+        ],
+        "confidence": 0.96
+      }
+    },
+    {
+      "apiName": "Deficiency",
+      "pk": "DF-25-01",
+      "title": "数据链偶发失锁（干扰条件下）",
+      "data": {
+        "code": "DF-25-01",
+        "title": "数据链偶发失锁（干扰条件下）",
+        "severity": "I类",
+        "status": "分析中",
+        "foundIn": "TE-25-002",
+        "owner": "承制单位 · 数据链室",
+        "raisedAt": "D+14",
+        "rootCause": "初步定位：跳频驻留时间不足"
+      }
+    },
+    {
+      "apiName": "MissionThread",
+      "pk": "MT-01",
+      "title": "复杂电磁环境下远程察打一体任务线程",
+      "data": {
+        "code": "MT-01",
+        "name": "复杂电磁环境下远程察打一体任务线程",
+        "missionObjective": "在受干扰、多威胁环境中完成搜索—识别—分发—决策—交战—评估闭环。",
+        "scenarioRef": "SC-BASE",
+        "coverage": 75,
+        "status": "试验中",
+        "owner": "试验总师 · 周衡",
+        "measures": [
+          "M-03",
+          "M-04",
+          "M-05",
+          "M-07",
+          "M-08",
+          "M-09",
+          "M-10"
+        ],
+        "events": [
+          "TE-25-002",
+          "TE-25-003",
+          "TE-25-004",
+          "TE-25-006",
+          "TE-25-007",
+          "TE-25-008",
+          "TE-25-009"
+        ],
+        "risks": [
+          "强干扰下数据链可能造成任务线程断裂",
+          "高威胁数字场景超出部分模型验证域"
+        ],
+        "steps": [
+          {
+            "id": "S1",
+            "label": "任务区域搜索",
+            "actor": "X9A / 构建侦察节点",
+            "effect": "发现候选目标",
+            "measures": [
+              "M-05"
+            ],
+            "events": [
+              "TE-25-004",
+              "TE-25-009"
+            ],
+            "status": "covered"
+          },
+          {
+            "id": "S2",
+            "label": "目标探测与识别",
+            "actor": "光电载荷 / 算法",
+            "effect": "形成目标置信判定",
+            "measures": [
+              "M-04"
+            ],
+            "events": [
+              "TE-25-003"
+            ],
+            "status": "partial"
+          },
+          {
+            "id": "S3",
+            "label": "情报分发",
+            "actor": "数据链 / 指挥节点",
+            "effect": "情报进入任务网络",
+            "measures": [
+              "M-03",
+              "M-08"
+            ],
+            "events": [
+              "TE-25-002",
+              "TE-25-004"
+            ],
+            "status": "partial"
+          },
+          {
+            "id": "S4",
+            "label": "指挥决策与任务重规划",
+            "actor": "指挥员 / 任务规划软件",
+            "effect": "形成交战任务",
+            "measures": [
+              "M-05",
+              "M-08"
+            ],
+            "events": [
+              "TE-25-004",
+              "TE-25-006"
+            ],
+            "status": "covered"
+          },
+          {
+            "id": "S5",
+            "label": "突防与交战",
+            "actor": "X9A / 武器系统",
+            "effect": "完成目标打击",
+            "measures": [
+              "M-07",
+              "M-09",
+              "M-10"
+            ],
+            "events": [
+              "TE-25-007",
+              "TE-25-008"
+            ],
+            "status": "covered"
+          },
+          {
+            "id": "S6",
+            "label": "毁伤评估与任务结束",
+            "actor": "载荷 / 指挥节点",
+            "effect": "确认任务结果",
+            "measures": [
+              "M-05"
+            ],
+            "events": [
+              "TE-25-006",
+              "TE-25-009"
+            ],
+            "status": "partial"
+          }
+        ]
+      }
+    },
+    {
+      "apiName": "EvidenceGate",
+      "pk": "EG-M03",
+      "title": "M-03 数据链作用距离证据门控",
+      "data": {
+        "code": "EG-M03",
+        "name": "M-03 数据链作用距离证据门控",
+        "measureId": "M-03",
+        "decision": "有条件通过",
+        "criteria": [
+          "事件覆盖",
+          "数据质量",
+          "模型认可",
+          "统计可判定性"
+        ],
+        "blockers": [
+          "TE-25-002 暂停，强干扰段未完整执行"
+        ],
+        "requiredEvidence": [
+          "归零后完成受控干扰复试"
+        ],
+        "owner": "鉴定主管 · 孙立",
+        "lastEvaluated": "D+57"
+      }
+    },
+    {
+      "apiName": "EvidenceGate",
+      "pk": "EG-M13",
+      "title": "M-13 数字化任务成功率证据门控",
+      "data": {
+        "code": "EG-M13",
+        "name": "M-13 数字化任务成功率证据门控",
+        "measureId": "M-13",
+        "decision": "阻塞",
+        "criteria": [
+          "任务线程覆盖",
+          "Intended Use",
+          "Validation Domain",
+          "关键模型认可",
+          "实测/LVC 锚点"
+        ],
+        "blockers": [
+          "MD-07/MD-08 尚未认可",
+          "候选高压场景超出 MD-08 验证域"
+        ],
+        "requiredEvidence": [
+          "完成高压区验证点",
+          "与 TE-25-004/006 形成实测-LVC-数字闭环"
+        ],
+        "owner": "VV&A 主管 · 何斌",
+        "lastEvaluated": "D+57"
+      }
+    },
+    {
+      "apiName": "TestRun",
+      "pk": "RUN-DOT-S-02",
+      "title": "高压验证域扩展后的 5,000 次正式重跑",
+      "data": {
+        "code": "RUN-DOT-S-02",
+        "caseId": "CASE-01",
+        "eventId": "TE-25-009",
+        "scenarioId": "SC-COA-01",
+        "executionMode": "Digital",
+        "status": "待执行",
+        "configurationBaseline": "CBL-DOT-009-STRESS-v2-PENDING",
+        "replications": 5000,
+        "randomSeedPolicy": "预生成受控种子清单；待 VV&A 认可后锁定",
+        "resourceSnapshot": [
+          "R-09@pending"
+        ],
+        "modelSnapshot": [
+          "MD-01@FC-7.2",
+          "MD-02@CH-3.5-pending",
+          "MD-07@DE-4.1-pending",
+          "MD-08@MT-1.3-pending"
+        ],
+        "inputDatasetRefs": [],
+        "outputDatasetRefs": [],
+        "modelDomainChecks": [],
+        "anomalyRefs": [],
+        "formalEvidenceClass": "计划正式补证 Run",
+        "resultSummary": "仅创建 Run 计划；必须在 MD-02/07/08 高压验证域扩展和认可完成后才能冻结配置并执行。",
+        "operator": "数字试验运行席 · 待排班",
+        "startedAt": null,
+        "endedAt": null
+      }
+    }
+  ],
+  "deleteEntries": [
+    {
+      "apiName": "TestRun",
+      "pk": "RUN-LIVE-002-02"
+    },
+    {
+      "apiName": "TestRun",
+      "pk": "RUN-LVC-004-FRM-01"
+    },
+    {
+      "apiName": "EvidencePackage",
+      "pk": "EP-CASE01-M13-V0.4"
+    }
+  ],
+  "deleteDatasets": [
+    "raw/telemetry/F-2206-R2",
+    "raw/simulation/lvc-02",
+    "stg/evaluation/lvc-score-v2",
+    "raw/simulation/dot-stress-v2",
+    "stg/evaluation/metrics-stress-v2"
+  ]
+}

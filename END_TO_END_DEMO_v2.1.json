@@ -1,0 +1,291 @@
+{
+  "schema": "dtep/end-to-end-demo/v2.1",
+  "mode": "deterministic-architecture-shadow",
+  "runtimeNotice": "This validates the frozen design and evidence invariants without executing Next.js/browser APIs. It is not a browser E2E test.",
+  "strictRuleSetHash": "sha256:a077d5da6b1e8b2cb571cb2de134f470007eab05bc1c128083b53038a9e19121",
+  "adjudicationRuleSetHash": "sha256:555086efe8b46667a5f6e215769932d7ad070c8ff3e2e856bc872f891780a558",
+  "checkpointCount": 27,
+  "finalChainHash": "sha256:0d328fb47e52b4c5a76c4683f21329c3cba4a5811d0755ca456ef95b8f6f166f",
+  "checkpoints": [
+    {
+      "index": 1,
+      "code": "A01",
+      "stage": "3.0交付接收",
+      "artifact": "DLV-X9A-DP30-001",
+      "detail": "研制方提交→基地隔离接收",
+      "status": "PASS",
+      "previousHash": "GENESIS",
+      "checkpointHash": "sha256:d98024891cf614155a941d6b8c555aefeb4ea67c713d79feac5b8f9b2049547e"
+    },
+    {
+      "index": 2,
+      "code": "A02",
+      "stage": "G0交付验收",
+      "artifact": "G0-DP30",
+      "detail": "13/13交付项、3+3+4十要素、Manifest/Hash核验",
+      "status": "PASS",
+      "previousHash": "sha256:d98024891cf614155a941d6b8c555aefeb4ea67c713d79feac5b8f9b2049547e",
+      "checkpointHash": "sha256:22caa97f6de93b996d392cc794ca3d10c5c8e4b37dfa5eb393f4829fc7b7dcf3"
+    },
+    {
+      "index": 3,
+      "code": "A03",
+      "stage": "运行路由",
+      "artifact": "FMI/SAL/IDL",
+      "detail": "性能特性→FMI；作战运用→SAL；数据交互→IDL",
+      "status": "PASS",
+      "previousHash": "sha256:22caa97f6de93b996d392cc794ca3d10c5c8e4b37dfa5eb393f4829fc7b7dcf3",
+      "checkpointHash": "sha256:8347f176c299245d0d8aab091b0effa805da52821782a273514e51afb810d26f"
+    },
+    {
+      "index": 4,
+      "code": "A04",
+      "stage": "G1首测",
+      "artifact": "SAL-RESET-001 + IDL-SCHEMA-002",
+      "detail": "FMI PASS；SAL Reset失败；IDL EW.Status版本不兼容",
+      "status": "BLOCKED",
+      "previousHash": "sha256:8347f176c299245d0d8aab091b0effa805da52821782a273514e51afb810d26f",
+      "checkpointHash": "sha256:5ecaa71aac2934897d9e8d5282df01d2b7f34b3b7b027d60cdf6c0a5e27d2ca1"
+    },
+    {
+      "index": 5,
+      "code": "A05",
+      "stage": "整改复测",
+      "artifact": "3.0.1",
+      "detail": "Reset 100/100；EW.Status v2.1；首测失败记录保留",
+      "status": "PASS",
+      "previousHash": "sha256:5ecaa71aac2934897d9e8d5282df01d2b7f34b3b7b027d60cdf6c0a5e27d2ca1",
+      "checkpointHash": "sha256:3e382e9669138150246d37566e1ce633d58032bf3ada7954569065d000a83e78"
+    },
+    {
+      "index": 6,
+      "code": "A06",
+      "stage": "基地基线",
+      "artifact": "BL-X9A-DP30-001",
+      "detail": "冻结Artifact/Contract/Conformance/G0/G1快照",
+      "status": "PASS",
+      "previousHash": "sha256:3e382e9669138150246d37566e1ce633d58032bf3ada7954569065d000a83e78",
+      "checkpointHash": "sha256:5a13dc9476cab283cf0e364e0827280df398720b1e1d874e80fa1a96ff42d99b"
+    },
+    {
+      "index": 7,
+      "code": "A07",
+      "stage": "G2-ENTRY",
+      "artifact": "ModelBaseline→ModelAsset",
+      "detail": "仅准入VV&A，不代表已认可",
+      "status": "PASS",
+      "previousHash": "sha256:5a13dc9476cab283cf0e364e0827280df398720b1e1d874e80fa1a96ff42d99b",
+      "checkpointHash": "sha256:3a60a995200ff351248f06d6f5b6a15b42afde631ba7195fa57d4b2a2e8f5670"
+    },
+    {
+      "index": 8,
+      "code": "B01",
+      "stage": "Test Model Assembly",
+      "artifact": "TMA-CASE01-STRESS-v1/v2",
+      "detail": "ModelAsset绑定Baseline/Artifact/FMI-SAL-IDL/VV&A",
+      "status": "PASS",
+      "previousHash": "sha256:3a60a995200ff351248f06d6f5b6a15b42afde631ba7195fa57d4b2a2e8f5670",
+      "checkpointHash": "sha256:31cae9c51a59814d6674df97805f36017a920527865af803e25cfd06b0b8a64b"
+    },
+    {
+      "index": 9,
+      "code": "C01",
+      "stage": "Test Environment Assembly",
+      "artifact": "TEA-CASE01-STRESS-v1/v2",
+      "detail": "Live/Virtual/Constructive+网关+时统+网络+资源",
+      "status": "PASS",
+      "previousHash": "sha256:31cae9c51a59814d6674df97805f36017a920527865af803e25cfd06b0b8a64b",
+      "checkpointHash": "sha256:62ce9a7852d4694cbaa926ce48d4d76810208bf997880ce43a3cfaafe43851ae"
+    },
+    {
+      "index": 10,
+      "code": "C02",
+      "stage": "LVC Federation",
+      "artifact": "LVC-FED-CASE01-STRESS-v1/v2",
+      "detail": "HLA/DIS/TENA/DDS→IDL Topic Set",
+      "status": "PASS",
+      "previousHash": "sha256:62ce9a7852d4694cbaa926ce48d4d76810208bf997880ce43a3cfaafe43851ae",
+      "checkpointHash": "sha256:902ebd0d9816fcfb21ac99ef82ea558d3e953d5bb80e570f568208f0d21b31f8"
+    },
+    {
+      "index": 11,
+      "code": "D01",
+      "stage": "Federation Readiness A1",
+      "artifact": "TIME-SYNC 18ms > 10ms",
+      "detail": "正式LVC前时统超差",
+      "status": "BLOCKED",
+      "previousHash": "sha256:902ebd0d9816fcfb21ac99ef82ea558d3e953d5bb80e570f568208f0d21b31f8",
+      "checkpointHash": "sha256:1a24df2b14aae4500dfd0f80d86fb642c3b084763b798852937acf4923e39b10"
+    },
+    {
+      "index": 12,
+      "code": "D02",
+      "stage": "Federation Readiness A2",
+      "artifact": "TIME-SYNC 6ms <= 10ms",
+      "detail": "整改复核后允许进入审批",
+      "status": "PASS",
+      "previousHash": "sha256:1a24df2b14aae4500dfd0f80d86fb642c3b084763b798852937acf4923e39b10",
+      "checkpointHash": "sha256:c7d66af80e1ded1a76fb10985c0f560cc1f269066ed40071f9b8974196ea98cd"
+    },
+    {
+      "index": 13,
+      "code": "E01",
+      "stage": "LVC Run Control",
+      "artifact": "RUN-LVC-004-FRM-01",
+      "detail": "运行中22ms漂移触发AUTO_PAUSE",
+      "status": "PAUSED",
+      "previousHash": "sha256:c7d66af80e1ded1a76fb10985c0f560cc1f269066ed40071f9b8974196ea98cd",
+      "checkpointHash": "sha256:f9e144376c79a5bbebe28afe86789a3f947e9b2eba4815da7c2b79a93b81a4cd"
+    },
+    {
+      "index": 14,
+      "code": "E02",
+      "stage": "LVC Recovery",
+      "artifact": "Time Master relock",
+      "detail": "恢复到约5ms并RESUME",
+      "status": "PASS",
+      "previousHash": "sha256:f9e144376c79a5bbebe28afe86789a3f947e9b2eba4815da7c2b79a93b81a4cd",
+      "checkpointHash": "sha256:af3aa9b214eb4f3a795c121eb4396728f3f838f1075cf37df077d0d5db69c0c2"
+    },
+    {
+      "index": 15,
+      "code": "F01",
+      "stage": "Event Reconstruction A1",
+      "artifact": "canonical ledger A1",
+      "detail": "22ms时差+1重复+因果倒序",
+      "status": "BLOCKED",
+      "previousHash": "sha256:af3aa9b214eb4f3a795c121eb4396728f3f838f1075cf37df077d0d5db69c0c2",
+      "checkpointHash": "sha256:aa25a208e59b3a4ab570d703204d80e1d904316ed4dd41749f980bf4f1f113e2"
+    },
+    {
+      "index": 16,
+      "code": "F02",
+      "stage": "Event Reconstruction A2",
+      "artifact": "canonical ledger A2",
+      "detail": "分段校时+语义去重；残余4.8ms；因果链恢复",
+      "status": "READY_FOR_EVIDENCE",
+      "previousHash": "sha256:aa25a208e59b3a4ab570d703204d80e1d904316ed4dd41749f980bf4f1f113e2",
+      "checkpointHash": "sha256:94ac6a11f1d2cc522fc9e68cd650044d8a7a97e7794ac8237cc02249f49f15e1"
+    },
+    {
+      "index": 17,
+      "code": "G01",
+      "stage": "M-03自动判读",
+      "artifact": "Link.RangeAchieved",
+      "detail": "208km >= 200km",
+      "status": "达标",
+      "previousHash": "sha256:94ac6a11f1d2cc522fc9e68cd650044d8a7a97e7794ac8237cc02249f49f15e1",
+      "checkpointHash": "sha256:3536b1419e04afefb06086c564611f63d5e145eb7f8759df488e6ac2d7fe2644"
+    },
+    {
+      "index": 18,
+      "code": "G02",
+      "stage": "M-08自动判读",
+      "artifact": "Sensor.Track→Intel.Distributed",
+      "detail": "11.4s <= 15s",
+      "status": "达标",
+      "previousHash": "sha256:3536b1419e04afefb06086c564611f63d5e145eb7f8759df488e6ac2d7fe2644",
+      "checkpointHash": "sha256:095919824c001c3142a4fc1a5016a6a6a719ea12b5ec35054ab58d7e41d4fb6a"
+    },
+    {
+      "index": 19,
+      "code": "G03",
+      "stage": "M-13自动判读",
+      "artifact": "4160/5000",
+      "detail": "83.2% < 85%",
+      "status": "未达标",
+      "previousHash": "sha256:095919824c001c3142a4fc1a5016a6a6a719ea12b5ec35054ab58d7e41d4fb6a",
+      "checkpointHash": "sha256:0273548ec7ea7d138d516d0ad4d42f6b8a614a2adf7510b0310a074ce8e8ebfc"
+    },
+    {
+      "index": 20,
+      "code": "G04",
+      "stage": "M-14自动判读",
+      "artifact": "Twin.ErrorSummary",
+      "detail": "6.8% <= 8%",
+      "status": "达标",
+      "previousHash": "sha256:0273548ec7ea7d138d516d0ad4d42f6b8a614a2adf7510b0310a074ce8e8ebfc",
+      "checkpointHash": "sha256:c715f4f03eca0ac7af160995401629654c91ed277d2ceaae185002d608c04db2"
+    },
+    {
+      "index": 21,
+      "code": "G05",
+      "stage": "自动判读技术状态",
+      "artifact": "ARS-CASE01-E2M-v1",
+      "detail": "规则/事件/公式链完整",
+      "status": "READY_FOR_RUN_SIGNOFF",
+      "previousHash": "sha256:c715f4f03eca0ac7af160995401629654c91ed277d2ceaae185002d608c04db2",
+      "checkpointHash": "sha256:613926227accaabbecd883f8904ee491433052030b633be82f1d6c0f10b58362"
+    },
+    {
+      "index": 22,
+      "code": "P01",
+      "stage": "Evidence Package V0.4",
+      "artifact": "EP-CASE01-M13-V0.4",
+      "detail": "正式Run+Model/Scenario/Dataset/RuleSet冻结快照",
+      "status": "FROZEN",
+      "previousHash": "sha256:613926227accaabbecd883f8904ee491433052030b633be82f1d6c0f10b58362",
+      "checkpointHash": "sha256:5b0f6187766a3198429af95d7a7f0003e2ac3593dd23335a4de8bc3ca2fb2e7b"
+    },
+    {
+      "index": 23,
+      "code": "P02",
+      "stage": "STRICT-V1",
+      "artifact": "GRS-CASE01-STRICT-V1",
+      "detail": "Evidence Gate通过；不等于性能达标",
+      "status": "PASS",
+      "previousHash": "sha256:5b0f6187766a3198429af95d7a7f0003e2ac3593dd23335a4de8bc3ca2fb2e7b",
+      "checkpointHash": "sha256:33fa200324c324ae72f152e597cbb88927b4a9e6a5f2f8edb14312bdf6cb8229"
+    },
+    {
+      "index": 24,
+      "code": "H01",
+      "stage": "专家独立评阅",
+      "artifact": "ACT-FANG/GAO/YU",
+      "detail": "3/3盲审：1 CONCUR + 2 CONCUR_WITH_QUALIFICATION",
+      "status": "QUORUM",
+      "previousHash": "sha256:33fa200324c324ae72f152e597cbb88927b4a9e6a5f2f8edb14312bdf6cb8229",
+      "checkpointHash": "sha256:92ad3ad560901e8851d0bce916d83d40a10dbe09431593f4875b33facb7888bd"
+    },
+    {
+      "index": 25,
+      "code": "H02",
+      "stage": "专家合议终审",
+      "artifact": "FAD-CASE01-FINAL-001",
+      "detail": "CONFIRM_WITH_QUALIFICATION；机器83.2%事实不改写",
+      "status": "PASS",
+      "previousHash": "sha256:92ad3ad560901e8851d0bce916d83d40a10dbe09431593f4875b33facb7888bd",
+      "checkpointHash": "sha256:cbb5db1008c1e05c7b8bdc4796050365b31ea2ac6ad9725d1c3c2bfa853e50d7"
+    },
+    {
+      "index": 26,
+      "code": "H03",
+      "stage": "正式结论批准",
+      "artifact": "ACT-QIN",
+      "detail": "最终批准人冻结Case结论与适用范围",
+      "status": "PASS",
+      "previousHash": "sha256:cbb5db1008c1e05c7b8bdc4796050365b31ea2ac6ad9725d1c3c2bfa853e50d7",
+      "checkpointHash": "sha256:d2a8af46ae45c03bbaec66d3ea384a5407245b8348be977d2c0351ebe79fca45"
+    },
+    {
+      "index": 27,
+      "code": "Z01",
+      "stage": "Decision Provenance",
+      "artifact": "CASE-01",
+      "detail": "Final→Human Review→Gate→Package→Run→Adjudication→Event→3.0",
+      "status": "AUDITABLE",
+      "previousHash": "sha256:d2a8af46ae45c03bbaec66d3ea384a5407245b8348be977d2c0351ebe79fca45",
+      "checkpointHash": "sha256:0d328fb47e52b4c5a76c4683f21329c3cba4a5811d0755ca456ef95b8f6f166f"
+    }
+  ],
+  "assertions": {
+    "g1_has_block_then_retest_pass": true,
+    "frr_has_block_then_pass": true,
+    "run_control_has_pause_recovery": true,
+    "data_quality_has_block_then_ready": true,
+    "machine_m13_not_met": true,
+    "automated_adjudication_still_ready": true,
+    "human_final_confirms_with_scope": true,
+    "evidence_gate_pass_not_performance_pass": true
+  }
+}
