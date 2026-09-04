@@ -6,14 +6,19 @@ reviewable, portable source-of-truth for the frozen demo state used by CI/E2E.
 
 Compatibility note
 ------------------
-Earlier DTEP prototype revisions wrote some SQLite ``DATETIME`` columns as Unix
-milliseconds. Prisma 6.19 rejects those legacy integer cells with P2023 when a
-query materializes the DateTime field, even though the business payload itself
-is valid. After replaying the frozen dump we therefore perform a deterministic,
-storage-only compatibility normalization: numeric values in declared DATETIME
-columns are rewritten to the same UTC instant in RFC3339 text form. Business
-objects, hashes stored inside dataJson, rule-set content and evidence semantics
-are not changed.
+The frozen SQL dump contains two historical SQLite ``DATETIME`` representations:
+older Prisma-created rows use Unix epoch milliseconds, while later rows inserted
+through SQLite/raw fixture tooling use timestamp text such as
+``2026-09-03 06:09:34``. Prisma 6.19's SQLite connector expects its DateTime
+storage representation to be integer epoch milliseconds and raises P2023 when a
+query materializes one of the text cells.
+
+After replaying the frozen dump we therefore perform a deterministic,
+storage-only compatibility normalization: text values in declared DATETIME
+columns are parsed as UTC/ISO timestamps and rewritten to the same instant as
+Unix epoch milliseconds. Existing integer values are preserved byte-for-byte.
+Business objects, hashes stored inside dataJson, rule-set content and evidence
+semantics are not changed.
 """
 from __future__ import annotations
 
@@ -31,22 +36,24 @@ def _quote_identifier(value: str) -> str:
     return '"' + value.replace('"', '""') + '"'
 
 
-def _to_rfc3339_utc(value: int | float) -> str:
-    numeric = float(value)
-    # DTEP legacy Prisma/JS timestamps are millisecond Unix epochs (~1e12).
-    # Keep a conservative seconds fallback for any older fixture that used a
-    # standard Unix epoch instead.
-    seconds = numeric / 1000.0 if abs(numeric) >= 100_000_000_000 else numeric
-    return datetime.fromtimestamp(seconds, tz=timezone.utc).isoformat(timespec="milliseconds").replace("+00:00", "Z")
+def _text_datetime_to_unix_millis(value: str) -> int:
+    text = value.strip()
+    if not text:
+        raise ValueError("empty DATETIME text")
+    # SQLite CURRENT_TIMESTAMP emits ``YYYY-MM-DD HH:MM:SS`` (UTC); Python's
+    # ISO parser also accepts that separator. RFC3339 Z values are normalized
+    # to an explicit UTC offset before parsing.
+    normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
+    parsed = datetime.fromisoformat(normalized)
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=timezone.utc)
+    else:
+        parsed = parsed.astimezone(timezone.utc)
+    return int(round(parsed.timestamp() * 1000.0))
 
 
 def normalize_legacy_datetime_cells(con: sqlite3.Connection) -> int:
-    """Normalize numeric cells in declared DATETIME columns for Prisma 6.x.
-
-    The operation is deterministic and preserves the represented instant. Text
-    values are intentionally left untouched so committed fixture timestamps are
-    not reformatted unnecessarily.
-    """
+    """Convert textual DATETIME cells to Prisma-compatible epoch milliseconds."""
     converted = 0
     tables = [
         row[0]
@@ -65,13 +72,19 @@ def normalize_legacy_datetime_cells(con: sqlite3.Connection) -> int:
             rows = list(
                 con.execute(
                     f"SELECT rowid, {column_q} FROM {table_q} "
-                    f"WHERE typeof({column_q}) IN ('integer','real')"
+                    f"WHERE typeof({column_q})='text'"
                 )
             )
             for rowid, value in rows:
+                try:
+                    millis = _text_datetime_to_unix_millis(str(value))
+                except ValueError as exc:
+                    raise RuntimeError(
+                        f"cannot normalize DATETIME {table}.{name} rowid={rowid}: {value!r}"
+                    ) from exc
                 con.execute(
                     f"UPDATE {table_q} SET {column_q}=? WHERE rowid=?",
-                    (_to_rfc3339_utc(value), rowid),
+                    (millis, rowid),
                 )
                 converted += 1
     return converted
@@ -94,7 +107,7 @@ def restore(sql_path: Path, db_path: Path, force: bool = False) -> None:
         con.commit()
     finally:
         con.close()
-    print(f"restored {db_path} from {sql_path}; normalized {converted} legacy DATETIME cells")
+    print(f"restored {db_path} from {sql_path}; normalized {converted} textual DATETIME cells to epoch milliseconds")
 
 
 if __name__ == "__main__":
