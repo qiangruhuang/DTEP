@@ -30,7 +30,7 @@ jobs:
       DTEP_SIGNER_API_TOKEN: engineering-only-token
       DTEP_ADAPTER_DAEMON_URL: http://127.0.0.1:8093
       DTEP_REQUIRE_ENGINEERING_ADAPTERS: 'true'
-      DATABASE_URL: file:./db/custom.db
+      DATABASE_URL: file:${{ github.workspace }}/db/custom.db
       APP_URL: http://127.0.0.1:3000
     steps:
       - name: Checkout
@@ -91,15 +91,20 @@ jobs:
           python - <<'PY'
           import time, urllib.request
           url = 'http://127.0.0.1:3000/api/engineering/health'
+          last = None
           for _ in range(120):
               try:
                   with urllib.request.urlopen(url, timeout=2) as r:
+                      body = r.read().decode('utf-8', errors='replace')
+                      last = f'{r.status} {body}'
                       if r.status == 200:
+                          print(last)
                           break
-              except Exception:
+              except Exception as exc:
+                  last = repr(exc)
                   time.sleep(.5)
           else:
-              raise SystemExit('DTEP app not healthy')
+              raise SystemExit(f'DTEP app not healthy: {last}')
           PY
       - name: Run real Next.js product browser smoke in OIDC mode
         run: python scripts/e2e/github_product_smoke_v211.py
