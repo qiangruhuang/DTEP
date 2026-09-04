@@ -1,12 +1,27 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db } from '@/lib/db'
+import { authorizationResponse, authorizeOntologyAction } from '@/lib/security/ontology-policy'
 
 // 执行动作（试验指挥写回本体 + 日志）— 试验指挥台 / 试验自动化的核心写路径
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => ({}))
-  const { actionTypeId, objectPk, parameters, performedBy } = body
+  const { actionTypeId, objectPk, parameters } = body
+  if ('performedBy' in body) {
+    return NextResponse.json({ error: 'performedBy 由认证身份在服务端生成，客户端不得自报' }, { status: 400 })
+  }
+
   const at = await db.actionType.findUnique({ where: { id: actionTypeId } })
   if (!at) return NextResponse.json({ error: '动作类型不存在' }, { status: 404 })
+
+  let actor
+  try {
+    actor = await authorizeOntologyAction(req, at.apiName)
+  } catch (error) {
+    const auth = authorizationResponse(error)
+    if (auth) return NextResponse.json(auth.body, { status: auth.status })
+    return NextResponse.json({ error: error instanceof Error ? error.message : '身份认证失败' }, { status: 401 })
+  }
+  const performedBy = actor.actorId
 
   const defs: any[] = JSON.parse(at.parametersJson || '[]')
   for (const d of defs) {
@@ -18,7 +33,6 @@ export async function POST(req: NextRequest) {
   let resultMsg = ''
 
   if (at.apiName === 'issueTestOrder') {
-    // 下达试验指令：试验事件状态 → 执行中，指令写入事件档案
     const ot = await db.objectType.findUnique({ where: { apiName: 'TestEvent' } })
     if (ot) {
       const entry = await db.objectEntry.findFirst({ where: { objectTypeId: ot.id, pk: objectPk } })
@@ -31,7 +45,7 @@ export async function POST(req: NextRequest) {
           priority: parameters.priority || '常规',
           note: parameters.note || '',
           issuedAt: new Date().toISOString(),
-          issuedBy: performedBy || '试验总师',
+          issuedBy: performedBy,
         })
         const merged = { ...d, status: '执行中', orders, lastOrderNo: parameters.orderNo }
         await db.objectEntry.update({ where: { id: entry.id }, data: { dataJson: JSON.stringify(merged), updatedAt: new Date() } })
@@ -39,7 +53,6 @@ export async function POST(req: NextRequest) {
       }
     }
   } else if (at.apiName === 'closeDeficiency') {
-    // 缺陷归零确认：状态 → 已闭环
     const ot = await db.objectType.findUnique({ where: { apiName: 'Deficiency' } })
     if (ot) {
       const entry = await db.objectEntry.findFirst({ where: { objectTypeId: ot.id, pk: objectPk } })
@@ -56,7 +69,6 @@ export async function POST(req: NextRequest) {
       }
     }
   } else if (at.apiName === 'submitReport') {
-    // 提交鉴定报告
     const ot = await db.objectType.findUnique({ where: { apiName: 'Report' } })
     if (ot) {
       const entry = await db.objectEntry.findFirst({ where: { objectTypeId: ot.id, pk: objectPk } })
@@ -68,7 +80,6 @@ export async function POST(req: NextRequest) {
       }
     }
   } else if (at.apiName === 'createDeficiency') {
-    // 登记新缺陷（现场/自动化触发共用）
     const ot = await db.objectType.findUnique({ where: { apiName: 'Deficiency' } })
     if (ot) {
       const code = `DF-${new Date().getFullYear().toString().slice(-2)}-${Math.floor(10 + Math.random() * 89)}`
@@ -92,7 +103,6 @@ export async function POST(req: NextRequest) {
       resultMsg = `缺陷 ${code} 已登记（${parameters.severity || 'II类'}），进入归零流程`
     }
   } else if (at.apiName === 'authorizeLiveFire') {
-    // LFT&E 实弹射击授权：写入射击授权记录并同步安全联锁状态
     const ot = await db.objectType.findUnique({ where: { apiName: 'TestEvent' } })
     if (ot) {
       const entry = await db.objectEntry.findFirst({ where: { objectTypeId: ot.id, pk: objectPk } })
@@ -105,7 +115,7 @@ export async function POST(req: NextRequest) {
           safetyRadius: parameters.safetyRadius || '标准 1500m',
           note: parameters.note || '',
           authorizedAt: new Date().toISOString(),
-          authorizedBy: performedBy || '安全总监',
+          authorizedBy: performedBy,
         })
         const merged = { ...d, liveFireAuths: auths, lastShotSerial: parameters.shotSerial }
         await db.objectEntry.update({ where: { id: entry.id }, data: { dataJson: JSON.stringify(merged), updatedAt: new Date() } })
@@ -122,16 +132,16 @@ export async function POST(req: NextRequest) {
       objectPk,
       parametersJson: JSON.stringify(parameters || {}),
       status: 'succeeded',
-      performedBy: performedBy || '试验总师',
+      performedBy,
     },
   })
   await db.activityEvent.create({
     data: {
-      actor: performedBy || '试验总师',
+      actor: performedBy,
       module: 'Workshop',
       message: `执行动作「${at.displayName}」于 ${objectPk}：${resultMsg}`,
     },
   })
 
-  return NextResponse.json({ ok: true, message: resultMsg })
+  return NextResponse.json({ ok: true, message: resultMsg, performedBy })
 }
