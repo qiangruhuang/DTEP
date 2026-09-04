@@ -55,6 +55,25 @@ with sync_playwright() as pw:
     graph = graph_response.json()
     check(graph.get('root', {}).get('pk') == 'CASE-01' and isinstance(graph.get('links'), list), 'Ontology graph root resolution', 'compound object key + LinkEntry traversal contract rendered', checks)
 
+    governance_response = page.request.get(f'{APP}/api/china-te-governance', timeout=30000)
+    check(governance_response.status == 200, 'China T&E governance API', f'HTTP {governance_response.status}', checks)
+    governance = governance_response.json()
+    check(
+        governance.get('version') == 'v2.3-prototype'
+        and isinstance(governance.get('actions'), list)
+        and len(governance.get('actions', [])) == 3,
+        'China T&E governed action contract',
+        'state qualification + operational test + fielding finalization actions returned',
+        checks,
+    )
+    lifecycle = governance.get('authoritativeContext', {}).get('lifecycle', [])
+    check(
+        [item.get('label') for item in lifecycle] == ['性能试验', '状态鉴定', '作战试验', '列装定型', '在役考核'],
+        'China T&E lifecycle semantics',
+        'five-stage lifecycle returned in current-process order',
+        checks,
+    )
+
     # Ontology Action security: the client cannot choose the audit actor, and
     # the successful write must use the signed OIDC actor mapped by the server.
     ontology_response = page.request.get(f'{APP}/api/ontology', timeout=30000)
@@ -119,6 +138,16 @@ with sync_playwright() as pw:
     provenance_text = page.get_by_text('结论 → 专家合议/终审', exact=False)
     provenance_text.wait_for(timeout=30000)
     check(provenance_text.is_visible(), 'Decision Provenance UI', 'human + machine provenance rendered', checks)
+
+    page.get_by_role('button', name='试验鉴定治理工作台').click()
+    object_centered = page.get_by_text('对象中心，而不是文件中心', exact=False)
+    object_centered.wait_for(timeout=30000)
+    check(object_centered.is_visible(), 'China T&E governance workspace', 'object-centered governance view rendered', checks)
+    check(page.get_by_text('中国试验鉴定全寿命业务链', exact=False).is_visible(), 'China T&E lifecycle UI', 'five-stage lifecycle rendered', checks)
+    check(page.get_by_text('8 项专项评估', exact=False).is_visible(), 'Fielding finalization special assessments', 'eight-assessment structure rendered', checks)
+    check(page.get_by_text('数据采信入口', exact=False).is_visible(), 'Data acceptance UI', 'four legal data-acceptance paths exposed', checks)
+    blocked_action = page.get_by_role('button', name='当前不可提交').first
+    check(blocked_action.is_visible() and blocked_action.is_disabled(), 'Governed action submission criteria UI', 'blocked business action is explained and disabled', checks)
 
     page.screenshot(path=str(OUT_PNG), full_page=True)
     ctx.close()
