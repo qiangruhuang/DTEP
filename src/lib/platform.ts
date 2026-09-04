@@ -9,6 +9,7 @@ export type ModuleKey =
   | 'vva'
   | 'evidenceGate'
   | 'decisionProvenance'
+  | 'governance'
   | 'resources'
   | 'datasets'
   | 'pipelines'
@@ -39,6 +40,7 @@ export const MODULES: { key: ModuleKey; label: string; icon: string; group: stri
   { key: 'automate', label: '试验自动化', icon: 'zap', group: '试验实施' },
   { key: 'timeseries', label: '遥测时序', icon: 'activity', group: '试验实施' },
   { key: 'evidenceGate', label: 'Evidence Gate 证据门控', icon: 'gavel', group: '鉴定与智能' },
+  { key: 'governance', label: '试验鉴定治理工作台', icon: 'clipboard-check', group: '鉴定与智能' },
   { key: 'decisionProvenance', label: '鉴定审计 / Decision Provenance', icon: 'fingerprint', group: '鉴定与智能' },
   { key: 'lineage', label: '证据链追溯', icon: 'workflow', group: '鉴定与智能' },
   { key: 'aip', label: '鉴定助手', icon: 'bot', group: '鉴定与智能' },
