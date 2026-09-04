@@ -46,9 +46,6 @@ def _text_datetime_to_unix_millis(value: str) -> int:
     text = value.strip()
     if not text:
         raise ValueError("empty DATETIME text")
-    # SQLite CURRENT_TIMESTAMP emits ``YYYY-MM-DD HH:MM:SS`` (UTC); Python's
-    # ISO parser also accepts that separator. RFC3339 Z values are normalized
-    # to an explicit UTC offset before parsing.
     normalized = text[:-1] + "+00:00" if text.endswith("Z") else text
     parsed = datetime.fromisoformat(normalized)
     if parsed.tzinfo is None:
@@ -105,14 +102,21 @@ def restore(sql_path: Path, db_path: Path, force: bool = False) -> None:
     script = sql_path.read_text(encoding="utf-8")
     con = sqlite3.connect(db_path)
     try:
-        con.execute("PRAGMA foreign_keys=ON")
+        # The frozen dump predates FK-enforced replay and contains creation/drop
+        # ordering that is only valid with SQLite's default FK enforcement off.
+        # Replay it unchanged first; validate FKs after the additive migration.
         con.executescript(script)
         converted = normalize_legacy_datetime_cells(con)
         migrate_connection(con)
+        con.commit()
+
+        con.execute("PRAGMA foreign_keys=ON")
+        foreign_key_errors = list(con.execute("PRAGMA foreign_key_check"))
+        if foreign_key_errors:
+            raise RuntimeError(f"sqlite foreign_key_check failed: {foreign_key_errors[:5]}")
         row = con.execute("PRAGMA integrity_check").fetchone()
         if not row or row[0] != "ok":
             raise RuntimeError(f"sqlite integrity_check failed: {row}")
-        con.commit()
     finally:
         con.close()
     print(
