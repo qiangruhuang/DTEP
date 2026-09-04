@@ -4,7 +4,24 @@ import { db } from '@/lib/db'
 type Entry = { pk: string; title: string; data: Record<string, any> }
 
 async function getEntries(apiName: string): Promise<Entry[]> {
-  const ot = await db.objectType.findUnique({ where: { apiName }, include: { entries: true } })
+  // The frozen demo database intentionally preserves legacy rows created by
+  // earlier prototype versions. Some of those rows store SQLite DATETIME
+  // columns as millisecond integers. Prisma 6.19 decodes DateTime eagerly and
+  // raises P2023 even though this endpoint does not use those timestamp fields.
+  // Select only the business fields required by the Digital Case projection so
+  // the frozen evidence baseline is not mutated merely to satisfy a UI read.
+  const ot = await db.objectType.findUnique({
+    where: { apiName },
+    select: {
+      entries: {
+        select: {
+          pk: true,
+          title: true,
+          dataJson: true,
+        },
+      },
+    },
+  })
   return (ot?.entries ?? []).map((entry) => ({
     pk: entry.pk,
     title: entry.title,
