@@ -107,9 +107,9 @@ export function AppShell({
           <NavList current={current} onPick={onNavigate} />
           <div className="border-t border-zinc-800 px-4 py-3">
             <p className="text-[10px] leading-relaxed text-zinc-600">
-              借鉴美军 DoD T&E 体系构建的
+              以中国装备试验鉴定全寿命流程为业务主线
               <br />
-              数字样机3.0→模型装配→环境/LVC→Readiness→Run Control→事件重建→Event-to-Measure→专家合议→最终鉴定 · v2.1 FROZEN
+              吸收 Ontology · Action · Decision Lineage 方法，贯通数字样机→试验→状态鉴定→作战试验→列装定型→在役考核
             </p>
           </div>
         </aside>
@@ -177,8 +177,8 @@ export function AppShell({
 
           <footer className="mt-auto border-t border-zinc-200 bg-white/70 px-4 py-3 text-xs text-zinc-500 sm:px-6">
             <div className="mx-auto flex max-w-7xl flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-              <span>天衡 DTEP 数字化试验鉴定平台原型 — 融合 DT&E/OT&E、LVC 联合试验、数字孪生与 VV&A 的试验鉴定数字化架构</span>
-              <span className="text-zinc-400">任务 · 指标 · 事件 · 数据 · 鉴定</span>
+              <span>天衡 DTEP 数字化试验鉴定平台原型 — 以中国试验鉴定业务为主线，融合数字样机、M&S/LVC、VV&A、证据治理与决策血缘</span>
+              <span className="text-zinc-400">对象 · 关系 · 动作 · 证据 · 审查 · 决策</span>
             </div>
           </footer>
         </div>
