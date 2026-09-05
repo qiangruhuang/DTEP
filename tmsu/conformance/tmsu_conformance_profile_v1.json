@@ -49,6 +49,7 @@
         "MS01-P10 provenance hashes are complete"
       ],
       "reference_evidence": {
+        "status": "historical mechanism-development evidence",
         "evidence_set_id": "ms01.tws.openeaagles-reference.2026-09-05.v1",
         "capability_id": "sensor.tws.track",
         "implementation_a": "openeaagles.tws.airtrkmgr@b3d7e74",
@@ -60,6 +61,28 @@
         "upper_trial_artifacts_modified_for_swap": 0,
         "binding_selections_changed": 1,
         "report": "mre2/model_substitution/E2_MODEL_SUBSTITUTION_EVIDENCE_v1.md"
+      },
+      "preferred_real_heterogeneous_reference_evidence": {
+        "evidence_set_id": "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "capability_id": "sensor.tws.track",
+        "implementation_a": "openeaagles.tws.airtrkmgr@b3d7e74",
+        "implementation_b": "radarsimpublic.radar-kf@8b63f82",
+        "implementation_b_upstream_repo": "Murmur-ops/RadarSimPublic",
+        "implementation_b_upstream_commit": "8b63f824a5744c1b3a3fca5e948fa7c59f897b17",
+        "contract_id": "tmsu.sensor.tws.track.v1",
+        "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+        "decision": "PASS",
+        "case_count_each": 16,
+        "upper_trial_artifacts_modified_for_swap": 0,
+        "binding_selections_changed": 1,
+        "different_cross_implementation_trace_cases": 16,
+        "source_patch_count_a": 0,
+        "source_patch_count_b": 0,
+        "evidence_run": 33971627414,
+        "tested_dtep_head": "620fad4c934303a4682e97af7d5a42006a7c44e8",
+        "artifact_id": 9971118509,
+        "artifact_sha256": "7e4f421b04bf7dd9ca40964657ec7dc789fedcff1a66d85cefb9b6f2c6183bb1",
+        "report": "mre2/model_substitution/E2_MODEL_SUBSTITUTION_REAL_EVIDENCE_v2.md"
       }
     }
   ]

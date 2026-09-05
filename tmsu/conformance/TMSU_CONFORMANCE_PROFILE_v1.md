@@ -104,7 +104,7 @@ MS-01 is an architectural/contract conformance gate. It does not assert behavior
 
 MS-01 applies when two or more distinct `Implementation_ID`s claim the same `Capability_ID` and are intended to be selectable through TMSU capability binding.
 
-A legacy `M1 Wrap` or `M2 Adapt` implementation SHALL satisfy its applicable BP-01 requirement before its MS-01 substitution evidence is accepted. A native implementation does not require BP-01 unless it itself introduces a wrapper around an existing validated implementation.
+A legacy `M1 Wrap` or `M2 Adapt` implementation SHALL satisfy its applicable BP-01 requirement before its MS-01 substitution evidence is accepted. A new independent implementation does not inherit BP-01 merely because it is invoked through a TMSU adapter; its model validity and trial suitability remain separate evidence questions.
 
 ### Required frozen declarations
 
@@ -140,22 +140,49 @@ Any failure of MS01-P1 through MS01-P10 yields `FAIL`. Missing evidence yields `
 
 Behavioral equality is deliberately excluded from the universal MS-01 rule. If a particular test decision requires behavioral or statistical equivalence between implementations, that requirement SHALL be defined separately in the trial fitness-for-use criteria.
 
-### Frozen reference evidence
+### Historical mechanism-development evidence
+
+The original E2 v1 used a DTEP-authored independent reference implementation to prove that the binding-only substitution mechanism was executable:
 
 ```text
 Evidence_Set_ID: ms01.tws.openeaagles-reference.2026-09-05.v1
-Capability_ID: sensor.tws.track
 Implementation_A: openeaagles.tws.airtrkmgr@b3d7e74
 Implementation_B: dtep.reference_tws@1.0.0
-Contract_ID: tmsu.sensor.tws.track.v1
-Semantic_Profile_ID: tmsu.sensor.tws.track.semantic.v1
 Cases per implementation: 16
 Upper trial artifacts modified for swap: 0
 Binding selections changed: 1
 Decision: PASS
 ```
 
-Reference report: `mre2/model_substitution/E2_MODEL_SUBSTITUTION_EVIDENCE_v1.md`.
+Historical report: `mre2/model_substitution/E2_MODEL_SUBSTITUTION_EVIDENCE_v1.md`.
+
+### Preferred real heterogeneous reference evidence
+
+The stronger empirical reference replaces the DTEP-authored Reference TWS with independently developed public radar/tracking software from `Murmur-ops/RadarSimPublic` while retaining the same frozen E2 upper trial and the same MS-01 predicates:
+
+```text
+Evidence_Set_ID: ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2
+Capability_ID: sensor.tws.track
+Implementation_A: openeaagles.tws.airtrkmgr@b3d7e74
+Implementation_B: radarsimpublic.radar-kf@8b63f82
+RadarSimPublic commit: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+Contract_ID: tmsu.sensor.tws.track.v1
+Semantic_Profile_ID: tmsu.sensor.tws.track.semantic.v1
+Cases per implementation: 16
+Upper trial artifacts modified for swap: 0
+Binding selections changed: 1
+Different cross-implementation traces: 16 / 16
+Source patches A/B: 0 / 0
+Decision: PASS
+```
+
+Evidence run: `33971627414`.
+
+Tested DTEP head: `620fad4c934303a4682e97af7d5a42006a7c44e8`.
+
+Reference report: `mre2/model_substitution/E2_MODEL_SUBSTITUTION_REAL_EVIDENCE_v2.md`.
+
+The v2 result is the preferred reference for MS-01 because the second implementation is drawn from an independent public software/model codebase rather than authored inside DTEP. It still establishes architectural/contract substitutability only; it does not establish behavioral equivalence or equal model validity.
 
 ## 5. Gate relationship
 
