@@ -10,7 +10,9 @@ It does **not** claim global equivalence for every OpenEaagles scenario or every
 
 - OpenEaagles: `b3d7e74a9bf52934e13fd6a11f45dc9767ac9192` (`v17.06a`)
 - OpenEaaglesExamples reference: `f90bac38bfbea168e746ce75fc46d641974c6076`
-- JSBSim compatibility snapshot: `18c5b81d3f602099e1bf2a80aed379f5e80d9569` (2017-05-30)
+- JSBSim API-compatible snapshot: `140068895adf1b8981b45cc5e17a16d82990806d` (2015-12-29)
+
+The first attempted 2017-05-30 JSBSim snapshot was rejected by CI because its API had already diverged from the OpenEaagles `JSBSimModel` integration (`FGTurboProp::GetNozzle` removed and path setters changed to `SGPath`). The pinned 2015 snapshot retains the string path setters and `FGTurboProp::GetNozzle` expected by OpenEaagles. This dependency adjustment changes no OpenEaagles model source.
 
 No OpenEaagles `Radar`, `Tws`, `TrackManager`, `Track`, `Antenna`, `Emission`, or RF propagation source is patched by this experiment.
 
