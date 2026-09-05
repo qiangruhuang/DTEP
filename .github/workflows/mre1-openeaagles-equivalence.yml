@@ -1,0 +1,153 @@
+name: MRE1 OpenEaagles Behavior Equivalence
+
+on:
+  push:
+    branches:
+      - mre1-openeaagles-behavior-equivalence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  equivalence:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+
+      - name: Checkout frozen OpenEaagles
+        uses: actions/checkout@v4
+        with:
+          repository: doughodson/OpenEaagles
+          ref: b3d7e74a9bf52934e13fd6a11f45dc9767ac9192
+          path: upstream/OpenEaagles
+
+      - name: Checkout frozen JSBSim
+        uses: actions/checkout@v4
+        with:
+          repository: JSBSim-Team/jsbsim
+          ref: 18c5b81d3f602099e1bf2a80aed379f5e80d9569
+          path: upstream/jsbsim
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
+
+      - name: Build JSBSim compatibility snapshot
+        run: |
+          set -euxo pipefail
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          cmake -S upstream/jsbsim -B build/jsbsim \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DBUILD_SHARED_LIBS=ON
+          cmake --build build/jsbsim --parallel 2
+          cmake --install build/jsbsim
+          find "$PREFIX/include" -maxdepth 2 -type f | head -30
+          find "$PREFIX/lib" -maxdepth 2 -type f | head -30
+
+      - name: Normalize legacy JSBSim include/library layout
+        run: |
+          set -euxo pipefail
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p "$PREFIX/include/JSBSim" "$PREFIX/lib"
+          if [ -d "$PREFIX/include/jsbsim" ]; then
+            cp -a "$PREFIX/include/jsbsim/." "$PREFIX/include/JSBSim/"
+          fi
+          if [ -d "$PREFIX/lib64" ]; then
+            cp -a "$PREFIX/lib64/." "$PREFIX/lib/"
+          fi
+
+      - name: Build only required OpenEaagles legacy libraries
+        run: |
+          set -euxo pipefail
+          export OE_ROOT="$GITHUB_WORKSPACE/upstream/OpenEaagles"
+          export OE_3RD_PARTY_ROOT="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p "$OE_ROOT/lib"
+          make -C "$OE_ROOT/src/base" -j2
+          make -C "$OE_ROOT/src/simulation" -j2
+          make -C "$OE_ROOT/src/models" -j2
+          ls -lh "$OE_ROOT/lib"
+
+      - name: Compile deterministic native TWS probe
+        run: |
+          set -euxo pipefail
+          OE_ROOT="$GITHUB_WORKSPACE/upstream/OpenEaagles"
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p build/mre1
+          g++ -std=c++11 -O2 \
+            -I"$OE_ROOT/include" -I"$PREFIX/include" \
+            mre1/openeaagles/probe.cpp \
+            -L"$OE_ROOT/lib" -L"$PREFIX/lib" \
+            -Wl,-rpath,"$PREFIX/lib" \
+            -loe_models -loe_simulation -loe_base -lJSBSim \
+            -lpthread -lrt -lX11 -ldl -lm \
+            -o build/mre1/oe_tws_probe
+          sha256sum build/mre1/oe_tws_probe mre1/openeaagles/scenario.edl
+
+      - name: Run untouched-model baseline twice
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_1.tsv
+          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_2.tsv
+          grep -q '^T' build/mre1/baseline_1.tsv
+          python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/baseline_2.tsv --report build/mre1/g2a_reproducibility.json
+
+      - name: Run through TMSU process boundary
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre1/openeaagles/tmsu_wrapper.py \
+            --binary build/mre1/oe_tws_probe \
+            --config mre1/openeaagles/scenario.edl \
+            --frames 500 \
+            --output build/mre1/wrapped.tsv \
+            --evidence build/mre1/wrapper_evidence.json
+          python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/wrapped.tsv --report build/mre1/g2b_wrapper_transparency.json
+
+      - name: Negative-control sensitivity
+        run: |
+          set -euxo pipefail
+          python3 mre1/openeaagles/negative_control.py build/mre1/baseline_1.tsv build/mre1/negative.tsv
+          if python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/negative.tsv --report build/mre1/g2d_negative_control.json; then
+            echo 'ERROR: comparator accepted deliberately changed behavior' >&2
+            exit 1
+          fi
+
+      - name: Build evidence summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os
+          from pathlib import Path
+          root=Path('build/mre1')
+          def sha(p):
+              p=Path(p)
+              return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+          summary={
+            'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
+            'open_eaagles_examples_reference':'f90bac38bfbea168e746ce75fc46d641974c6076',
+            'jsbsim_commit':'18c5b81d3f602099e1bf2a80aed379f5e80d9569',
+            'probe_sha256':sha(root/'oe_tws_probe'),
+            'scenario_sha256':sha('mre1/openeaagles/scenario.edl'),
+            'baseline_1_sha256':sha(root/'baseline_1.tsv'),
+            'baseline_2_sha256':sha(root/'baseline_2.tsv'),
+            'wrapped_sha256':sha(root/'wrapped.tsv'),
+            'negative_sha256':sha(root/'negative.tsv'),
+          }
+          root.mkdir(parents=True,exist_ok=True)
+          (root/'evidence_summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          print(json.dumps(summary,indent=2,sort_keys=True))
+          PY
+
+      - name: Upload evidence bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mre1-openeaagles-equivalence-evidence
+          path: build/mre1/
