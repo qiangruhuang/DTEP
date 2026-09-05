@@ -1,0 +1,224 @@
+name: MRE2 TMSU Model Substitution
+
+on:
+  push:
+    branches:
+      - mre2-model-substitution
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  substitution:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+
+      - name: Validate frozen TMSU Conformance Profile and BP-01 reference
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          profile=json.loads(Path('tmsu/conformance/tmsu_conformance_profile_v1.json').read_text())
+          assert profile['profile_id']=='tmsu.conformance.v1'
+          assert profile['status']=='frozen'
+          gate=next(g for g in profile['gates'] if g['gate_id']=='BP-01')
+          assert gate['reference_evidence']['decision']=='PASS'
+          assert gate['reference_evidence']['case_count']==16
+          assert Path(gate['reference_evidence']['report']).exists()
+          PY
+
+      - name: Checkout frozen OpenEaagles
+        uses: actions/checkout@v4
+        with:
+          repository: doughodson/OpenEaagles
+          ref: b3d7e74a9bf52934e13fd6a11f45dc9767ac9192
+          path: upstream/OpenEaagles
+
+      - name: Checkout API-compatible JSBSim snapshot
+        uses: actions/checkout@v4
+        with:
+          repository: JSBSim-Team/jsbsim
+          ref: 140068895adf1b8981b45cc5e17a16d82990806d
+          path: upstream/jsbsim
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
+
+      - name: Apply documented compiler-compatibility fixes to JSBSim only
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          fixes = [
+              ('upstream/jsbsim/src/FGFDMExec.cpp',
+               'if (FDMctr > 0) (*FDMctr)--;',
+               'if (FDMctr != 0 && *FDMctr > 0) (*FDMctr)--;'),
+              ('upstream/jsbsim/src/input_output/FGInputSocket.cpp',
+               '} else if (node > 0) {',
+               '} else if (node != 0) {'),
+              ('upstream/jsbsim/src/simgear/props/propertyObject.cxx',
+               '#include <simgear/structure/exception.hxx>',
+               '#include <stdexcept>'),
+              ('upstream/jsbsim/src/simgear/props/propertyObject.cxx',
+               'throw sg_exception("Unknown property:" + path);',
+               'throw std::runtime_error("Unknown property:" + path);'),
+          ]
+          for filename, old, new in fixes:
+              p = Path(filename)
+              s = p.read_text()
+              assert s.count(old) == 1, f'expected historical expression not found exactly once in {filename}: {old}'
+              p.write_text(s.replace(old, new))
+          PY
+          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp src/input_output/FGInputSocket.cpp src/simgear/props/propertyObject.cxx | tee jsbsim-build-compat.patch
+          sha256sum jsbsim-build-compat.patch
+
+      - name: Build JSBSim compatibility snapshot
+        run: |
+          set -euxo pipefail
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          cmake -S upstream/jsbsim -B build/jsbsim \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DBUILD_SHARED_LIBS=ON
+          cmake --build build/jsbsim --parallel 2
+          cmake --install build/jsbsim
+
+      - name: Normalize legacy JSBSim include/library layout
+        run: |
+          set -euxo pipefail
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p "$PREFIX/include/JSBSim" "$PREFIX/lib"
+          if [ -d "$PREFIX/include/jsbsim" ]; then
+            cp -a "$PREFIX/include/jsbsim/." "$PREFIX/include/JSBSim/"
+          fi
+          if [ -d "$PREFIX/lib64" ]; then
+            cp -a "$PREFIX/lib64/." "$PREFIX/lib/"
+          fi
+
+      - name: Build required OpenEaagles legacy libraries
+        run: |
+          set -euxo pipefail
+          export OE_ROOT="$GITHUB_WORKSPACE/upstream/OpenEaagles"
+          export OE_3RD_PARTY_ROOT="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p "$OE_ROOT/lib"
+          make -C "$OE_ROOT/src/base" -j2
+          make -C "$OE_ROOT/src/simulation" -j2
+          make -C "$OE_ROOT/src/terrain" -j2
+          make -C "$OE_ROOT/src/models" -j2
+
+      - name: Compile frozen OpenEaagles TWS probe
+        run: |
+          set -euxo pipefail
+          OE_ROOT="$GITHUB_WORKSPACE/upstream/OpenEaagles"
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p build/mre2
+          g++ -std=c++11 -O2 \
+            -I"$OE_ROOT/include" -I"$PREFIX/include" \
+            mre1/openeaagles/probe.cpp \
+            -L"$OE_ROOT/lib" -L"$PREFIX/lib" \
+            -Wl,-rpath,"$PREFIX/lib" \
+            -Wl,--start-group -loe_models -loe_terrain -loe_simulation -loe_base -lJSBSim -Wl,--end-group \
+            -lpthread -lrt -lX11 -ldl -lm \
+            -o build/mre2/oe_tws_probe
+          sha256sum build/mre2/oe_tws_probe
+
+      - name: Static-check E2 implementation
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile mre2/model_substitution/*.py
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          trial=json.loads(Path('mre2/model_substitution/trial_spec.json').read_text())
+          contract=json.loads(Path('mre2/model_substitution/capability_contract.json').read_text())
+          a=json.loads(Path('mre2/model_substitution/bindings/openeaagles_tws.json').read_text())
+          b=json.loads(Path('mre2/model_substitution/bindings/reference_tws.json').read_text())
+          for binding in (a,b):
+              assert binding['capability_id']==trial['capability_id']==contract['capability_id']
+              assert binding['contract_id']==trial['contract_id']==contract['contract_id']
+              assert binding['semantic_profile_id']==trial['semantic_profile_id']==contract['semantic_profile_id']
+          assert a['implementation_id'] != b['implementation_id']
+          PY
+
+      - name: Execute frozen upper trial with legacy OpenEaagles binding
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/openeaagles_tws.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/mre2/run_openeaagles
+
+      - name: Execute identical upper trial with independent reference TWS binding
+        run: |
+          set -euxo pipefail
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/reference_tws.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/mre2/run_reference
+
+      - name: Evaluate binding-only model substitution
+        run: |
+          set -euxo pipefail
+          python3 mre2/model_substitution/evaluate_substitution.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --orchestrator mre2/model_substitution/orchestrator.py \
+            --run-a build/mre2/run_openeaagles \
+            --run-b build/mre2/run_reference \
+            --report build/mre2/e2_model_substitution_v1.json
+          cat build/mre2/e2_model_substitution_v1.json
+
+      - name: Build E2 evidence summary
+        if: always()
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path('build/mre2')
+          def sha(p):
+              p=Path(p)
+              return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+          report_path=root/'e2_model_substitution_v1.json'
+          report=json.loads(report_path.read_text()) if report_path.exists() else None
+          summary={
+            'evidence_profile':'E2 Model Substitution Evidence v1.0',
+            'decision': report.get('decision') if report else None,
+            'candidate_gate':'MS-01 Model Substitution',
+            'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
+            'jsbsim_commit':'140068895adf1b8981b45cc5e17a16d82990806d',
+            'open_eaagles_source_patch_count':0,
+            'trial_spec_sha256':sha('mre2/model_substitution/trial_spec.json'),
+            'orchestrator_sha256':sha('mre2/model_substitution/orchestrator.py'),
+            'contract_sha256':sha('mre2/model_substitution/capability_contract.json'),
+            'openeaagles_binding_sha256':sha('mre2/model_substitution/bindings/openeaagles_tws.json'),
+            'reference_binding_sha256':sha('mre2/model_substitution/bindings/reference_tws.json'),
+            'openeaagles_adapter_sha256':sha('mre2/model_substitution/openeaagles_adapter.py'),
+            'reference_adapter_sha256':sha('mre2/model_substitution/reference_tws.py'),
+            'probe_sha256':sha(root/'oe_tws_probe'),
+            'upper_trial_artifacts_modified_for_swap': report.get('upper_trial_artifacts_modified_for_swap') if report else None,
+            'different_trace_cases': report.get('cross_implementation_different_trace_cases') if report else None,
+            'case_count_each': report.get('case_count_each') if report else None,
+          }
+          root.mkdir(parents=True,exist_ok=True)
+          (root/'evidence_summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          PY
+          cp jsbsim-build-compat.patch build/mre2/ 2>/dev/null || true
+          cat build/mre2/evidence_summary.json
+
+      - name: Upload E2 evidence bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mre2-model-substitution-evidence
+          path: build/mre2/
