@@ -38,6 +38,7 @@ def main() -> int:
                 "trace_identical": a_cases[case_id]["trace_sha256"] == b_cases[case_id]["trace_sha256"],
             })
 
+    # These predicates are the frozen MS-01/E2 rules. Only the concrete B binding changes.
     predicates = {
         "E2-P1_same_trial_spec": a["trial_spec_sha256"] == b["trial_spec_sha256"] == sha256_file(args.trial),
         "E2-P2_same_orchestrator": a["orchestrator_sha256"] == b["orchestrator_sha256"] == sha256_file(args.orchestrator),
@@ -61,7 +62,7 @@ def main() -> int:
 
     pass_all = all(predicates.values())
     report = {
-        "evidence_profile": "E2 Model Substitution Evidence v1.0",
+        "evidence_profile": "E2 Model Substitution Evidence v2.0 — Real Heterogeneous Implementation",
         "candidate_gate": "MS-01 Model Substitution",
         "decision": "PASS" if pass_all else "FAIL",
         "claim": "The frozen upper trial specification and orchestrator can execute two distinct implementations of sensor.tws.track by changing only the TMSU binding selection.",
@@ -78,7 +79,7 @@ def main() -> int:
         "cases": differences,
         "inference_boundary": [
             "This demonstrates architectural/contract substitutability, not behavioral equivalence between the two models.",
-            "The Native-C reference TWS is a research instrument and is not an accredited operational sensor model.",
+            "A successful MS-01 decision does not establish equal fidelity, predictive accuracy, intended-use fitness, VV&A status, or accreditation.",
             "Trial-specific fitness-for-use and authoritative accreditation remain separate decisions."
         ]
     }
