@@ -1,0 +1,63 @@
+{
+  "registry_version": "1.0.0",
+  "evidence_sets": {
+    "BP-01": {
+      "evidence_set_id": "bp01.openeaagles.tws.2026-09-05.v1",
+      "decision": "PASS",
+      "report": "mre1/openeaagles/BEHAVIOR_PRESERVATION_EVIDENCE_v1.md",
+      "supports": ["behavior_preservation"],
+      "implementation_id": "openeaagles.tws.airtrkmgr@b3d7e74",
+      "capability_id": "sensor.tws.track",
+      "envelope": {
+        "distance_m": [10000, 20000],
+        "azimuth_deg": [0, 20],
+        "rcs_m2": [1, 4],
+        "motion": ["static", "closing_150_mps"]
+      },
+      "does_not_establish": ["comparative_model_validity", "operational_accreditation"]
+    },
+    "MS-01": {
+      "evidence_set_id": "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+      "decision": "PASS",
+      "report": "mre2/model_substitution/E2_MODEL_SUBSTITUTION_REAL_EVIDENCE_v2.md",
+      "supports": ["architectural_substitution", "contract_execution"],
+      "capability_id": "sensor.tws.track",
+      "implementation_ids": [
+        "openeaagles.tws.airtrkmgr@b3d7e74",
+        "radarsimpublic.radar-kf@8b63f82"
+      ],
+      "envelope": {
+        "distance_m": [10000, 20000],
+        "azimuth_deg": [0, 20],
+        "rcs_m2": [1, 4],
+        "motion": ["static", "closing_150_mps"]
+      },
+      "does_not_establish": ["behavioral_equivalence", "comparative_model_validity", "operational_accreditation"]
+    },
+    "SP-01": {
+      "evidence_set_id": "sp01.tws.semantic-precheck.2026-09-05.v1",
+      "decision": "PASS",
+      "report": "research/SP01_SEMANTIC_PRECHECK_EVIDENCE_v1.md",
+      "supports": ["semantic_precheck"],
+      "capability_id": "sensor.tws.track",
+      "candidate_implementation_id": "radarsimpublic.radar-kf@8b63f82",
+      "field_status": {
+        "range_m": "COMPATIBLE",
+        "range_rate_mps": "COMPATIBLE",
+        "relative_azimuth_rad": "COMPATIBLE",
+        "elevation_rad": "COMPATIBLE",
+        "quality": "COMPATIBLE",
+        "average_signal_db": "UNKNOWN"
+      },
+      "unknown_reason": {
+        "average_signal_db": "rf.signal_to_noise_ratio ?= rf.track_average_signal"
+      },
+      "does_not_establish": ["ontology_completeness", "comparative_model_validity", "operational_accreditation"]
+    }
+  },
+  "evidence_absent": [
+    "comparative_model_validity",
+    "operational_accreditation",
+    "enterprise_engineering_benefit"
+  ]
+}

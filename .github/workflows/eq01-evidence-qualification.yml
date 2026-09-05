@@ -1,0 +1,45 @@
+name: EQ01 Evidence-Aware Qualification and Reuse
+
+on:
+  push:
+    branches:
+      - eq01-evidence-aware-qualification-reuse
+  workflow_dispatch:
+
+jobs:
+  qualification:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+
+      - name: Run preregistered EQ-01 experiment
+        run: |
+          python3 mre3/evidence_qualification/eq01.py \
+            --root . \
+            --out build/eq01
+
+      - name: Assert EQ-01 PASS and key bounded outcomes
+        run: |
+          python3 - <<'PY'
+          import json
+          r=json.load(open('build/eq01/eq01_results.json'))
+          assert r['decision']=='PASS'
+          q={x['case_id']:x for x in r['qualification_results']}
+          assert q['U1_architectural_tracking_within_evidence']['decision']=='QUALIFIED_WITHIN_EVIDENCE'
+          assert q['U2_rf_performance_decision']['decision']=='UNKNOWN'
+          assert q['U3_tracking_outside_executed_domain']['decision']=='UNKNOWN'
+          assert q['U4_known_semantic_conflict']['decision']=='NOT_QUALIFIED'
+          m=r['metrics']
+          assert m['qualification_cases_matching_preregistered_expectation']==4
+          assert m['change_cases_matching_preregistered_expectation']==4
+          assert m['gate_change_cells_total']==12
+          assert m['gate_change_cells_reused']==8
+          assert m['gate_change_cells_reassessed']==4
+          PY
+
+      - name: Upload EQ-01 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: eq01-evidence-aware-qualification-reuse
+          path: build/eq01

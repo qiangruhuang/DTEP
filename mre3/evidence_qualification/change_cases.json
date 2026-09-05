@@ -1,0 +1,33 @@
+{
+  "gate_dependencies": {
+    "BP-01": ["model_source_or_binary", "wrapper_adapter", "execution_environment", "scenario_envelope", "comparator"],
+    "SP-01": ["capability_semantics", "semantic_mapping", "field_units", "reference_frame", "time_basis", "sign_convention"],
+    "MS-01": ["trial_spec", "orchestrator", "capability_contract", "binding", "implementation_provenance", "case_set", "validator"]
+  },
+  "changes": [
+    {
+      "change_id": "C1_display_metadata_only",
+      "description": "Change display label/documentation metadata only",
+      "changed_dimensions": ["display_metadata"],
+      "expected": {"BP-01": "REUSE", "SP-01": "REUSE", "MS-01": "REUSE"}
+    },
+    {
+      "change_id": "C2_semantic_mapping_change",
+      "description": "Change a native-to-canonical semantic mapping while leaving runtime and upper trial unchanged",
+      "changed_dimensions": ["semantic_mapping"],
+      "expected": {"BP-01": "REUSE", "SP-01": "REASSESS", "MS-01": "REUSE"}
+    },
+    {
+      "change_id": "C3_wrapper_executable_change",
+      "description": "Change wrapper/adapter executable while preserving declared semantics",
+      "changed_dimensions": ["wrapper_adapter", "binding", "implementation_provenance"],
+      "expected": {"BP-01": "REASSESS", "SP-01": "REUSE", "MS-01": "REASSESS"}
+    },
+    {
+      "change_id": "C4_upper_trial_spec_change",
+      "description": "Change upper-level trial specification without changing model wrapper or semantic declaration",
+      "changed_dimensions": ["trial_spec"],
+      "expected": {"BP-01": "REUSE", "SP-01": "REUSE", "MS-01": "REASSESS"}
+    }
+  ]
+}
