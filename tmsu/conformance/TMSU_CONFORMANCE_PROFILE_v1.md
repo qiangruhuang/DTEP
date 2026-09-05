@@ -14,7 +14,7 @@ The profile distinguishes:
 - `Semantic_Profile_ID`: the declared meaning, type, unit, reference frame and time basis of exchanged data.
 - `Evidence_Set_ID`: immutable evidence bundle supporting a gate decision.
 
-`Capability_ID != Implementation_ID` is mandatory. This separation is the prerequisite for later model substitution.
+`Capability_ID != Implementation_ID` is mandatory. This separation is the prerequisite for model substitution.
 
 ## 2. Decision states
 
@@ -79,22 +79,7 @@ and all mandatory predicates below SHALL be satisfied.
 
 Any failure of BP01-P1 through BP01-P10 yields `FAIL`. Missing evidence yields `UNKNOWN`.
 
-### Evidence artifacts
-
-A conforming deterministic BP-01 evidence set SHOULD contain at least:
-
-- paired baseline and wrapped traces;
-- scenario/configuration artifacts;
-- executable/model and adapter digests;
-- comparator report;
-- negative-control report;
-- runtime stderr/warning record;
-- per-case decision matrix;
-- machine-readable summary with evidence hashes.
-
-## 4. Frozen reference evidence: OpenEaagles TWS
-
-The first frozen BP-01 evidence set is:
+### Frozen reference evidence
 
 ```text
 Evidence_Set_ID: bp01.openeaagles.tws.2026-09-05.v1
@@ -105,29 +90,83 @@ Cases: 16
 Decision: PASS
 ```
 
-Evidence envelope:
-
-```text
-OpenEaagles commit: b3d7e74a9bf52934e13fd6a11f45dc9767ac9192
-Host: native headless Station
-Rate: 50 Hz
-Length: 500 frames
-Distance: {10 km, 20 km}
-Azimuth: {0 deg, 20 deg}
-RCS: {1 m^2, 4 m^2}
-Motion: {static, closing 150 m/s}
-Observables: {track_count, track_id, range, range_rate,
-              relative_azimuth, elevation, quality, average_signal}
-```
-
-All 16 paired cases satisfied `D_byte = 0`; all contained native track behavior; all Station lifecycle warnings were absent; the deliberately changed negative control was rejected. OpenEaagles model source patch count was zero.
-
 Reference report: `mre1/openeaagles/BEHAVIOR_PRESERVATION_EVIDENCE_v1.md`.
 
-## 5. Relationship to model substitution
+## 4. MS-01 — Model Substitution
 
-BP-01 establishes wrapper transparency for one implementation. It does **not** establish that two different implementations are interchangeable.
+### Purpose
 
-Model substitution is evaluated separately by E2. E2 freezes the upper trial specification and orchestrator, then changes only the capability binding from one `Implementation_ID` to another. E2 evaluates contract/semantic compatibility and change isolation; it does not require the two models to produce identical behavior unless a trial explicitly declares such a requirement.
+MS-01 tests whether a frozen upper-level trial can substitute one concrete implementation of a declared capability for another while preserving the upper trial specification, orchestration logic, capability contract and semantic profile.
 
-A model implementation that passes BP-01 may therefore still fail an E2 substitution test because of contract, semantic, lifecycle, data, or trial-fitness incompatibility.
+MS-01 is an architectural/contract conformance gate. It does not assert behavioral equivalence, equal model fidelity, trial-specific fitness-for-use or authoritative accreditation.
+
+### Applicability
+
+MS-01 applies when two or more distinct `Implementation_ID`s claim the same `Capability_ID` and are intended to be selectable through TMSU capability binding.
+
+A legacy `M1 Wrap` or `M2 Adapt` implementation SHALL satisfy its applicable BP-01 requirement before its MS-01 substitution evidence is accepted. A native implementation does not require BP-01 unless it itself introduces a wrapper around an existing validated implementation.
+
+### Required frozen declarations
+
+Before execution, the substitution evidence SHALL freeze:
+
+1. `Capability_ID`;
+2. all participating `Implementation_ID`s;
+3. `Contract_ID` and contract artifact digest;
+4. `Semantic_Profile_ID`;
+5. upper trial specification and digest;
+6. orchestrator implementation and digest;
+7. common scenario/case set;
+8. implementation binding artifacts;
+9. output conformance validator;
+10. explicit statement of whether behavioral equality is or is not a trial requirement.
+
+### Decision predicates
+
+| Predicate | Requirement |
+|---|---|
+| MS01-P1 | all substituted runs use the identical frozen upper trial specification |
+| MS01-P2 | all substituted runs use the identical frozen orchestrator |
+| MS01-P3 | all implementations expose the same `Capability_ID` and `Contract_ID` |
+| MS01-P4 | all implementations declare the same `Semantic_Profile_ID` for the exchanged capability data |
+| MS01-P5 | participating `Implementation_ID`s are distinct and provenance demonstrates distinct implementations |
+| MS01-P6 | the same frozen case set is executed for each implementation |
+| MS01-P7 | every required case executes successfully for each implementation |
+| MS01-P8 | every implementation output passes the same canonical contract validator |
+| MS01-P9 | the model swap is isolated to implementation binding selection; frozen trial specification and orchestrator are not edited |
+| MS01-P10 | evidence contains hashes/provenance sufficient to reproduce the substitution decision |
+
+Any failure of MS01-P1 through MS01-P10 yields `FAIL`. Missing evidence yields `UNKNOWN`.
+
+Behavioral equality is deliberately excluded from the universal MS-01 rule. If a particular test decision requires behavioral or statistical equivalence between implementations, that requirement SHALL be defined separately in the trial fitness-for-use criteria.
+
+### Frozen reference evidence
+
+```text
+Evidence_Set_ID: ms01.tws.openeaagles-reference.2026-09-05.v1
+Capability_ID: sensor.tws.track
+Implementation_A: openeaagles.tws.airtrkmgr@b3d7e74
+Implementation_B: dtep.reference_tws@1.0.0
+Contract_ID: tmsu.sensor.tws.track.v1
+Semantic_Profile_ID: tmsu.sensor.tws.track.semantic.v1
+Cases per implementation: 16
+Upper trial artifacts modified for swap: 0
+Binding selections changed: 1
+Decision: PASS
+```
+
+Reference report: `mre2/model_substitution/E2_MODEL_SUBSTITUTION_EVIDENCE_v1.md`.
+
+## 5. Gate relationship
+
+The current minimum sequence for a wrapped legacy implementation is:
+
+```text
+BP-01 Behavior Preservation
+          ↓
+MS-01 Model Substitution
+          ↓
+Trial-specific fitness-for-use / VV&A / accreditation
+```
+
+BP-01 asks whether packaging preserves one legacy implementation's declared behavior. MS-01 asks whether implementation choice can change without rewriting the upper trial. Neither gate replaces the intended-use, validity, uncertainty or accreditation decisions required for a real test conclusion.
