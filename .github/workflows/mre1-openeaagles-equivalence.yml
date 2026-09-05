@@ -25,11 +25,11 @@ jobs:
           ref: b3d7e74a9bf52934e13fd6a11f45dc9767ac9192
           path: upstream/OpenEaagles
 
-      - name: Checkout frozen JSBSim
+      - name: Checkout API-compatible JSBSim snapshot
         uses: actions/checkout@v4
         with:
           repository: JSBSim-Team/jsbsim
-          ref: 18c5b81d3f602099e1bf2a80aed379f5e80d9569
+          ref: 140068895adf1b8981b45cc5e17a16d82990806d
           path: upstream/jsbsim
 
       - name: Install build dependencies
@@ -123,7 +123,7 @@ jobs:
         if: always()
         run: |
           python3 - <<'PY'
-          import hashlib, json, os
+          import hashlib, json
           from pathlib import Path
           root=Path('build/mre1')
           def sha(p):
@@ -132,7 +132,7 @@ jobs:
           summary={
             'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
             'open_eaagles_examples_reference':'f90bac38bfbea168e746ce75fc46d641974c6076',
-            'jsbsim_commit':'18c5b81d3f602099e1bf2a80aed379f5e80d9569',
+            'jsbsim_commit':'140068895adf1b8981b45cc5e17a16d82990806d',
             'probe_sha256':sha(root/'oe_tws_probe'),
             'scenario_sha256':sha('mre1/openeaagles/scenario.edl'),
             'baseline_1_sha256':sha(root/'baseline_1.tsv'),
