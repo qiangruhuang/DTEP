@@ -1,0 +1,19 @@
+{
+  "binding_version": "1.0.0",
+  "capability_id": "sensor.tws.track",
+  "implementation_id": "openeaagles.tws.airtrkmgr@b3d7e74",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "migration_path": "M1 Wrap",
+  "adapter": "mre2/model_substitution/openeaagles_adapter.py",
+  "runtime": {
+    "probe_binary": "build/mre2/oe_tws_probe",
+    "scenario_template": "mre1/openeaagles/scenario_matrix_template.edl",
+    "upstream_commit": "b3d7e74a9bf52934e13fd6a11f45dc9767ac9192"
+  },
+  "bp01": {
+    "required": true,
+    "evidence_set_id": "bp01.openeaagles.tws.2026-09-05.v1",
+    "decision": "PASS"
+  }
+}
