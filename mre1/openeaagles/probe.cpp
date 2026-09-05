@@ -130,7 +130,6 @@ int main(int argc, char* argv[])
         emitSnapshot(simulation, frame);
     }
 
-    simulation->event(SHUTDOWN_EVENT);
     simulation->unref();
     return EXIT_SUCCESS;
 }
