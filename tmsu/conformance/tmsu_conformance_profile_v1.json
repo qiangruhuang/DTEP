@@ -30,6 +30,37 @@
         "case_count": 16,
         "report": "mre1/openeaagles/BEHAVIOR_PRESERVATION_EVIDENCE_v1.md"
       }
+    },
+    {
+      "gate_id": "MS-01",
+      "title": "Model Substitution",
+      "applies_to": ["multiple implementations sharing one Capability_ID"],
+      "behavioral_identity_required": false,
+      "predicates": [
+        "MS01-P1 identical frozen upper trial specification",
+        "MS01-P2 identical frozen orchestrator",
+        "MS01-P3 same Capability_ID and Contract_ID",
+        "MS01-P4 same Semantic_Profile_ID",
+        "MS01-P5 distinct Implementation_IDs with distinct provenance",
+        "MS01-P6 same frozen case set",
+        "MS01-P7 every required case executes for every implementation",
+        "MS01-P8 every output passes the same canonical contract validator",
+        "MS01-P9 substitution isolated to binding selection",
+        "MS01-P10 provenance hashes are complete"
+      ],
+      "reference_evidence": {
+        "evidence_set_id": "ms01.tws.openeaagles-reference.2026-09-05.v1",
+        "capability_id": "sensor.tws.track",
+        "implementation_a": "openeaagles.tws.airtrkmgr@b3d7e74",
+        "implementation_b": "dtep.reference_tws@1.0.0",
+        "contract_id": "tmsu.sensor.tws.track.v1",
+        "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+        "decision": "PASS",
+        "case_count_each": 16,
+        "upper_trial_artifacts_modified_for_swap": 0,
+        "binding_selections_changed": 1,
+        "report": "mre2/model_substitution/E2_MODEL_SUBSTITUTION_EVIDENCE_v1.md"
+      }
     }
   ]
 }
