@@ -1,0 +1,141 @@
+{
+  "experiment_id": "sp01.semantic-precheck-ablation.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "base_candidate": {
+    "capability_id": "sensor.tws.track",
+    "contract_id": "tmsu.sensor.tws.track.v1",
+    "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+    "implementation_id": "sp01.canonical-positive-control@1",
+    "fields": {
+      "frame": {
+        "concept": "time.observation_index",
+        "concept_relation": "equivalent",
+        "datatype": "integer",
+        "unit": "frame",
+        "reference_frame": "simulation_clock",
+        "time_basis": "simulation_frame",
+        "sign_convention": "nonnegative"
+      },
+      "range_m": {
+        "concept": "kinematics.relative_range",
+        "concept_relation": "equivalent",
+        "datatype": "number",
+        "unit": "m",
+        "reference_frame": "ownship_relative",
+        "time_basis": "simulation_frame",
+        "sign_convention": "nonnegative"
+      },
+      "range_rate_mps": {
+        "concept": "kinematics.radial_range_rate",
+        "concept_relation": "equivalent",
+        "datatype": "number",
+        "unit": "m/s",
+        "reference_frame": "ownship_relative",
+        "time_basis": "simulation_frame",
+        "sign_convention": "positive=increasing_range"
+      },
+      "relative_azimuth_rad": {
+        "concept": "kinematics.relative_azimuth",
+        "concept_relation": "equivalent",
+        "datatype": "number",
+        "unit": "rad",
+        "reference_frame": "ownship_relative",
+        "time_basis": "simulation_frame",
+        "sign_convention": "positive=declared_canonical_azimuth"
+      },
+      "elevation_rad": {
+        "concept": "kinematics.relative_elevation",
+        "concept_relation": "equivalent",
+        "datatype": "number",
+        "unit": "rad",
+        "reference_frame": "ownship_relative",
+        "time_basis": "simulation_frame",
+        "sign_convention": "positive=declared_canonical_elevation"
+      },
+      "quality": {
+        "concept": "track.quality_score",
+        "concept_relation": "equivalent",
+        "datatype": "number",
+        "unit": "1",
+        "reference_frame": "not_applicable",
+        "time_basis": "simulation_frame",
+        "sign_convention": "higher=better"
+      },
+      "average_signal_db": {
+        "concept": "rf.track_average_signal",
+        "concept_relation": "equivalent",
+        "datatype": "number",
+        "unit": "dB",
+        "reference_frame": "receiver_track",
+        "time_basis": "simulation_frame",
+        "sign_convention": "higher=stronger"
+      }
+    }
+  },
+  "cases": [
+    {
+      "case_id": "positive_control",
+      "kind": "positive_control",
+      "expected_structural": "PASS",
+      "expected_semantic": "COMPATIBLE",
+      "mutations": []
+    },
+    {
+      "case_id": "neg_range_unit_m_to_km",
+      "kind": "injected_mismatch",
+      "expected_structural": "PASS",
+      "expected_semantic": "INCOMPATIBLE",
+      "mutations": [
+        {"field": "range_m", "dimension": "unit", "value": "km"}
+      ]
+    },
+    {
+      "case_id": "neg_azimuth_unit_rad_to_deg",
+      "kind": "injected_mismatch",
+      "expected_structural": "PASS",
+      "expected_semantic": "INCOMPATIBLE",
+      "mutations": [
+        {"field": "relative_azimuth_rad", "dimension": "unit", "value": "deg"}
+      ]
+    },
+    {
+      "case_id": "neg_range_rate_sign_reversed",
+      "kind": "injected_mismatch",
+      "expected_structural": "PASS",
+      "expected_semantic": "INCOMPATIBLE",
+      "mutations": [
+        {"field": "range_rate_mps", "dimension": "sign_convention", "value": "positive=decreasing_range"}
+      ]
+    },
+    {
+      "case_id": "neg_reference_frame_ownship_to_ecef",
+      "kind": "injected_mismatch",
+      "expected_structural": "PASS",
+      "expected_semantic": "INCOMPATIBLE",
+      "mutations": [
+        {"field": "range_m", "dimension": "reference_frame", "value": "earth_centered_ecef"}
+      ]
+    },
+    {
+      "case_id": "neg_time_basis_sim_to_utc",
+      "kind": "injected_mismatch",
+      "expected_structural": "PASS",
+      "expected_semantic": "INCOMPATIBLE",
+      "mutations": [
+        {"field": "frame", "dimension": "time_basis", "value": "utc_epoch_seconds"}
+      ]
+    },
+    {
+      "case_id": "real_radarsimpublic_rf_quantity_ambiguity",
+      "kind": "real_ambiguity_control",
+      "expected_structural": "PASS",
+      "expected_semantic": "UNKNOWN",
+      "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+      "mutations": [
+        {"field": "average_signal_db", "dimension": "concept", "value": "rf.signal_to_noise_ratio"},
+        {"field": "average_signal_db", "dimension": "concept_relation", "value": "unknown"}
+      ],
+      "evidence_note": "The frozen RadarSimPublic adapter maps Radar.snr(range, rcs) to average_signal_db, while the canonical field is defined as rf.track_average_signal. No equivalence evidence is declared in SP-01."
+    }
+  ]
+}
