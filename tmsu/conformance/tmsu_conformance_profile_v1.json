@@ -1,0 +1,35 @@
+{
+  "profile_id": "tmsu.conformance.v1",
+  "version": "1.0.0",
+  "status": "frozen",
+  "decision_states": ["PASS", "FAIL", "UNKNOWN", "WARN"],
+  "identity_rule": "Capability_ID != Implementation_ID",
+  "gates": [
+    {
+      "gate_id": "BP-01",
+      "title": "Behavior Preservation",
+      "applies_to": ["M1 Wrap", "M2 Adapt"],
+      "deterministic_rule": "D_byte(Y_legacy(i),Y_TMSU(i)) = 0 for every paired case i",
+      "predicates": [
+        "BP01-P1 direct baseline succeeds",
+        "BP01-P2 deterministic baseline is reproducible",
+        "BP01-P3 wrapped execution succeeds",
+        "BP01-P4 native observable trace is behavior-bearing",
+        "BP01-P5 every paired case satisfies the frozen equivalence rule",
+        "BP01-P6 no undeclared native-trace transformation",
+        "BP01-P7 negative control is rejected",
+        "BP01-P8 source changes equal the permitted patch set",
+        "BP01-P9 blocking runtime/lifecycle warnings are absent",
+        "BP01-P10 provenance hashes are complete"
+      ],
+      "reference_evidence": {
+        "evidence_set_id": "bp01.openeaagles.tws.2026-09-05.v1",
+        "capability_id": "sensor.tws.track",
+        "implementation_id": "openeaagles.tws.airtrkmgr@b3d7e74",
+        "decision": "PASS",
+        "case_count": 16,
+        "report": "mre1/openeaagles/BEHAVIOR_PRESERVATION_EVIDENCE_v1.md"
+      }
+    }
+  ]
+}
