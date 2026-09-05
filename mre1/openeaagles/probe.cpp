@@ -77,9 +77,10 @@ void emitSnapshot(oe::simulation::Simulation* simulation, const unsigned int fra
     std::vector<const oe::models::Track*> tracks;
     tracks.reserve(n > 0 ? static_cast<std::size_t>(n) : 0U);
     for (int i = 0; i < n; ++i) {
-        if (trackRefs[i].get() != nullptr) tracks.push_back(trackRefs[i].get());
+        const oe::models::Track* p = trackRefs[i];
+        if (p != nullptr) tracks.push_back(p);
     }
-    std::sort(tracks.begin(), tracks.end(), [](const auto* a, const auto* b) {
+    std::sort(tracks.begin(), tracks.end(), [](const oe::models::Track* a, const oe::models::Track* b) {
         return a->getTrackID() < b->getTrackID();
     });
 
