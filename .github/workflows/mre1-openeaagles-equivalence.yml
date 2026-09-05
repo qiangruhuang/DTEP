@@ -114,15 +114,19 @@ jobs:
             -Wl,--start-group -loe_models -loe_terrain -loe_simulation -loe_base -lJSBSim -Wl,--end-group \
             -lpthread -lrt -lX11 -ldl -lm \
             -o build/mre1/oe_tws_probe
-          sha256sum build/mre1/oe_tws_probe mre1/openeaagles/scenario.edl
+          sha256sum build/mre1/oe_tws_probe mre1/openeaagles/scenario.edl mre1/openeaagles/scenario_matrix_template.edl
 
-      - name: Run untouched-model baseline twice
+      - name: Run untouched-model baseline twice under headless Station
         run: |
           set -euxo pipefail
           export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
-          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_1.tsv
-          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_2.tsv
+          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_1.tsv 2> build/mre1/baseline_1.stderr.txt
+          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_2.tsv 2> build/mre1/baseline_2.stderr.txt
           grep -q '^T' build/mre1/baseline_1.tsv
+          if grep -q 'unable to locate the Station class' build/mre1/baseline_1.stderr.txt build/mre1/baseline_2.stderr.txt; then
+            echo 'ERROR: headless Station host still emits missing-Station warning' >&2
+            exit 1
+          fi
           python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/baseline_2.tsv --report build/mre1/g2a_reproducibility.json
 
       - name: Run through TMSU process boundary
@@ -136,6 +140,12 @@ jobs:
             --output build/mre1/wrapped.tsv \
             --evidence build/mre1/wrapper_evidence.json
           python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/wrapped.tsv --report build/mre1/g2b_wrapper_transparency.json
+          python3 - <<'PY'
+          import json
+          e=json.load(open('build/mre1/wrapper_evidence.json'))
+          assert not e['station_warning_present'], 'wrapped process emitted missing-Station warning'
+          assert e['transformations_applied_to_stdout'] == 0
+          PY
 
       - name: Negative-control sensitivity
         run: |
@@ -145,6 +155,18 @@ jobs:
             echo 'ERROR: comparator accepted deliberately changed behavior' >&2
             exit 1
           fi
+
+      - name: Run Behavior Preservation Evidence v1.0 matrix
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre1/openeaagles/behavior_matrix.py \
+            --binary build/mre1/oe_tws_probe \
+            --template mre1/openeaagles/scenario_matrix_template.edl \
+            --wrapper mre1/openeaagles/tmsu_wrapper.py \
+            --frames 500 \
+            --outdir build/mre1/behavior_matrix
+          cat build/mre1/behavior_matrix/behavior_preservation_v1.json
 
       - name: Build evidence summary
         if: always()
@@ -156,7 +178,10 @@ jobs:
           def sha(p):
               p=Path(p)
               return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+          matrix_path=root/'behavior_matrix'/'behavior_preservation_v1.json'
+          matrix=json.loads(matrix_path.read_text()) if matrix_path.exists() else None
           summary={
+            'evidence_profile':'Behavior Preservation Evidence v1.0',
             'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
             'open_eaagles_examples_reference':'f90bac38bfbea168e746ce75fc46d641974c6076',
             'jsbsim_commit':'140068895adf1b8981b45cc5e17a16d82990806d',
@@ -164,10 +189,18 @@ jobs:
             'open_eaagles_source_patch_count':0,
             'probe_sha256':sha(root/'oe_tws_probe'),
             'scenario_sha256':sha('mre1/openeaagles/scenario.edl'),
+            'matrix_template_sha256':sha('mre1/openeaagles/scenario_matrix_template.edl'),
             'baseline_1_sha256':sha(root/'baseline_1.tsv'),
             'baseline_2_sha256':sha(root/'baseline_2.tsv'),
             'wrapped_sha256':sha(root/'wrapped.tsv'),
             'negative_sha256':sha(root/'negative.tsv'),
+            'matrix_all_pass': matrix.get('all_pass') if matrix else None,
+            'matrix_case_count': matrix.get('case_count') if matrix else None,
+            'matrix_passed_cases': matrix.get('passed_cases') if matrix else None,
+            'matrix_all_D_byte_zero': matrix.get('all_D_byte_zero') if matrix else None,
+            'matrix_all_cases_have_tracks': matrix.get('all_cases_have_tracks') if matrix else None,
+            'matrix_station_warning_eliminated': matrix.get('station_warning_eliminated') if matrix else None,
+            'matrix_distinct_baseline_traces': matrix.get('distinct_baseline_traces') if matrix else None,
           }
           root.mkdir(parents=True,exist_ok=True)
           (root/'evidence_summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
