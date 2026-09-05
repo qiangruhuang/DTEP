@@ -33,6 +33,7 @@ def main() -> int:
     args.output.parent.mkdir(parents=True, exist_ok=True)
     args.output.write_bytes(completed.stdout)
 
+    stderr_text = completed.stderr.decode("utf-8", errors="replace")
     evidence = {
         "wrapper": "tmsu.external-process.transparent.v1",
         "command": cmd,
@@ -41,6 +42,8 @@ def main() -> int:
         "scenario_sha256": sha256(config),
         "stdout_sha256": hashlib.sha256(completed.stdout).hexdigest(),
         "stderr_sha256": hashlib.sha256(completed.stderr).hexdigest(),
+        "stderr_text": stderr_text,
+        "station_warning_present": "unable to locate the Station class" in stderr_text,
         "frames": args.frames,
         "transformations_applied_to_stdout": 0,
     }
@@ -48,7 +51,7 @@ def main() -> int:
     args.evidence.write_text(json.dumps(evidence, indent=2, sort_keys=True) + "\n", encoding="utf-8")
 
     if completed.returncode != 0:
-        print(completed.stderr.decode("utf-8", errors="replace"))
+        print(stderr_text)
     return completed.returncode
 
 
