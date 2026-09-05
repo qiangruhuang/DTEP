@@ -37,19 +37,26 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
 
-      - name: Apply documented compiler-compatibility fix to JSBSim only
+      - name: Apply documented compiler-compatibility fixes to JSBSim only
         run: |
           set -euxo pipefail
           python3 - <<'PY'
           from pathlib import Path
-          p=Path('upstream/jsbsim/src/FGFDMExec.cpp')
-          s=p.read_text()
-          old='if (FDMctr > 0) (*FDMctr)--;'
-          new='if (FDMctr != 0 && *FDMctr > 0) (*FDMctr)--;'
-          assert s.count(old)==1, 'expected historical JSBSim destructor expression not found exactly once'
-          p.write_text(s.replace(old,new))
+          fixes = [
+              ('upstream/jsbsim/src/FGFDMExec.cpp',
+               'if (FDMctr > 0) (*FDMctr)--;',
+               'if (FDMctr != 0 && *FDMctr > 0) (*FDMctr)--;'),
+              ('upstream/jsbsim/src/input_output/FGInputSocket.cpp',
+               '} else if (node > 0) {',
+               '} else if (node != 0) {'),
+          ]
+          for filename, old, new in fixes:
+              p = Path(filename)
+              s = p.read_text()
+              assert s.count(old) == 1, f'expected historical expression not found exactly once in {filename}'
+              p.write_text(s.replace(old, new))
           PY
-          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp | tee jsbsim-build-compat.patch
+          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp src/input_output/FGInputSocket.cpp | tee jsbsim-build-compat.patch
           sha256sum jsbsim-build-compat.patch
 
       - name: Build JSBSim compatibility snapshot
@@ -97,7 +104,7 @@ jobs:
             mre1/openeaagles/probe.cpp \
             -L"$OE_ROOT/lib" -L"$PREFIX/lib" \
             -Wl,-rpath,"$PREFIX/lib" \
-            -loe_models -loe_simulation -loe_base -lJSBSim \
+            -Wl,--start-group -loe_models -loe_simulation -loe_base -lJSBSim -Wl,--end-group \
             -lpthread -lrt -lX11 -ldl -lm \
             -o build/mre1/oe_tws_probe
           sha256sum build/mre1/oe_tws_probe mre1/openeaagles/scenario.edl
