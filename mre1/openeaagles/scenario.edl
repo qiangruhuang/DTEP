@@ -1,133 +1,140 @@
-( WorldModel
-   latitude: 45.0
-   longitude: -90.0
-   simulationTime: ( Seconds 0 )
-   day: 1
-   month: 1
-   year: 2017
-   numTcThreads: 1
-   numBgThreads: 1
+( Station
+   ownship: ownship
+   tcRate: 50
+   netRate: 0
+   bgRate: 0
 
-   players: {
-      ownship:
-      ( Aircraft
-         id: 1
-         side: blue
-         type: "F-16"
-         signature: ( SigSphere radius: 2.0 )
-         initPosition: [ 0 0 -10000 ]
-         initHeading: ( Degrees 0 )
-         initVelocity: 0
-         positionFreeze: true
-         altitudeFreeze: true
-         attitudeFreeze: true
+   simulation: ( WorldModel
+      latitude: 45.0
+      longitude: -90.0
+      simulationTime: ( Seconds 0 )
+      day: 1
+      month: 1
+      year: 2017
+      numTcThreads: 1
+      numBgThreads: 1
 
-         components: {
-            antennas: ( Gimbal
-               components: {
-                  radar: ( Antenna
-                     // Frozen from OpenEaaglesExamples/testRadar/configs/test1.epp
-                     polarization: horizontal
-                     gain: ( dB 42 )
-                     gainPattern: ( Func1
-                        table: ( Table1
-                           x:    [ 0.0 0.01745 0.02618 0.04363 0.05236 0.061087 0.06981 0.07854 ]
-                           data: [ 0.0 -3.0 -10.0 -30.0 -20.0 -14.0 -25.0 -80.0 ]
+      players: {
+         ownship:
+         ( Aircraft
+            id: 1
+            side: blue
+            type: "F-16"
+            signature: ( SigSphere radius: 2.0 )
+            initPosition: [ 0 0 -10000 ]
+            initHeading: ( Degrees 0 )
+            initVelocity: 0
+            positionFreeze: true
+            altitudeFreeze: true
+            attitudeFreeze: true
+
+            components: {
+               antennas: ( Gimbal
+                  components: {
+                     radar: ( Antenna
+                        // Frozen from OpenEaaglesExamples/testRadar/configs/test1.epp
+                        polarization: horizontal
+                        gain: ( dB 42 )
+                        gainPattern: ( Func1
+                           table: ( Table1
+                              x:    [ 0.0 0.01745 0.02618 0.04363 0.05236 0.061087 0.06981 0.07854 ]
+                              data: [ 0.0 -3.0 -10.0 -30.0 -20.0 -14.0 -25.0 -80.0 ]
+                           )
                         )
+                        initPosition: [ 0 0 ]
+                        maxRates: [ 0.8727 0.8727 ]
+                        commandRateAzimuth: ( Degrees 60 )
+                        commandRateElevation: ( Degrees 60 )
+                        reference: [ 0 0 ]
+                        searchVolume: [ 1.0472 0.05 ]
+                        numBars: 2
+                        maxPlayersOfInterest: 6
+                        playerOfInterestTypes: { air weapon }
+                        maxRange2PlayersOfInterest: ( KiloMeters 100.0 )
+                        maxAngle2PlayersOfInterest: ( Degrees 90.0 )
+                        localPlayersOfInterestOnly: false
+                        useWorldCoordinates: false
                      )
-                     initPosition: [ 0 0 ]
-                     maxRates: [ 0.8727 0.8727 ]
-                     commandRateAzimuth: ( Degrees 60 )
-                     commandRateElevation: ( Degrees 60 )
-                     reference: [ 0 0 ]
-                     searchVolume: [ 1.0472 0.05 ]
-                     numBars: 2
-                     maxPlayersOfInterest: 6
-                     playerOfInterestTypes: { air weapon }
-                     maxRange2PlayersOfInterest: ( KiloMeters 100.0 )
-                     maxAngle2PlayersOfInterest: ( Degrees 90.0 )
-                     localPlayersOfInterestOnly: false
-                     useWorldCoordinates: false
-                  )
-               }
-            )
+                  }
+               )
 
-            sensors: ( SensorMgr
-               components: {
-                  tws: ( Tws
-                     trackManagerName: twsTrkMgr
-                     antennaName: radar
-                     powerPeak: ( KiloWatts 500.0 )
-                     frequency: ( GigaHertz 3.0 )
-                     bandwidth: ( GigaHertz 2.0 )
-                     PRF: ( Hertz 500.0 )
-                     pulseWidth: ( MilliSeconds 0.01 )
-                     threshold: ( dB 0.0 )
-                     igain: ( dB 0 )
-                     ranges: [ 10 20 40 80 160 ]
-                     initRangeIdx: 2
-                  )
-               }
-            )
+               sensors: ( SensorMgr
+                  components: {
+                     tws: ( Tws
+                        trackManagerName: twsTrkMgr
+                        antennaName: radar
+                        powerPeak: ( KiloWatts 500.0 )
+                        frequency: ( GigaHertz 3.0 )
+                        bandwidth: ( GigaHertz 2.0 )
+                        PRF: ( Hertz 500.0 )
+                        pulseWidth: ( MilliSeconds 0.01 )
+                        threshold: ( dB 0.0 )
+                        igain: ( dB 0 )
+                        ranges: [ 10 20 40 80 160 ]
+                        initRangeIdx: 2
+                     )
+                  }
+               )
 
-            obc: ( OnboardComputer
-               components: {
-                  twsTrkMgr: ( AirTrkMgr
-                     maxTracks: 50
-                     alpha: 1.0
-                     beta: 0.5
-                     gamma: 0.0
-                     positionGate: 1500
-                     rangeGate: 500
-                     velocityGate: 10
-                     firstTrackId: 2000
-                     logTrackUpdates: false
-                  )
-               }
-            )
-         }
-      )
+               obc: ( OnboardComputer
+                  components: {
+                     twsTrkMgr: ( AirTrkMgr
+                        maxTracks: 50
+                        alpha: 1.0
+                        beta: 0.5
+                        gamma: 0.0
+                        positionGate: 1500
+                        rangeGate: 500
+                        velocityGate: 10
+                        firstTrackId: 2000
+                        logTrackUpdates: false
+                     )
+                  }
+               )
+            }
+         )
 
-      p00:
-      ( Aircraft
-         id: 1000
-         side: red
-         type: "F-16"
-         signature: ( SigSphere radius: 2.0 )
-         initPosition: [ 10000 0 -10000 ]
-         initHeading: ( Degrees 180 )
-         initVelocity: 0
-         positionFreeze: true
-         altitudeFreeze: true
-         attitudeFreeze: true
-      )
+         p00:
+         ( Aircraft
+            id: 1000
+            side: red
+            type: "F-16"
+            signature: ( SigSphere radius: 2.0 )
+            initPosition: [ 10000 0 -10000 ]
+            initHeading: ( Degrees 180 )
+            initVelocity: 0
+            positionFreeze: true
+            altitudeFreeze: true
+            attitudeFreeze: true
+         )
 
-      p01:
-      ( Aircraft
-         id: 1001
-         side: red
-         type: "F-16"
-         signature: ( SigSphere radius: 2.0 )
-         initPosition: [ 15000 5000 -10000 ]
-         initHeading: ( Degrees 180 )
-         initVelocity: 0
-         positionFreeze: true
-         altitudeFreeze: true
-         attitudeFreeze: true
-      )
+         p01:
+         ( Aircraft
+            id: 1001
+            side: red
+            type: "F-16"
+            signature: ( SigSphere radius: 2.0 )
+            initPosition: [ 15000 5000 -10000 ]
+            initHeading: ( Degrees 180 )
+            initVelocity: 0
+            positionFreeze: true
+            altitudeFreeze: true
+            attitudeFreeze: true
+         )
 
-      p02:
-      ( Aircraft
-         id: 1002
-         side: red
-         type: "F-16"
-         signature: ( SigSphere radius: 2.0 )
-         initPosition: [ 20000 -5000 -10000 ]
-         initHeading: ( Degrees 180 )
-         initVelocity: 0
-         positionFreeze: true
-         altitudeFreeze: true
-         attitudeFreeze: true
-      )
-   }
+         p02:
+         ( Aircraft
+            id: 1002
+            side: red
+            type: "F-16"
+            signature: ( SigSphere radius: 2.0 )
+            initPosition: [ 20000 -5000 -10000 ]
+            initHeading: ( Degrees 180 )
+            initVelocity: 0
+            positionFreeze: true
+            altitudeFreeze: true
+            attitudeFreeze: true
+         )
+      }
+   )
 )
