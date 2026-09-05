@@ -1,4 +1,5 @@
 #include "openeaagles/simulation/Simulation.hpp"
+#include "openeaagles/simulation/Station.hpp"
 #include "openeaagles/base/Pair.hpp"
 #include "openeaagles/base/edl_parser.hpp"
 #include "openeaagles/base/safe_ptr.hpp"
@@ -27,7 +28,13 @@ oe::base::Object* factory(const std::string& name)
     return obj;
 }
 
-oe::simulation::Simulation* buildSimulation(const std::string& filename)
+struct Host {
+    oe::base::Object* root {};
+    oe::simulation::Station* station {};
+    oe::simulation::Simulation* simulation {};
+};
+
+Host buildHost(const std::string& filename)
 {
     unsigned int numErrors = 0;
     oe::base::Object* obj = oe::base::edl_parser(filename, factory, &numErrors);
@@ -43,12 +50,43 @@ oe::simulation::Simulation* buildSimulation(const std::string& filename)
         pair->unref();
     }
 
-    const auto simulation = dynamic_cast<oe::simulation::Simulation*>(obj);
-    if (simulation == nullptr) {
-        std::cerr << "EDL_NOT_SIMULATION" << std::endl;
+    Host host;
+    host.root = obj;
+    host.station = dynamic_cast<oe::simulation::Station*>(obj);
+    if (host.station != nullptr) {
+        host.simulation = host.station->getSimulation();
+        if (host.simulation == nullptr) {
+            std::cerr << "STATION_HAS_NO_SIMULATION" << std::endl;
+            std::exit(EXIT_FAILURE);
+        }
+        return host;
+    }
+
+    // Backward-compatible fallback for older direct-WorldModel fixtures.
+    host.simulation = dynamic_cast<oe::simulation::Simulation*>(obj);
+    if (host.simulation == nullptr) {
+        std::cerr << "EDL_NOT_STATION_OR_SIMULATION" << std::endl;
         std::exit(EXIT_FAILURE);
     }
-    return simulation;
+    return host;
+}
+
+void resetHost(Host& host)
+{
+    if (host.station != nullptr) host.station->reset();
+    else host.simulation->reset();
+}
+
+void advanceHost(Host& host, const double dt)
+{
+    if (host.station != nullptr) {
+        host.station->updateTC(dt);
+        host.station->updateData(dt);
+    }
+    else {
+        host.simulation->tcFrame(dt);
+        host.simulation->updateData(dt);
+    }
 }
 
 void emitSnapshot(oe::simulation::Simulation* simulation, const unsigned int frame)
@@ -117,19 +155,18 @@ int main(int argc, char* argv[])
         return EXIT_FAILURE;
     }
 
-    auto* simulation = buildSimulation(config);
-    simulation->reset();
+    Host host = buildHost(config);
+    resetHost(host);
 
     constexpr double dt = 1.0 / 50.0;
     std::cout << std::setprecision(17);
     std::cout << "META\tdt\t" << dt << "\tframes\t" << frames << '\n';
 
     for (unsigned int frame = 0; frame < frames; ++frame) {
-        simulation->tcFrame(dt);
-        simulation->updateData(dt);
-        emitSnapshot(simulation, frame);
+        advanceHost(host, dt);
+        emitSnapshot(host.simulation, frame);
     }
 
-    simulation->unref();
+    host.root->unref();
     return EXIT_SUCCESS;
 }
