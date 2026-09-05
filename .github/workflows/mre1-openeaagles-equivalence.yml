@@ -37,6 +37,21 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
 
+      - name: Apply documented compiler-compatibility fix to JSBSim only
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('upstream/jsbsim/src/FGFDMExec.cpp')
+          s=p.read_text()
+          old='if (FDMctr > 0) (*FDMctr)--;'
+          new='if (FDMctr != 0 && *FDMctr > 0) (*FDMctr)--;'
+          assert s.count(old)==1, 'expected historical JSBSim destructor expression not found exactly once'
+          p.write_text(s.replace(old,new))
+          PY
+          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp | tee jsbsim-build-compat.patch
+          sha256sum jsbsim-build-compat.patch
+
       - name: Build JSBSim compatibility snapshot
         run: |
           set -euxo pipefail
@@ -47,8 +62,6 @@ jobs:
             -DBUILD_SHARED_LIBS=ON
           cmake --build build/jsbsim --parallel 2
           cmake --install build/jsbsim
-          find "$PREFIX/include" -maxdepth 2 -type f | head -30
-          find "$PREFIX/lib" -maxdepth 2 -type f | head -30
 
       - name: Normalize legacy JSBSim include/library layout
         run: |
@@ -133,6 +146,8 @@ jobs:
             'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
             'open_eaagles_examples_reference':'f90bac38bfbea168e746ce75fc46d641974c6076',
             'jsbsim_commit':'140068895adf1b8981b45cc5e17a16d82990806d',
+            'jsbsim_build_compat_patch_sha256':sha('jsbsim-build-compat.patch'),
+            'open_eaagles_source_patch_count':0,
             'probe_sha256':sha(root/'oe_tws_probe'),
             'scenario_sha256':sha('mre1/openeaagles/scenario.edl'),
             'baseline_1_sha256':sha(root/'baseline_1.tsv'),
@@ -142,8 +157,9 @@ jobs:
           }
           root.mkdir(parents=True,exist_ok=True)
           (root/'evidence_summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
-          print(json.dumps(summary,indent=2,sort_keys=True))
           PY
+          cp jsbsim-build-compat.patch build/mre1/ 2>/dev/null || true
+          cat build/mre1/evidence_summary.json
 
       - name: Upload evidence bundle
         if: always()
