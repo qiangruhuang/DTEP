@@ -96,6 +96,7 @@ jobs:
           mkdir -p "$OE_ROOT/lib"
           make -C "$OE_ROOT/src/base" -j2
           make -C "$OE_ROOT/src/simulation" -j2
+          make -C "$OE_ROOT/src/terrain" -j2
           make -C "$OE_ROOT/src/models" -j2
           ls -lh "$OE_ROOT/lib"
 
@@ -110,7 +111,7 @@ jobs:
             mre1/openeaagles/probe.cpp \
             -L"$OE_ROOT/lib" -L"$PREFIX/lib" \
             -Wl,-rpath,"$PREFIX/lib" \
-            -Wl,--start-group -loe_models -loe_simulation -loe_base -lJSBSim -Wl,--end-group \
+            -Wl,--start-group -loe_models -loe_terrain -loe_simulation -loe_base -lJSBSim -Wl,--end-group \
             -lpthread -lrt -lX11 -ldl -lm \
             -o build/mre1/oe_tws_probe
           sha256sum build/mre1/oe_tws_probe mre1/openeaagles/scenario.edl
