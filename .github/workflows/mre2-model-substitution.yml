@@ -1,9 +1,9 @@
-name: MRE2 TMSU Model Substitution
+name: MRE2 Real Heterogeneous TMSU Model Substitution
 
 on:
   push:
     branches:
-      - mre2-model-substitution
+      - mre2-real-heterogeneous-tws
   workflow_dispatch:
 
 permissions:
@@ -27,10 +27,12 @@ jobs:
           profile=json.loads(Path('tmsu/conformance/tmsu_conformance_profile_v1.json').read_text())
           assert profile['profile_id']=='tmsu.conformance.v1'
           assert profile['status']=='frozen'
-          gate=next(g for g in profile['gates'] if g['gate_id']=='BP-01')
-          assert gate['reference_evidence']['decision']=='PASS'
-          assert gate['reference_evidence']['case_count']==16
-          assert Path(gate['reference_evidence']['report']).exists()
+          bp=next(g for g in profile['gates'] if g['gate_id']=='BP-01')
+          ms=next(g for g in profile['gates'] if g['gate_id']=='MS-01')
+          assert bp['reference_evidence']['decision']=='PASS'
+          assert bp['reference_evidence']['case_count']==16
+          assert ms['gate_id']=='MS-01'
+          assert Path(bp['reference_evidence']['report']).exists()
           PY
 
       - name: Checkout frozen OpenEaagles
@@ -47,10 +49,31 @@ jobs:
           ref: 140068895adf1b8981b45cc5e17a16d82990806d
           path: upstream/jsbsim
 
-      - name: Install build dependencies
+      - name: Checkout frozen real heterogeneous RadarSimPublic implementation
+        uses: actions/checkout@v4
+        with:
+          repository: Murmur-ops/RadarSimPublic
+          ref: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          path: upstream/RadarSimPublic
+
+      - name: Install build/runtime dependencies
         run: |
           sudo apt-get update
           sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Verify frozen RadarSimPublic components used by binding
+        run: |
+          set -euxo pipefail
+          test "$(git -C upstream/RadarSimPublic rev-parse HEAD)" = "8b63f824a5744c1b3a3fca5e948fa7c59f897b17"
+          grep -q 'def snr' upstream/RadarSimPublic/src/radar.py
+          grep -q 'def initialize_constant_velocity_filter' upstream/RadarSimPublic/src/tracking/kalman_filters.py
+          grep -q 'def update_quality_metrics' upstream/RadarSimPublic/src/tracking/tracker_base.py
+          sha256sum \
+            upstream/RadarSimPublic/src/radar.py \
+            upstream/RadarSimPublic/src/tracking/kalman_filters.py \
+            upstream/RadarSimPublic/src/tracking/tracker_base.py
 
       - name: Apply documented compiler-compatibility fixes to JSBSim only
         run: |
@@ -130,7 +153,7 @@ jobs:
             -o build/mre2/oe_tws_probe
           sha256sum build/mre2/oe_tws_probe
 
-      - name: Static-check E2 implementation
+      - name: Static-check unchanged E2 upper trial and real bindings
         run: |
           set -euxo pipefail
           python3 -m py_compile mre2/model_substitution/*.py
@@ -140,13 +163,19 @@ jobs:
           trial=json.loads(Path('mre2/model_substitution/trial_spec.json').read_text())
           contract=json.loads(Path('mre2/model_substitution/capability_contract.json').read_text())
           a=json.loads(Path('mre2/model_substitution/bindings/openeaagles_tws.json').read_text())
-          b=json.loads(Path('mre2/model_substitution/bindings/reference_tws.json').read_text())
+          b=json.loads(Path('mre2/model_substitution/bindings/radarsimpublic_tws.json').read_text())
           for binding in (a,b):
               assert binding['capability_id']==trial['capability_id']==contract['capability_id']
               assert binding['contract_id']==trial['contract_id']==contract['contract_id']
               assert binding['semantic_profile_id']==trial['semantic_profile_id']==contract['semantic_profile_id']
           assert a['implementation_id'] != b['implementation_id']
+          assert b['runtime']['upstream_repo']=='Murmur-ops/RadarSimPublic'
+          assert b['runtime']['upstream_commit']=='8b63f824a5744c1b3a3fca5e948fa7c59f897b17'
           PY
+          sha256sum \
+            mre2/model_substitution/trial_spec.json \
+            mre2/model_substitution/orchestrator.py \
+            mre2/model_substitution/capability_contract.json
 
       - name: Execute frozen upper trial with legacy OpenEaagles binding
         run: |
@@ -158,27 +187,27 @@ jobs:
             --contract mre2/model_substitution/capability_contract.json \
             --outdir build/mre2/run_openeaagles
 
-      - name: Execute identical upper trial with independent reference TWS binding
+      - name: Execute identical upper trial with real RadarSimPublic binding
         run: |
           set -euxo pipefail
           python3 mre2/model_substitution/orchestrator.py \
             --trial mre2/model_substitution/trial_spec.json \
-            --binding mre2/model_substitution/bindings/reference_tws.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
             --contract mre2/model_substitution/capability_contract.json \
-            --outdir build/mre2/run_reference
+            --outdir build/mre2/run_radarsimpublic
 
-      - name: Evaluate binding-only model substitution
+      - name: Evaluate unchanged MS-01 binding-only model substitution
         run: |
           set -euxo pipefail
           python3 mre2/model_substitution/evaluate_substitution.py \
             --trial mre2/model_substitution/trial_spec.json \
             --orchestrator mre2/model_substitution/orchestrator.py \
             --run-a build/mre2/run_openeaagles \
-            --run-b build/mre2/run_reference \
-            --report build/mre2/e2_model_substitution_v1.json
-          cat build/mre2/e2_model_substitution_v1.json
+            --run-b build/mre2/run_radarsimpublic \
+            --report build/mre2/e2_model_substitution_real_v2.json
+          cat build/mre2/e2_model_substitution_real_v2.json
 
-      - name: Build E2 evidence summary
+      - name: Build real-heterogeneous E2 evidence summary
         if: always()
         run: |
           set -euxo pipefail
@@ -189,36 +218,48 @@ jobs:
           def sha(p):
               p=Path(p)
               return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
-          report_path=root/'e2_model_substitution_v1.json'
+          report_path=root/'e2_model_substitution_real_v2.json'
           report=json.loads(report_path.read_text()) if report_path.exists() else None
+          bsum_path=root/'run_radarsimpublic'/'run_summary.json'
+          bsum=json.loads(bsum_path.read_text()) if bsum_path.exists() else None
           summary={
-            'evidence_profile':'E2 Model Substitution Evidence v1.0',
+            'evidence_profile':'E2 Model Substitution Evidence v2.0 — Real Heterogeneous Implementation',
             'decision': report.get('decision') if report else None,
-            'candidate_gate':'MS-01 Model Substitution',
+            'gate':'MS-01 Model Substitution',
+            'implementation_a':'openeaagles.tws.airtrkmgr@b3d7e74',
+            'implementation_b':'radarsimpublic.radar-kf@8b63f82',
             'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
-            'jsbsim_commit':'140068895adf1b8981b45cc5e17a16d82990806d',
+            'radarsimpublic_commit':'8b63f824a5744c1b3a3fca5e948fa7c59f897b17',
             'open_eaagles_source_patch_count':0,
+            'radarsimpublic_source_patch_count':0,
             'trial_spec_sha256':sha('mre2/model_substitution/trial_spec.json'),
             'orchestrator_sha256':sha('mre2/model_substitution/orchestrator.py'),
             'contract_sha256':sha('mre2/model_substitution/capability_contract.json'),
             'openeaagles_binding_sha256':sha('mre2/model_substitution/bindings/openeaagles_tws.json'),
-            'reference_binding_sha256':sha('mre2/model_substitution/bindings/reference_tws.json'),
+            'radarsimpublic_binding_sha256':sha('mre2/model_substitution/bindings/radarsimpublic_tws.json'),
             'openeaagles_adapter_sha256':sha('mre2/model_substitution/openeaagles_adapter.py'),
-            'reference_adapter_sha256':sha('mre2/model_substitution/reference_tws.py'),
+            'radarsimpublic_adapter_sha256':sha('mre2/model_substitution/radarsimpublic_adapter.py'),
+            'radarsimpublic_radar_source_sha256':sha('upstream/RadarSimPublic/src/radar.py'),
+            'radarsimpublic_kalman_source_sha256':sha('upstream/RadarSimPublic/src/tracking/kalman_filters.py'),
+            'radarsimpublic_track_source_sha256':sha('upstream/RadarSimPublic/src/tracking/tracker_base.py'),
             'probe_sha256':sha(root/'oe_tws_probe'),
             'upper_trial_artifacts_modified_for_swap': report.get('upper_trial_artifacts_modified_for_swap') if report else None,
+            'binding_selections_changed': report.get('binding_selections_changed') if report else None,
             'different_trace_cases': report.get('cross_implementation_different_trace_cases') if report else None,
             'case_count_each': report.get('case_count_each') if report else None,
+            'radarsimpublic_all_cases_pass': bsum.get('all_cases_pass') if bsum else None,
+            'radarsimpublic_all_outputs_contract_valid': bsum.get('all_outputs_contract_valid') if bsum else None,
+            'licensing_note':'RadarSimPublic README states MIT License, but the frozen root snapshot does not contain a LICENSE file; no upstream source is redistributed in this DTEP evidence package.'
           }
           root.mkdir(parents=True,exist_ok=True)
-          (root/'evidence_summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          (root/'evidence_summary_real_v2.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
           PY
           cp jsbsim-build-compat.patch build/mre2/ 2>/dev/null || true
-          cat build/mre2/evidence_summary.json
+          cat build/mre2/evidence_summary_real_v2.json
 
-      - name: Upload E2 evidence bundle
+      - name: Upload real heterogeneous E2 evidence bundle
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: mre2-model-substitution-evidence
+          name: mre2-real-heterogeneous-model-substitution-evidence
           path: build/mre2/
