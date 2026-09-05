@@ -49,14 +49,20 @@ jobs:
               ('upstream/jsbsim/src/input_output/FGInputSocket.cpp',
                '} else if (node > 0) {',
                '} else if (node != 0) {'),
+              ('upstream/jsbsim/src/simgear/props/propertyObject.cxx',
+               '#include <simgear/structure/exception.hxx>',
+               '#include <stdexcept>'),
+              ('upstream/jsbsim/src/simgear/props/propertyObject.cxx',
+               'throw sg_exception("Unknown property:" + path);',
+               'throw std::runtime_error("Unknown property:" + path);'),
           ]
           for filename, old, new in fixes:
               p = Path(filename)
               s = p.read_text()
-              assert s.count(old) == 1, f'expected historical expression not found exactly once in {filename}'
+              assert s.count(old) == 1, f'expected historical expression not found exactly once in {filename}: {old}'
               p.write_text(s.replace(old, new))
           PY
-          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp src/input_output/FGInputSocket.cpp | tee jsbsim-build-compat.patch
+          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp src/input_output/FGInputSocket.cpp src/simgear/props/propertyObject.cxx | tee jsbsim-build-compat.patch
           sha256sum jsbsim-build-compat.patch
 
       - name: Build JSBSim compatibility snapshot
