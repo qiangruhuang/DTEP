@@ -1,54 +1,64 @@
-# VU-01 Real Version Update & Evidence Carry-Forward Evidence v1.0
+# VU-01 Real Version Update & Evidence Carry-Forward Evidence v1.1
 
-Status: **Frozen result: PASS**
+Status: **Corrected frozen result: VU-01a strict-byte FAIL; VU-01b numerical carry-forward PASS**
 
 Research target: **RQ4/RQ5 refinement — cumulative evidence under a real lifecycle change**
 
-Evidence run:
+## 1. Correction history
 
-- DTEP branch: `vu01-real-version-carry-forward`
-- GitHub Actions run: `34001226517`
-- Tested DTEP head: `6713568b032963e212e2930f094b3902eea13bb5`
-- Source MS-01 evidence run: `33971627414`
-- Source MS-01 artifact: `9971118509`
-- Source MS-01 artifact SHA-256: `7e4f421b04bf7dd9ca40964657ec7dc789fedcff1a66d85cefb9b6f2c6183bb1`
-- VU-01 artifact: `9979541204`
-- VU-01 artifact SHA-256: `3982a7df81356e0f3811d0898b14501b81ec7b547eeeefc96a72d9e59c5375bb`
-
-## 1. Why VU-01 was needed
-
-EA-01 showed, by replaying the frozen evidence dependency graph, that evidence can be retained while applicability is selectively invalidated after change.
-
-VU-01 converts that rule-based result into an **actual lifecycle event**.
-
-The question is:
-
-> After a real adapter/binding revision, can the system preserve historical evidence, reuse evidence whose dependencies did not change, selectively re-run only the affected qualification path, and reconstruct the current decision without resetting the entire evidence base?
-
-No new model or transport mechanism is introduced.
-
-## 2. Controlled real change
-
-The upstream RadarSimPublic model remains frozen at:
+The first VU-01 implementation used exact SHA-256 identity of floating-point canonical traces as the cross-run carry-forward criterion. One early run happened to satisfy 16/16 exact identity, but a later full branch-head rerun exposed that criterion as non-reproducible:
 
 ```text
-8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+VU-01a strict byte criterion
+Run: 34001315535
+Head: 499486e27fa7b4a4cbd44b3ad2e1ab35e420b627
+Result: FAIL
+Exact trace identity: 8 / 16
 ```
 
-The shared upper trial also remains unchanged:
+The failed run is retained as evidence and is not discarded.
+
+Artifact-level comparison against the prior MS-01 v2 RadarSimPublic traces showed that the non-identical moving-target traces differed only at floating-point representation scale. Across the 16 cases, the maximum observed absolute differences were approximately:
 
 ```text
-trial_spec.json
-SHA-256 = af041b33dbb481e0f0061e57d06a0d5e12623e9365b182570a654a314f1e4baf
-
-orchestrator.py
-SHA-256 = b8da984bd430cf0430ada9123f32077dc2c4d8c3e6667a9e07b7b1d8a4c939db
-
-capability_contract.json
-SHA-256 = f31bca5238105ea3925dca3b7cab8089cc6e00cd27efbce3f49c0d0b5fe67a2b
+range_m:          3.64e-12 m
+range_rate_mps:   5.68e-14 m/s
+quality:          2.22e-16
+average_signal_db:7.11e-15 dB
 ```
 
-The change is limited to the RadarSimPublic adapter/binding revision:
+Static cases remained byte-identical. A representative first difference was:
+
+```text
+33.02970199401323
+vs
+33.029701994013237
+```
+
+The frozen RadarSimPublic constant-velocity filter itself propagates state and covariance through deterministic matrix operations; its `Q` is a covariance matrix rather than a sampled random process. Radar SNR is calculated from deterministic radar-equation arithmetic and `np.log10`. The observed issue is therefore treated as cross-run floating-point numerical representation sensitivity, not evidence of stochastic model behavior.
+
+This exposed an important methodological error: **cross-run evidence carry-forward for a numerical model must not assume byte identity unless the execution environment guarantees bitwise reproducibility.**
+
+## 2. Corrected VU-01b criterion
+
+VU-01b preserves discrete trace structure exactly and normalizes only floating fields for the cross-run representation comparison:
+
+```text
+META records: exact
+S records:    exact
+T frame/id:   exact
+T float fields: decimal normalization to 9 places
+```
+
+The normalized traces are then hashed with SHA-256.
+
+This is a numerical-representation criterion for lifecycle evidence comparison; it is **not** a radar-fidelity tolerance.
+
+A negative control deliberately perturbs one `range_m` value by `1e-6 m`, three orders of magnitude above the normalization resolution, and the comparator must reject it.
+
+## 3. Controlled real change
+
+The actual lifecycle change remains unchanged from VU-01a:
 
 ```text
 old adapter:
@@ -61,31 +71,40 @@ old binding version: 1.0.0
 new binding version: 1.1.0
 ```
 
-The new adapter revision changes provenance evidence only. Canonical trace generation still delegates to the unchanged v1 adapter logic.
+The new revision changes provenance evidence only and delegates canonical trace generation to the original adapter logic.
 
-The following remain identical between the old and new binding:
+Frozen invariants:
 
 ```text
-Capability_ID
-Implementation_ID
-Contract_ID
-Semantic_Profile_ID
-RadarSimPublic upstream commit
-declared semantic mapping
+RadarSimPublic upstream commit:
+8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+
+trial_spec SHA-256:
+af041b33dbb481e0f0061e57d06a0d5e12623e9365b182570a654a314f1e4baf
+
+orchestrator SHA-256:
+b8da984bd430cf0430ada9123f32077dc2c4d8c3e6667a9e07b7b1d8a4c939db
+
+capability_contract SHA-256:
+f31bca5238105ea3925dca3b7cab8089cc6e00cd27efbce3f49c0d0b5fe67a2b
+
+Capability_ID / Implementation_ID / Contract_ID / Semantic_Profile_ID:
+unchanged
+
+declared semantic mapping:
+unchanged
 ```
 
-This is deliberately a narrow, controlled version update suitable for testing evidence carry-forward.
+## 4. Evidence state immediately after change
 
-## 3. Evidence state immediately after change
-
-Before any delta reassessment, the dependency rules conservatively produce:
+Before reassessment, the dependency rules conservatively produce:
 
 ```text
 ACTIVE:
   BP-01
   SP-01
 
-STALE for the changed configuration:
+STALE for current configuration:
   MS-01-v2
   EQ-01-v1
   EB-01-v1
@@ -98,65 +117,58 @@ HISTORICALLY RETAINED:
   EB-01-v1
 ```
 
-Thus the change does not erase prior experiments. It only changes which evidence can be used as current qualification evidence.
+Thus a version change changes applicability, not history.
 
-## 4. Selective delta requalification
+## 5. Corrected delta-requalification result
 
-VU-01 did not rebuild or re-run every preceding experiment.
+Corrected run:
 
-It reused without re-execution:
+```text
+VU-01b
+Run: 34001585171
+Tested head: a55e48a169c3f398b6ff4e4229adfdb75fd1777d
+Artifact ID: 9979638632
+Artifact SHA-256:
+86abdfc4cb8aca8e5778556fa86b20e59cdd222c8fdd88817b0967134828fb76
+Decision: PASS
+```
+
+Updated binding execution:
+
+```text
+cases executed:       16 / 16
+cases passed:         16 / 16
+contract-valid:       16 / 16
+```
+
+Cross-run comparison against the original MS-01 v2 RadarSimPublic artifact:
+
+```text
+9-decimal normalized equivalence: 16 / 16
+negative-control perturbation:     correctly rejected
+```
+
+Exact byte identity is retained only as a diagnostic, not as the portability gate. Depending on the runner, exact identity may be 8/16 or 16/16; this variability is itself why the corrected criterion is necessary.
+
+## 6. Current evidence carry-forward
+
+VU-01b reuses without re-execution:
 
 ```text
 BP-01
 SP-01
 ```
 
-because the OpenEaagles behavior-preservation envelope and the declared semantic mapping/profile were unchanged.
-
-The changed RadarSimPublic binding was then executed under the frozen upper trial for the same 16 E2 cases.
-
-Result:
+and performs delta reassessment of the current decision path:
 
 ```text
-updated binding cases executed:       16 / 16
-updated binding cases passed:         16 / 16
-updated outputs contract-valid:       16 / 16
+MS-01 architectural substitution
+EQ-01 intended-use screening
 ```
 
-The new canonical traces were compared against the exact RadarSimPublic trace hashes preserved from the prior MS-01 v2 artifact.
+`EB-01-v1` is retained historically and is not silently declared current for the revised configuration.
 
-Result:
-
-```text
-new vs prior RadarSimPublic trace identity:
-16 / 16 byte-identical
-```
-
-Therefore, for this controlled revision:
-
-```text
-Y_adapter_v2(i) == Y_adapter_v1(i)
-for all 16 frozen cases
-```
-
-## 5. Current decision after delta evidence
-
-Following the delta reassessment:
-
-```text
-reused without re-execution:
-  BP-01
-  SP-01
-
-delta reassessed:
-  MS-01 architectural substitution
-  EQ-01 intended-use screening
-
-retained historical, not re-executed:
-  EB-01-v1
-```
-
-Current states are restored as:
+Current states after VU-01b:
 
 ```text
 architectural substitution:
@@ -172,95 +184,80 @@ RF semantic relation:
 UNKNOWN
 ```
 
-The real `UNKNOWN` therefore survives the version update. The successful adapter revision does not silently resolve an unrelated semantic-evidence gap.
-
-## 6. VU-01 predicates
-
-All nine frozen predicates passed:
-
-| Predicate | Result |
-|---|---|
-| same RadarSimPublic upstream model commit | PASS |
-| same capability, implementation, contract and semantic-profile identity | PASS |
-| same declared semantic mapping | PASS |
-| adapter/binding revision is real | PASS |
-| frozen upper trial unchanged | PASS |
-| old binding matches frozen MS-01 v2 reference | PASS |
-| updated binding executes all 16 cases | PASS |
-| updated outputs equal prior RadarSimPublic traces 16/16 | PASS |
-| real RF `UNKNOWN` remains unresolved | PASS |
-
-Overall:
-
-```text
-VU-01 = PASS
-```
+The real `UNKNOWN` therefore survives a successful version update and corrected requalification. Maintenance success does not resolve an unrelated evidence gap.
 
 ## 7. Research interpretation
 
-VU-01 is the first actual lifecycle demonstration of **selective evidence carry-forward** in this study.
+VU-01 produced two useful results rather than one uniformly positive result.
 
-The important result is not that the change was small. It is that the evidence system behaved differently from both undesirable extremes:
+First, the failed strict-byte rerun demonstrates that the **evidence rule itself must be qualified**. A deterministic numerical model can be behaviorally stable while differing in last-bit floating representation across executions. Reusing an inappropriate evidence criterion would make the evidence-management system brittle.
 
-```text
-Extreme A:
-any change -> rerun everything
-
-Extreme B:
-any change -> trust everything old
-```
-
-Instead:
+Second, VU-01b demonstrates the intended lifecycle behavior:
 
 ```text
 real change
   -> identify affected evidence
-  -> preserve unaffected evidence
-  -> re-run the affected current-decision path
+  -> retain all historical evidence
+  -> reuse unaffected evidence
+  -> apply an evidence-type-appropriate delta criterion
   -> append delta evidence
-  -> retain the old evidence historically
+  -> reconstruct current intended-use state
 ```
 
-This is the operational meaning of "manageable and cumulative" in the present research.
+This is stronger than a simple claim that evidence can be stored or reused.
 
-## 8. Stronger combined EA-01 + VU-01 claim
+## 8. Combined EA-01 + VU-01 contribution
 
-EA-01 established the logic of an append-only, dependency-aware evidence chain.
+EA-01 established that:
 
-VU-01 then exercised that logic with a real code/binding revision.
+```text
+provenance accumulation is monotonic
+qualification is not monotonic
+```
 
-Together they support:
+VU-01 adds that:
 
-> Evidence accumulation can be provenance-monotonic while current qualification remains configuration-dependent. A real version change can invalidate only the affected applicability chain, preserve unrelated evidence, append delta evidence, and retain unresolved `UNKNOWN` states until relevant evidence explicitly resolves them.
+```text
+evidence criteria are themselves typed by model/execution behavior
+```
 
-This is a stronger digital T&E claim than source-code reduction or nominal integration-time reduction.
+Therefore cumulative digital T&E evidence requires at least three separations:
+
+```text
+historical retention != current applicability
+current applicability != intended-use qualification
+numerical equivalence != byte identity
+```
+
+Together they support the paper-level proposition:
+
+> Evidence can accumulate without being blindly inherited. After a controlled version change, affected evidence may be made stale, unaffected evidence retained, and current qualification restored by delta evidence using a comparison rule appropriate to the numerical behavior of the model; unresolved evidence gaps remain explicit.
 
 ## 9. Boundary of inference
 
-VU-01 remains deliberately narrow:
+VU-01b remains deliberately narrow:
 
-- it is an adapter/binding provenance revision, not an upstream RadarSimPublic model-algorithm update;
-- the canonical output was expected to remain unchanged and did remain unchanged;
-- it does not prove that major model-version changes can always use delta requalification;
-- it does not establish authoritative VV&A or accreditation;
-- it does not measure organization-wide governance performance;
-- it does not imply that EB-01 remains current evidence after this revision; EB-01 is retained historically unless separately reassessed for the new configuration.
+- it is an adapter/binding provenance revision, not an upstream model-algorithm update;
+- 9-decimal normalization is a representation-comparison rule, not a model-validity threshold;
+- the correction was introduced after VU-01a exposed the inadequacy of exact byte identity and must therefore be described transparently as a corrected analysis;
+- major algorithm/version changes may require a fuller reassessment;
+- authoritative VV&A/accreditation remains outside this gate;
+- enterprise-scale evidence management is not established.
 
-## 10. Evidence identity
+## 10. Evidence identities
 
 ```text
-Evidence_Set_ID:
-vu01.tws.real-version-carry-forward.2026-09-06.v1
+Diagnostic strict-byte failure:
+Run 34001315535
+Head 499486e27fa7b4a4cbd44b3ad2e1ab35e420b627
+Decision FAIL
+Exact identity 8/16
 
-CI Run:
-34001226517
-
-Tested DTEP head:
-6713568b032963e212e2930f094b3902eea13bb5
-
-Artifact ID:
-9979541204
-
-Artifact SHA-256:
-3982a7df81356e0f3811d0898b14501b81ec7b547eeeefc96a72d9e59c5375bb
+Corrected evidence set:
+vu01b.tws.numeric-version-carry-forward.2026-09-06.v1
+Run 34001585171
+Head a55e48a169c3f398b6ff4e4229adfdb75fd1777d
+Artifact 9979638632
+Artifact SHA-256 86abdfc4cb8aca8e5778556fa86b20e59cdd222c8fdd88817b0967134828fb76
+Decision PASS
 ```
