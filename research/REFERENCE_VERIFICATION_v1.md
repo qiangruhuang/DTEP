@@ -1,6 +1,6 @@
-# Reference Verification v1.0
+# Reference Verification v1.1
 
-Status: **Core reference verification in progress**
+Status: **Core reference metadata verified; optional policy citation remains**
 
 Date: 2026-09-06
 
@@ -74,45 +74,43 @@ Fonseca i Casas P. A Continuous Process for Validation, Verification, and Accred
 
 Status: **VERIFIED** from publisher.
 
-### [10] Owen & Chakrabortty
+### [10] Noguchi 2025
+
+Noguchi R. Standards Gaps for Enabling Model Interoperability for MBSE in a Digital Engineering Context. *INCOSE International Symposium*. 2025;35(1):427–443. doi: **10.1002/iis2.70030**.
+
+Status: **VERIFIED** from Wiley/INCOSE.
+
+### [11] Owen & Chakrabortty
 
 Owen KR, Chakrabortty RK. Verification, validation, and accreditation for models and simulations in the Australian defence context: a review. *The Journal of Defense Modeling and Simulation*. 2024;21(2):205–227. First published online 21 Nov 2022. doi: **10.1177/15485129221134632**.
 
 Status: **VERIFIED** from SAGE. Manuscript references should use the issue year 2024 and may note online-first 2022 only if journal style requires it.
 
-### [11] Eichenseer et al. 2023
+### [12] Eichenseer et al. 2023
 
 Eichenseer F, Heinkel H-M, Benedikt M, Ahmann M, Holzner M, Stadler C. Modeling & Simulation SPICE: Assessing the Capability of Credible Simulation Processes. *INCOSE International Symposium*. 2023;33(1):399–415. doi: **10.1002/iis2.13029**.
 
 Status: **VERIFIED** from Wiley/INCOSE.
 
-### [12] Erdemir et al. 2020
+### [13] Erdemir et al. 2020
 
 Erdemir A, Mulugeta L, Ku JP, Drach A, Horner M, Morrison TM, Peng GCY, Vadigepalli R, Lytton WW, Myers JG Jr. Credible practice of modeling and simulation in healthcare: ten rules from a multidisciplinary perspective. *Journal of Translational Medicine*. 2020;18(1):369. doi: **10.1186/s12967-020-02540-4**.
 
 Status: **VERIFIED** from PubMed/publisher metadata.
 
-### [13] Zschaler et al.
+### [14] Zschaler et al.
 
 Zschaler S, Mustafee N, Harper A, Monks T, Onggo BS, Currie CSM, Polack FAC. On simulation reuse in healthcare applications. *Simulation*. 2026;102(2):149–165. First published online 12 Nov 2025. doi: **10.1177/00375497251383912**.
 
 Status: **VERIFIED** from SAGE/PubMed. Manuscript should use the issue year 2026 rather than online-first year 2025 unless target style explicitly uses e-publication year.
 
-## C. Still pending before submission
-
-### Noguchi 2025
-
-`Standards Gaps for Enabling Model Interoperability for MBSE in a Digital Engineering Context`.
-
-Title/authorship/venue were discovered, but final publisher DOI/pages have not yet been frozen in this verification file.
-
-Status: **PENDING PUBLISHER METADATA**.
+## C. Optional item before submission
 
 ### SD-28 / exact 2026 MOSA standardization-decision citation
 
-The manuscript can rely on the official MOSA webpage and implementation guidebook without SD-28 if exact bibliographic metadata is not needed. If SD-28 remains in the final reference list, verify the authoritative document record before submission.
+The manuscript does not need SD-28 if it cites the official MOSA webpage plus the 2025 Implementation Guidebook. If SD-28 is retained in a later draft, verify the authoritative document record before submission.
 
-Status: **OPTIONAL / PENDING IF RETAINED**.
+Status: **OPTIONAL / NOT REQUIRED FOR CURRENT REFERENCE SET**.
 
 ## D. Reference-use discipline
 
