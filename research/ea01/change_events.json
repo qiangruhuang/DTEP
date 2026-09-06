@@ -1,0 +1,66 @@
+{
+  "change_profile_id": "ea01.change-events.v1",
+  "events": [
+    {
+      "event_id": "C1_metadata_only",
+      "changed_dimensions": ["documentation_metadata"],
+      "expected_directly_stale": [],
+      "expected_final_stale": []
+    },
+    {
+      "event_id": "C2_semantic_mapping",
+      "changed_dimensions": ["semantic_mapping"],
+      "expected_directly_stale": [
+        "sp01.tws.semantic-precheck.2026-09-05.v1",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ],
+      "expected_final_stale": [
+        "sp01.tws.semantic-precheck.2026-09-05.v1",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ]
+    },
+    {
+      "event_id": "C3_radarsimpublic_adapter",
+      "changed_dimensions": ["radarsimpublic_adapter"],
+      "expected_directly_stale": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ],
+      "expected_final_stale": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ]
+    },
+    {
+      "event_id": "C4_upper_trial_spec",
+      "changed_dimensions": ["trial_spec"],
+      "expected_directly_stale": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ],
+      "expected_final_stale": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ]
+    },
+    {
+      "event_id": "C5_capability_contract",
+      "changed_dimensions": ["capability_contract"],
+      "expected_directly_stale": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "sp01.tws.semantic-precheck.2026-09-05.v1"
+      ],
+      "expected_final_stale": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "sp01.tws.semantic-precheck.2026-09-05.v1",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+        "eb01.tws.paired-engineering-burden.2026-09-06.v1"
+      ]
+    }
+  ]
+}
