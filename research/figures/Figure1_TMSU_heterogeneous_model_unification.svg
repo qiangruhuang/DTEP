@@ -1,16 +1,57 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="900" viewBox="0 0 1400 900">
-<style>
-text{font-family:Arial,Helvetica,sans-serif;fill:#111} .t{font-size:30px;font-weight:700}.h{font-size:23px;font-weight:700}.b{font-size:19px}.s{font-size:16px}.box{fill:#fff;stroke:#222;stroke-width:2}.soft{fill:#f5f5f5;stroke:#555;stroke-width:1.6}.dash{fill:#fff;stroke:#555;stroke-width:2;stroke-dasharray:8 6}.arrow{stroke:#222;stroke-width:2.5;fill:none;marker-end:url(#a)} .thin{stroke:#777;stroke-width:1.6;fill:none;marker-end:url(#a)}
-</style><defs><marker id="a" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#222"/></marker></defs>
-<text x="700" y="48" text-anchor="middle" class="t">Figure 1. TMSU unifies heterogeneous model implementations at a stable trial-facing capability boundary</text>
-<rect x="470" y="90" width="460" height="120" rx="14" class="box"/><text x="700" y="126" text-anchor="middle" class="h">Upper trial / scenario logic</text><text x="700" y="160" text-anchor="middle" class="b">frozen trial specification + orchestrator</text><text x="700" y="188" text-anchor="middle" class="s">does not encode concrete model internals</text>
-<path d="M700 210 L700 270" class="arrow"/>
-<rect x="305" y="270" width="790" height="175" rx="16" class="dash"/><text x="700" y="306" text-anchor="middle" class="h">SAL-aligned Test Model Service Unit (TMSU)</text><text x="700" y="338" text-anchor="middle" class="b">logical packaging / conformance unit — not runtime middleware</text>
-<rect x="355" y="360" width="210" height="55" rx="8" class="soft"/><text x="460" y="394" text-anchor="middle" class="b">Capability_ID</text><rect x="595" y="360" width="210" height="55" rx="8" class="soft"/><text x="700" y="394" text-anchor="middle" class="b">Contract_ID</text><rect x="835" y="360" width="210" height="55" rx="8" class="soft"/><text x="940" y="394" text-anchor="middle" class="b">Semantic_Profile_ID</text>
-<text x="700" y="438" text-anchor="middle" class="b">Capability_ID ≠ Implementation_ID</text>
-<path d="M520 445 L350 520" class="arrow"/><path d="M880 445 L1050 520" class="arrow"/>
-<rect x="110" y="520" width="480" height="225" rx="16" class="box"/><text x="350" y="558" text-anchor="middle" class="h">Implementation A — OpenEaagles TWS</text><text x="350" y="592" text-anchor="middle" class="b">legacy C++ implementation</text><text x="145" y="635" class="b">• distinct Implementation_ID</text><text x="145" y="668" class="b">• wrapper / binding</text><text x="145" y="701" class="b">• provenance + evidence links</text><text x="145" y="734" class="s">BP-01: 16/16 preserved</text>
-<rect x="810" y="520" width="480" height="225" rx="16" class="box"/><text x="1050" y="558" text-anchor="middle" class="h">Implementation B — RadarSimPublic</text><text x="1050" y="592" text-anchor="middle" class="b">independent Python / NumPy implementation</text><text x="845" y="635" class="b">• distinct Implementation_ID</text><text x="845" y="668" class="b">• adapter / binding</text><text x="845" y="701" class="b">• provenance + evidence links</text><text x="845" y="734" class="s">MS-01: 16/16 execution</text>
-<path d="M590 632 L810 632" class="thin"/><text x="700" y="615" text-anchor="middle" class="s">same trial-facing capability contract</text><text x="700" y="665" text-anchor="middle" class="s">different internal architectures and behavior</text>
-<rect x="250" y="790" width="900" height="72" rx="12" class="soft"/><text x="700" y="820" text-anchor="middle" class="b">Empirical substitution result: change binding, not upper trial logic</text><text x="700" y="848" text-anchor="middle" class="s">OpenEaagles 16/16 PASS; RadarSimPublic 16/16 PASS; upper-trial modifications = 0</text>
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="960" viewBox="0 0 1600 960" role="img" aria-labelledby="title desc">
+<title id="title">TMSU heterogeneous-model unification at a stable trial-facing capability boundary</title>
+<desc id="desc">A stable upper trial addresses a shared capability contract. OpenEaagles and RadarSimPublic remain distinct implementations selected by bindings, with separate provenance and evidence.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#17202a}.panel{font-size:26px;font-weight:700}.head{font-size:25px;font-weight:700}.body{font-size:20px}.small{font-size:17px}.mono{font-family:'Courier New',monospace;font-size:18px}.box{fill:#ffffff;stroke:#334155;stroke-width:2}.cap{fill:#eef4f8;stroke:#355f7c;stroke-width:2.2}.implA{fill:#f7f9fb;stroke:#475569;stroke-width:2}.implB{fill:#f7f9fb;stroke:#475569;stroke-width:2}.note{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5}.dash{fill:#ffffff;stroke:#355f7c;stroke-width:2.4;stroke-dasharray:9 6}.arr{stroke:#334155;stroke-width:2.4;fill:none;marker-end:url(#arrow)}.thin{stroke:#64748b;stroke-width:1.6;fill:none}.accent{fill:#355f7c;font-weight:700}.rule{stroke:#cbd5e1;stroke-width:1.2}
+  </style>
+</defs>
+<text x="70" y="62" class="panel">A</text>
+<rect x="500" y="78" width="600" height="118" rx="16" class="box"/>
+<text x="800" y="118" text-anchor="middle" class="head">Upper trial / scenario logic</text>
+<text x="800" y="154" text-anchor="middle" class="body">Frozen trial specification + orchestrator</text>
+<text x="800" y="181" text-anchor="middle" class="small">No concrete-model internals encoded in the upper trial</text>
+<path d="M800 196 L800 258" class="arr"/>
+
+<rect x="270" y="258" width="1060" height="220" rx="20" class="dash"/>
+<text x="800" y="302" text-anchor="middle" class="head">SAL-aligned Test Model Service Unit (TMSU)</text>
+<text x="800" y="337" text-anchor="middle" class="body">Logical packaging / conformance unit — not runtime middleware</text>
+<rect x="345" y="372" width="260" height="62" rx="10" class="cap"/>
+<rect x="670" y="372" width="260" height="62" rx="10" class="cap"/>
+<rect x="995" y="372" width="260" height="62" rx="10" class="cap"/>
+<text x="475" y="411" text-anchor="middle" class="mono">Capability_ID</text>
+<text x="800" y="411" text-anchor="middle" class="mono">Contract_ID</text>
+<text x="1125" y="411" text-anchor="middle" class="mono">Semantic_Profile_ID</text>
+<text x="800" y="462" text-anchor="middle" class="body accent">Capability_ID ≠ Implementation_ID</text>
+
+<path d="M555 478 C505 520 455 538 405 570" class="arr"/>
+<path d="M1045 478 C1095 520 1145 538 1195 570" class="arr"/>
+
+<text x="70" y="560" class="panel">B</text>
+<rect x="95" y="570" width="590" height="248" rx="18" class="implA"/>
+<text x="390" y="612" text-anchor="middle" class="head">Implementation A — OpenEaagles TWS</text>
+<text x="390" y="646" text-anchor="middle" class="body">Legacy C++ / AirTrkMgr</text>
+<line x1="135" y1="668" x2="645" y2="668" class="rule"/>
+<text x="140" y="704" class="body">Distinct implementation identity</text>
+<text x="140" y="738" class="body">Wrapper + binding</text>
+<text x="140" y="772" class="body">Provenance + evidence links</text>
+<text x="140" y="806" class="small accent">BP-01: 16/16 behavior-preserved in frozen envelope</text>
+
+<rect x="915" y="570" width="590" height="248" rx="18" class="implB"/>
+<text x="1210" y="612" text-anchor="middle" class="head">Implementation B — RadarSimPublic</text>
+<text x="1210" y="646" text-anchor="middle" class="body">Independent Python / NumPy implementation</text>
+<line x1="955" y1="668" x2="1465" y2="668" class="rule"/>
+<text x="960" y="704" class="body">Distinct implementation identity</text>
+<text x="960" y="738" class="body">Adapter + binding</text>
+<text x="960" y="772" class="body">Provenance + evidence links</text>
+<text x="960" y="806" class="small accent">MS-01: 16/16 execution under frozen upper trial</text>
+
+<path d="M685 692 L915 692" class="thin"/>
+<text x="800" y="682" text-anchor="middle" class="small">same trial-facing capability</text>
+<text x="800" y="716" text-anchor="middle" class="small">different internal architectures</text>
+
+<rect x="275" y="858" width="1050" height="72" rx="12" class="note"/>
+<text x="800" y="887" text-anchor="middle" class="body accent">Empirical substitution: change implementation binding, not upper-trial logic</text>
+<text x="800" y="916" text-anchor="middle" class="small">OpenEaagles 16/16; RadarSimPublic 16/16; upper-trial modifications = 0</text>
 </svg>
