@@ -1,0 +1,114 @@
+{
+  "manifest_id": "tmsu.wp1.evidence-manifest.2026-09-06.v1",
+  "status": "WP1_EMPIRICAL_MECHANISM_FROZEN",
+  "principles": {
+    "history": "APPEND_ONLY_LOGICAL_RECORD",
+    "qualification": "CONFIGURATION_AND_INTENDED_USE_DEPENDENT",
+    "unknown_policy": "PERSIST_UNTIL_RELEVANT_EVIDENCE_RESOLVES",
+    "carry_forward": "DEPENDENCY_AND_EVIDENCE_TYPE_AWARE",
+    "algorithm_change_policy": "NO_AUTOMATIC_IMPLEMENTATION_SPECIFIC_INHERITANCE"
+  },
+  "capability_id": "sensor.tws.track",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "evidence_chain": [
+    {
+      "evidence_id": "BP-01",
+      "kind": "BEHAVIOR_PRESERVATION",
+      "status": "PASS",
+      "ci_run": 33962481425,
+      "implementation_scope": ["openeaagles.tws.airtrkmgr@b3d7e74"],
+      "claim": "legacy wrapper preserves declared observable behavior within frozen deterministic envelope",
+      "report": "mre1/openeaagles/BEHAVIOR_PRESERVATION_EVIDENCE_v1.md",
+      "depends_on": []
+    },
+    {
+      "evidence_id": "MS-01-v2",
+      "kind": "ARCHITECTURAL_MODEL_SUBSTITUTION",
+      "status": "PASS",
+      "ci_run": 33971627414,
+      "implementation_scope": [
+        "openeaagles.tws.airtrkmgr@b3d7e74",
+        "radarsimpublic.radar-kf@8b63f82"
+      ],
+      "claim": "real heterogeneous implementations execute behind one frozen upper trial and structural capability contract",
+      "report": "mre2/model_substitution/E2_MODEL_SUBSTITUTION_REAL_EVIDENCE_v2.md",
+      "depends_on": ["BP-01"]
+    },
+    {
+      "evidence_id": "SP-01",
+      "kind": "SEMANTIC_PRECHECK",
+      "status": "PASS_WITH_REAL_UNKNOWN",
+      "ci_run": 33977174819,
+      "claim": "structurally valid semantic mismatches are detected; unresolved RF concept remains UNKNOWN",
+      "report": "research/SP01_SEMANTIC_PRECHECK_EVIDENCE_v1.md",
+      "depends_on": ["MS-01-v2"]
+    },
+    {
+      "evidence_id": "EQ-01-v1",
+      "kind": "INTENDED_USE_QUALIFICATION_SCREEN",
+      "status": "PASS",
+      "ci_run": 33998600234,
+      "claim": "qualification depends on intended use, evidence scope and domain; insufficient evidence returns UNKNOWN",
+      "report": "research/EQ01_EVIDENCE_AWARE_QUALIFICATION_EVIDENCE_v1.md",
+      "depends_on": ["BP-01", "MS-01-v2", "SP-01"]
+    },
+    {
+      "evidence_id": "EB-01-v1",
+      "kind": "CHANGE_RADIUS_ENGINEERING_BURDEN",
+      "status": "PASS_BOUNDED",
+      "ci_run": 33999279669,
+      "claim": "model-specific change is isolated outside shared upper trial and reassessment propagation is reduced for a controlled semantic update",
+      "report": "research/EB01_ENGINEERING_BURDEN_EVIDENCE_v1.md",
+      "depends_on": ["MS-01-v2", "SP-01", "EQ-01-v1"]
+    },
+    {
+      "evidence_id": "EA-01",
+      "kind": "EVIDENCE_ACCUMULATION_LIFECYCLE",
+      "status": "PASS",
+      "ci_run": 34000965675,
+      "claim": "evidence history accumulates while applicability can become selectively stale and UNKNOWN persists",
+      "depends_on": ["BP-01", "MS-01-v2", "SP-01", "EQ-01-v1", "EB-01-v1"]
+    },
+    {
+      "evidence_id": "VU-01a",
+      "kind": "STRICT_BYTE_CARRY_FORWARD_CRITERION",
+      "status": "FAIL_RETAINED_NEGATIVE_RESULT",
+      "ci_run": 34001315535,
+      "claim": "exact floating-trace byte identity is not a robust generic cross-run carry-forward criterion",
+      "depends_on": ["EA-01", "MS-01-v2", "SP-01", "EQ-01-v1"]
+    },
+    {
+      "evidence_id": "VU-01b",
+      "kind": "TYPED_DELTA_CARRY_FORWARD",
+      "status": "PASS",
+      "ci_run": 34001585171,
+      "final_head_validation_run": 34001696429,
+      "claim": "a provenance-only adapter/binding revision can restore affected claims with evidence-type-appropriate numerical delta evidence while preserving unrelated UNKNOWN",
+      "report": "research/VU01_REAL_VERSION_CARRY_FORWARD_EVIDENCE_v1.md",
+      "depends_on": ["EA-01", "VU-01a", "MS-01-v2", "SP-01", "EQ-01-v1"]
+    },
+    {
+      "evidence_id": "LC-01",
+      "kind": "MODEL_ALGORITHM_CARRY_FORWARD_BOUNDARY",
+      "status": "PASS",
+      "ci_run": 34004499753,
+      "implementation_scope": [
+        "radarsimpublic.radar-kf@8b63f82",
+        "radarsimpublic.radar-ca-kf@8b63f82"
+      ],
+      "claim": "substantive model-algorithm and implementation-identity changes reject automatic implementation-specific qualification inheritance while unaffected evidence remains reusable",
+      "report": "research/LC01_ALGORITHM_CHANGE_CARRY_FORWARD_BOUNDARY_EVIDENCE_v1.md",
+      "depends_on": ["EA-01", "VU-01b", "MS-01-v2", "SP-01", "EQ-01-v1"]
+    }
+  ],
+  "current_reference_configuration": {
+    "implementation_id": "radarsimpublic.radar-ca-kf@8b63f82",
+    "architectural_execution": "PASS_FRESH_EXECUTION",
+    "kinematic_intended_use": "UNKNOWN_PENDING_FRESH_FITNESS_EVIDENCE",
+    "rf_semantic_relation": "UNKNOWN",
+    "rf_performance_intended_use": "UNKNOWN"
+  },
+  "lifecycle_profile": "tmsu/evidence/EVIDENCE_LIFECYCLE_PROFILE_v1_2.md",
+  "wp1_audit": "research/WP1_FORMAL_RESULTS_AND_RQ_AUDIT_v1_5.md"
+}
