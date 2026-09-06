@@ -1,0 +1,18 @@
+{
+  "profile_id": "tmsu.intended-use-screen.v1",
+  "version": "1.0.0",
+  "status": "preregistered",
+  "decision_states": [
+    "QUALIFIED_WITHIN_EVIDENCE",
+    "NOT_QUALIFIED",
+    "UNKNOWN"
+  ],
+  "rules": {
+    "semantic_conflict": "NOT_QUALIFIED",
+    "semantic_unknown_on_required_observable": "UNKNOWN",
+    "requested_domain_outside_evidence": "UNKNOWN",
+    "required_evidence_absent": "UNKNOWN",
+    "all_required_conditions_supported": "QUALIFIED_WITHIN_EVIDENCE"
+  },
+  "important_boundary": "This is an evidence-sufficiency screening decision, not authoritative accreditation or a claim that the underlying model is operationally valid."
+}

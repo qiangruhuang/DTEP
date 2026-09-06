@@ -1,0 +1,49 @@
+{
+  "source_evidence_id": "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+  "source_ci_run": 33971627414,
+  "source_artifact_id": 9971118509,
+  "source_artifact_sha256": "7e4f421b04bf7dd9ca40964657ec7dc789fedcff1a66d85cefb9b6f2c6183bb1",
+  "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+  "normalization": {
+    "name": "canonical_numeric_9dp_v1",
+    "rule": "META and S records exact; T frame/track_id exact; T floating fields normalized with decimal format .9f before SHA-256",
+    "purpose": "cross-run numerical reproducibility for lifecycle carry-forward; not a model-fidelity tolerance",
+    "negative_control_delta": 1e-6
+  },
+  "trace_hashes_exact": {
+    "d10_a00_r01_closing": "5a38972b9c8dbce15ba0d79f7bd995741e7806f464025931b86920f8fbb6a60f",
+    "d10_a00_r01_static": "8957a0b6f22103aed97db1f8dc0962955188bc64a4dd9793c03522ad879369dd",
+    "d10_a00_r04_closing": "a0fc4816834499c6cb4e280b76d98bb6c40a938a671172eac898ebe112abb936",
+    "d10_a00_r04_static": "70aa352702a189f281279fe68d5bb5a0bc692eaeb7648c50d18937bfa7e635b1",
+    "d10_a20_r01_closing": "c0dc8fcb5fa40e6b4553c7c54c689236d3fc6e96392ef6d5a4dbb4732bd40a35",
+    "d10_a20_r01_static": "a6641e07fa94d8e2caf1f42b7933b2295f7fd7d690fe0b4d369faf00a91f1816",
+    "d10_a20_r04_closing": "f103c86c688ee9c61a82ff7a1e9dc163951ed2a4554b5c47edd417122f1f6a63",
+    "d10_a20_r04_static": "30bf2ee5fd4dc7432a49596c4c8f4e17c9cbc9da52331e4779d0445bdf9ce85a",
+    "d20_a00_r01_closing": "c93a26bc8e106775ab672f10d14146c4e1893d829d98b3249ae525172c2e2b5d",
+    "d20_a00_r01_static": "eb83c0004af955564b25915d94237b055735056beb578a3b476a0e0e42cb6b3a",
+    "d20_a00_r04_closing": "eb69c12a914fc11a04e56ba1ad63a2d91cc61e94291c686de57c0a73db0dffa9",
+    "d20_a00_r04_static": "2b1d309ba599dbd2dab6aefc333b65fed8b44c01843a2272bce37149d0bb4b46",
+    "d20_a20_r01_closing": "148c753db42b46495f5a414cf0018111df4b173d6f90d78f0f8e5fa2e56d3091",
+    "d20_a20_r01_static": "948bbd44424a2b2421d63c123f5a418676db3ea7990f8065be88784232726234",
+    "d20_a20_r04_closing": "214e01c32119e7438d3ecdcb6c6336d439f261db90e2afcd86bb6830ada1a3e5",
+    "d20_a20_r04_static": "8751669fa0e47515f889824a12c1628facb4b0ef463aa7007ce6d808018adcff"
+  },
+  "trace_hashes_numeric_9dp": {
+    "d10_a00_r01_closing": "5019f456fa918d28e8b3794b8818c29760aa7d8b5f414214cd455469fac8b6a9",
+    "d10_a00_r01_static": "f73257f488a1653d377ea215837593587d580e1233d23015f5032979473f98af",
+    "d10_a00_r04_closing": "4e3d9ea95075d90512abdf67989fcc152886b70aab88dd7324556b768c90bc4b",
+    "d10_a00_r04_static": "53283e828579014e49f942a1ac1733913971446f39502be10085a5a517cbb3ba",
+    "d10_a20_r01_closing": "64b5fc8d279ec475377e6f3967e1bbb99d19c3181502fe3f72a3cf299c5f6660",
+    "d10_a20_r01_static": "f552180463baa773100932b29287e8e730053040d0e02fafc6db66ad80793da6",
+    "d10_a20_r04_closing": "64733dfb455502aa2bcde747de0e98db1001b66d55c846b0ec910172f280cbb8",
+    "d10_a20_r04_static": "95ff91048f883d50198df3ceb8f06f35bf499d693de109836598adb4f8967b03",
+    "d20_a00_r01_closing": "84acb88ad3f04b02be6ad6a12afb0cd3145e7f97ceac84fe52bf5ac63fca8ef5",
+    "d20_a00_r01_static": "5821665a5f3979773d65979432a94cc59f9fe1c59f540e148248f1d190ecfd38",
+    "d20_a00_r04_closing": "87433e9e6bb79a63e8a6d569b97c3daa4154e001f304caae2993d6a59abcc059",
+    "d20_a00_r04_static": "bf836d9ebf1a54d1f5928842ffc3ce12e3d9f4a3a2642bb7bb4e09a80b679939",
+    "d20_a20_r01_closing": "faab138eed3df644bd6c148181c220e4a27ae59bddd6b21167c60e8c26cabf96",
+    "d20_a20_r01_static": "8cc60ee726b4f0561512685d10eda91aaa56743fa01bc3fc8728eb497903130f",
+    "d20_a20_r04_closing": "be9c8070d5f823e2e9148a83825d84f37dec7385f5db7688be8d7a0d1baa1bc9",
+    "d20_a20_r04_static": "8913204d059c91cae0b81be5535786f307d05203395258360600e9a6ebb8cf1c"
+  }
+}

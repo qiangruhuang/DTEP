@@ -1,0 +1,20 @@
+{
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "capability_id": "sensor.tws.track",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "record_format": "TSV-v1",
+  "meta_record": ["META", "dt_s", "frames", "capability_id", "implementation_id"],
+  "summary_record": ["S", "frame", "track_count"],
+  "track_record": [
+    "T", "frame", "track_id", "range_m", "range_rate_mps",
+    "relative_azimuth_rad", "elevation_rad", "quality", "average_signal_db"
+  ],
+  "constraints": {
+    "frame": "integer >= 0",
+    "track_count": "integer >= 0",
+    "range_m": "finite number >= 0",
+    "quality": "finite number in [0,1]",
+    "angles": "finite radians",
+    "average_signal_db": "finite dB"
+  }
+}

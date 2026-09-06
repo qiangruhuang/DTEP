@@ -1,0 +1,44 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1500" height="900" viewBox="0 0 1500 900" role="img" aria-labelledby="title desc">
+<title id="title">BP-01 frozen behavior-preservation matrix</title>
+<desc id="desc">Sixteen combinations of range, azimuth, RCS, and target motion all produced tracks and zero byte distance between direct and wrapped OpenEaagles traces.</desc>
+<defs><style>
+text{font-family:Arial,Helvetica,sans-serif;fill:#17202a}.head{font-size:25px;font-weight:700}.body{font-size:18px}.small{font-size:15px}.cell{fill:#eef4f8;stroke:#355f7c;stroke-width:1.8}.lab{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.4}.accent{fill:#355f7c;font-weight:700}.muted{fill:#64748b}
+</style></defs>
+<text x="750" y="58" text-anchor="middle" class="head">BP-01 frozen 2×2×2×2 behavior-preservation envelope</text>
+<text x="750" y="91" text-anchor="middle" class="body">Each cell: behavior-bearing track present; direct vs TMSU-wrapped trace D_byte = 0</text>
+
+<text x="870" y="145" text-anchor="middle" class="head">RCS / target motion</text>
+<rect x="520" y="165" width="220" height="64" rx="8" class="lab"/><text x="630" y="193" text-anchor="middle" class="body">1 m² · static</text>
+<rect x="750" y="165" width="220" height="64" rx="8" class="lab"/><text x="860" y="193" text-anchor="middle" class="body">1 m² · closing</text><text x="860" y="216" text-anchor="middle" class="small">150 m/s</text>
+<rect x="980" y="165" width="220" height="64" rx="8" class="lab"/><text x="1090" y="193" text-anchor="middle" class="body">4 m² · static</text>
+<rect x="1210" y="165" width="220" height="64" rx="8" class="lab"/><text x="1320" y="193" text-anchor="middle" class="body">4 m² · closing</text><text x="1320" y="216" text-anchor="middle" class="small">150 m/s</text>
+
+<text x="245" y="160" text-anchor="middle" class="head">Range / azimuth</text>
+<rect x="85" y="250" width="380" height="110" rx="10" class="lab"/><text x="275" y="292" text-anchor="middle" class="body">10 km · 0°</text><text x="275" y="325" text-anchor="middle" class="small muted">near / boresight</text>
+<rect x="85" y="375" width="380" height="110" rx="10" class="lab"/><text x="275" y="417" text-anchor="middle" class="body">10 km · 20°</text><text x="275" y="450" text-anchor="middle" class="small muted">near / off-axis</text>
+<rect x="85" y="500" width="380" height="110" rx="10" class="lab"/><text x="275" y="542" text-anchor="middle" class="body">20 km · 0°</text><text x="275" y="575" text-anchor="middle" class="small muted">far / boresight</text>
+<rect x="85" y="625" width="380" height="110" rx="10" class="lab"/><text x="275" y="667" text-anchor="middle" class="body">20 km · 20°</text><text x="275" y="700" text-anchor="middle" class="small muted">far / off-axis</text>
+
+<!-- 16 cells -->
+<g>
+<rect x="520" y="250" width="220" height="110" rx="9" class="cell"/><rect x="750" y="250" width="220" height="110" rx="9" class="cell"/><rect x="980" y="250" width="220" height="110" rx="9" class="cell"/><rect x="1210" y="250" width="220" height="110" rx="9" class="cell"/>
+<rect x="520" y="375" width="220" height="110" rx="9" class="cell"/><rect x="750" y="375" width="220" height="110" rx="9" class="cell"/><rect x="980" y="375" width="220" height="110" rx="9" class="cell"/><rect x="1210" y="375" width="220" height="110" rx="9" class="cell"/>
+<rect x="520" y="500" width="220" height="110" rx="9" class="cell"/><rect x="750" y="500" width="220" height="110" rx="9" class="cell"/><rect x="980" y="500" width="220" height="110" rx="9" class="cell"/><rect x="1210" y="500" width="220" height="110" rx="9" class="cell"/>
+<rect x="520" y="625" width="220" height="110" rx="9" class="cell"/><rect x="750" y="625" width="220" height="110" rx="9" class="cell"/><rect x="980" y="625" width="220" height="110" rx="9" class="cell"/><rect x="1210" y="625" width="220" height="110" rx="9" class="cell"/>
+</g>
+<g class="accent" font-size="18" text-anchor="middle">
+<text x="630" y="295">PASS</text><text x="860" y="295">PASS</text><text x="1090" y="295">PASS</text><text x="1320" y="295">PASS</text>
+<text x="630" y="420">PASS</text><text x="860" y="420">PASS</text><text x="1090" y="420">PASS</text><text x="1320" y="420">PASS</text>
+<text x="630" y="545">PASS</text><text x="860" y="545">PASS</text><text x="1090" y="545">PASS</text><text x="1320" y="545">PASS</text>
+<text x="630" y="670">PASS</text><text x="860" y="670">PASS</text><text x="1090" y="670">PASS</text><text x="1320" y="670">PASS</text>
+</g>
+<g class="small" text-anchor="middle">
+<text x="630" y="328">D_byte = 0</text><text x="860" y="328">D_byte = 0</text><text x="1090" y="328">D_byte = 0</text><text x="1320" y="328">D_byte = 0</text>
+<text x="630" y="453">D_byte = 0</text><text x="860" y="453">D_byte = 0</text><text x="1090" y="453">D_byte = 0</text><text x="1320" y="453">D_byte = 0</text>
+<text x="630" y="578">D_byte = 0</text><text x="860" y="578">D_byte = 0</text><text x="1090" y="578">D_byte = 0</text><text x="1320" y="578">D_byte = 0</text>
+<text x="630" y="703">D_byte = 0</text><text x="860" y="703">D_byte = 0</text><text x="1090" y="703">D_byte = 0</text><text x="1320" y="703">D_byte = 0</text>
+</g>
+<rect x="315" y="790" width="870" height="72" rx="10" class="lab"/>
+<text x="750" y="821" text-anchor="middle" class="body accent">16/16 preserved; all scenarios produced behavior-bearing native tracks</text>
+<text x="750" y="848" text-anchor="middle" class="small">Bounded wrapper-transparency evidence only; no hidden-state or universal equivalence claim.</text>
+</svg>

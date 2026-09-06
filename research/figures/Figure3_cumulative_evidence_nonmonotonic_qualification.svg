@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1020" viewBox="0 0 1600 1020" role="img" aria-labelledby="title desc">
+<title id="title">Cumulative evidence with non-monotonic qualification</title>
+<desc id="desc">Evidence records accumulate across baseline, provenance revision, and algorithm change, while current evidence applicability and intended-use qualification are recomputed.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#17202a}.panel{font-size:27px;font-weight:700}.head{font-size:23px;font-weight:700}.body{font-size:18px}.small{font-size:16px}.mono{font-family:'Courier New',monospace;font-size:18px}.box{fill:#ffffff;stroke:#475569;stroke-width:1.9}.stage{fill:#f7fafc;stroke:#355f7c;stroke-width:2}.unknown{fill:#fffaf0;stroke:#9a6b16;stroke-width:1.8;stroke-dasharray:6 5}.stale{fill:#f8fafc;stroke:#7c8796;stroke-width:1.8;stroke-dasharray:7 5}.fresh{fill:#eef4f8;stroke:#355f7c;stroke-width:2}.arr{stroke:#334155;stroke-width:2.1;fill:none;marker-end:url(#arrow)}.line{stroke:#cbd5e1;stroke-width:1.5}.accent{fill:#355f7c;font-weight:700}.unk{fill:#8a5a00;font-weight:700}.muted{fill:#64748b}.principle{fill:#f8fafc;stroke:#355f7c;stroke-width:2.2}
+  </style>
+</defs>
+
+<text x="70" y="64" class="panel">A</text>
+<text x="120" y="64" class="head">Evidence history accumulates</text>
+<line x1="150" y1="140" x2="1450" y2="140" class="line"/>
+<text x="270" y="116" text-anchor="middle" class="body">C0 · EA baseline</text>
+<text x="800" y="116" text-anchor="middle" class="body">C1 · VU provenance revision</text>
+<text x="1330" y="116" text-anchor="middle" class="body">C2 · LC algorithm change</text>
+
+<rect x="120" y="182" width="300" height="70" rx="11" class="stage"/>
+<text x="270" y="211" text-anchor="middle" class="small muted">accumulated records</text>
+<text x="270" y="238" text-anchor="middle" class="mono">BP MS SP EQ EB</text>
+<path d="M420 217 L645 217" class="arr"/>
+<rect x="645" y="182" width="310" height="70" rx="11" class="stage"/>
+<text x="800" y="211" text-anchor="middle" class="small muted">append VU evidence</text>
+<text x="800" y="238" text-anchor="middle" class="mono">BP MS SP EQ EB VU</text>
+<path d="M955 217 L1160 217" class="arr"/>
+<rect x="1160" y="182" width="340" height="70" rx="11" class="stage"/>
+<text x="1330" y="211" text-anchor="middle" class="small muted">append LC evidence</text>
+<text x="1330" y="238" text-anchor="middle" class="mono">BP MS SP EQ EB VU LC</text>
+<text x="800" y="306" text-anchor="middle" class="head accent">E(t+1) = E(t) ∪ ΔE</text>
+<text x="800" y="337" text-anchor="middle" class="small">Historical evidence is retained; later records do not overwrite earlier decisions.</text>
+
+<text x="70" y="405" class="panel">B</text>
+<text x="120" y="405" class="head">Current applicability and qualification are recomputed</text>
+
+<rect x="95" y="445" width="425" height="310" rx="16" class="box"/>
+<text x="307" y="482" text-anchor="middle" class="head">C0 · Baseline state</text>
+<rect x="130" y="515" width="355" height="58" rx="9" class="fresh"/>
+<text x="307" y="550" text-anchor="middle" class="body">BP / MS / SP / EQ / EB → ACTIVE</text>
+<rect x="130" y="598" width="355" height="58" rx="9" class="fresh"/>
+<text x="307" y="633" text-anchor="middle" class="body accent">Kinematic use → QUALIFIED</text>
+<rect x="130" y="681" width="355" height="50" rx="9" class="unknown"/>
+<text x="307" y="712" text-anchor="middle" class="body unk">RF relation / use → UNKNOWN</text>
+
+<path d="M520 600 L590 600" class="arr"/>
+<rect x="590" y="445" width="425" height="310" rx="16" class="box"/>
+<text x="802" y="482" text-anchor="middle" class="head">C1 · After VU revision</text>
+<rect x="625" y="515" width="355" height="58" rx="9" class="fresh"/>
+<text x="802" y="550" text-anchor="middle" class="body">BP / SP → ACTIVE</text>
+<rect x="625" y="598" width="355" height="58" rx="9" class="fresh"/>
+<text x="802" y="624" text-anchor="middle" class="body">MS / EQ → delta reassessed</text>
+<text x="802" y="648" text-anchor="middle" class="small accent">kinematic use restored by typed evidence</text>
+<rect x="625" y="681" width="355" height="50" rx="9" class="unknown"/>
+<text x="802" y="712" text-anchor="middle" class="body unk">RF relation / use → UNKNOWN</text>
+
+<path d="M1015 600 L1085 600" class="arr"/>
+<rect x="1085" y="445" width="425" height="310" rx="16" class="box"/>
+<text x="1297" y="482" text-anchor="middle" class="head">C2 · After LC algorithm change</text>
+<rect x="1120" y="515" width="355" height="52" rx="9" class="fresh"/>
+<text x="1297" y="547" text-anchor="middle" class="body">BP / SP → ACTIVE</text>
+<rect x="1120" y="586" width="355" height="52" rx="9" class="stale"/>
+<text x="1297" y="618" text-anchor="middle" class="body">CV-specific evidence → STALE</text>
+<rect x="1120" y="657" width="355" height="52" rx="9" class="fresh"/>
+<text x="1297" y="689" text-anchor="middle" class="body accent">CA architecture → FRESH PASS</text>
+<rect x="1120" y="726" width="355" height="50" rx="9" class="unknown"/>
+<text x="1297" y="757" text-anchor="middle" class="small unk">CA fitness / RF use → UNKNOWN</text>
+
+<rect x="205" y="838" width="1190" height="128" rx="16" class="principle"/>
+<text x="800" y="877" text-anchor="middle" class="head">Lifecycle principle</text>
+<text x="800" y="914" text-anchor="middle" class="body accent">Evidence history is provenance-monotonic.</text>
+<text x="800" y="946" text-anchor="middle" class="body">Current qualification is not monotonic; it depends on implementation, intended use, configuration, and applicable evidence.</text>
+</svg>

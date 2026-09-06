@@ -1,0 +1,48 @@
+{
+  "cases": [
+    {
+      "case_id": "U1_architectural_tracking_within_evidence",
+      "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+      "intended_use": "Research demonstration of binding-only architectural substitution using track kinematics within the frozen E2 envelope",
+      "use_class": "conformance_research",
+      "required_observables": ["range_m", "range_rate_mps", "relative_azimuth_rad"],
+      "requested_domain": {"distance_m": [10000, 20000], "azimuth_deg": [0, 20], "rcs_m2": [1, 4]},
+      "required_evidence": ["architectural_substitution", "semantic_precheck"],
+      "semantic_overrides": {},
+      "expected_decision": "QUALIFIED_WITHIN_EVIDENCE"
+    },
+    {
+      "case_id": "U2_rf_performance_decision",
+      "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+      "intended_use": "Use RF signal output to support a radar performance test decision",
+      "use_class": "test_decision",
+      "required_observables": ["range_m", "average_signal_db"],
+      "requested_domain": {"distance_m": [10000, 20000], "azimuth_deg": [0, 20], "rcs_m2": [1, 4]},
+      "required_evidence": ["semantic_precheck", "comparative_model_validity"],
+      "semantic_overrides": {},
+      "expected_decision": "UNKNOWN"
+    },
+    {
+      "case_id": "U3_tracking_outside_executed_domain",
+      "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+      "intended_use": "Research substitution demonstration at 50 km",
+      "use_class": "conformance_research",
+      "required_observables": ["range_m", "range_rate_mps", "relative_azimuth_rad"],
+      "requested_domain": {"distance_m": [50000, 50000], "azimuth_deg": [0, 20], "rcs_m2": [1, 4]},
+      "required_evidence": ["architectural_substitution", "semantic_precheck"],
+      "semantic_overrides": {},
+      "expected_decision": "UNKNOWN"
+    },
+    {
+      "case_id": "U4_known_semantic_conflict",
+      "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+      "intended_use": "Research substitution demonstration with an explicitly conflicting range unit declaration",
+      "use_class": "conformance_research",
+      "required_observables": ["range_m"],
+      "requested_domain": {"distance_m": [10000, 20000], "azimuth_deg": [0, 20], "rcs_m2": [1, 4]},
+      "required_evidence": ["architectural_substitution", "semantic_precheck"],
+      "semantic_overrides": {"range_m": "INCOMPATIBLE"},
+      "expected_decision": "NOT_QUALIFIED"
+    }
+  ]
+}

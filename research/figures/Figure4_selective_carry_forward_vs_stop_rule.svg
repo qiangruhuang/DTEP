@@ -1,0 +1,66 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="980" viewBox="0 0 1600 980" role="img" aria-labelledby="title desc">
+<title id="title">Selective carry-forward versus inheritance stop rule</title>
+<desc id="desc">A controlled provenance-only revision permits typed delta evidence and selective carry-forward; a model-algorithm and implementation-identity change requires fresh affected qualification.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#17202a}.panel{font-size:28px;font-weight:700}.head{font-size:23px;font-weight:700}.body{font-size:18px}.small{font-size:16px}.box{fill:#fff;stroke:#475569;stroke-width:1.9}.soft{fill:#f7fafc;stroke:#64748b;stroke-width:1.6}.ok{fill:#eef4f8;stroke:#355f7c;stroke-width:2.1}.stop{fill:#fff4f0;stroke:#9a3412;stroke-width:2.2}.note{fill:#f8fafc;stroke:#94a3b8;stroke-width:1.5}.arr{stroke:#334155;stroke-width:2.2;fill:none;marker-end:url(#arrow)}.divider{stroke:#cbd5e1;stroke-width:1.8}.accent{fill:#355f7c;font-weight:700}.warning{fill:#9a3412;font-weight:700}.muted{fill:#64748b}
+  </style>
+</defs>
+<line x1="800" y1="55" x2="800" y2="900" class="divider"/>
+<text x="70" y="72" class="panel">A</text>
+<text x="400" y="72" text-anchor="middle" class="head">VU-01b · Controlled provenance revision</text>
+<text x="830" y="72" class="panel">B</text>
+<text x="1200" y="72" text-anchor="middle" class="head">LC-01 · Substantive algorithm / identity change</text>
+
+<rect x="105" y="120" width="590" height="125" rx="15" class="box"/>
+<text x="400" y="158" text-anchor="middle" class="head">Change classification</text>
+<text x="400" y="194" text-anchor="middle" class="body">Adapter / binding provenance revision</text>
+<text x="400" y="224" text-anchor="middle" class="small muted">model identity, contract, semantics, upper trial unchanged</text>
+<path d="M400 245 L400 300" class="arr"/>
+
+<rect x="105" y="300" width="590" height="135" rx="15" class="soft"/>
+<text x="400" y="338" text-anchor="middle" class="head">Affected evidence</text>
+<text x="150" y="378" class="body">BP / SP → reuse</text>
+<text x="150" y="410" class="body">MS / EQ → typed delta reassessment</text>
+<path d="M400 435 L400 490" class="arr"/>
+
+<rect x="105" y="490" width="590" height="175" rx="15" class="box"/>
+<text x="400" y="528" text-anchor="middle" class="head">Comparator-qualified result</text>
+<text x="150" y="570" class="body warning">VU-01a: exact bytes 8/16 → FAIL</text>
+<text x="150" y="606" class="body">VU-01b: normalized equivalence 16/16</text>
+<text x="150" y="642" class="body">+1e-6 m perturbation → rejected</text>
+<path d="M400 665 L400 720" class="arr"/>
+
+<rect x="105" y="720" width="590" height="135" rx="15" class="ok"/>
+<text x="400" y="758" text-anchor="middle" class="head accent">SELECTIVE CARRY-FORWARD</text>
+<text x="400" y="796" text-anchor="middle" class="body">Affected current claims restored by typed delta evidence</text>
+<text x="400" y="827" text-anchor="middle" class="small muted">Unrelated RF UNKNOWN remains unresolved</text>
+
+<rect x="905" y="120" width="590" height="125" rx="15" class="box"/>
+<text x="1200" y="158" text-anchor="middle" class="head">Change classification</text>
+<text x="1200" y="194" text-anchor="middle" class="body">CV KF → CA KF; Implementation_ID changes</text>
+<text x="1200" y="224" text-anchor="middle" class="small muted">contract, semantic mapping, upper trial unchanged</text>
+<path d="M1200 245 L1200 300" class="arr"/>
+
+<rect x="905" y="300" width="590" height="135" rx="15" class="soft"/>
+<text x="1200" y="338" text-anchor="middle" class="head">Old-envelope evidence</text>
+<text x="950" y="378" class="body">CV: 16/16 execute; CA: 16/16 execute</text>
+<text x="950" y="410" class="body">normalized CV–CA equality: 12/16</text>
+<path d="M1200 435 L1200 490" class="arr"/>
+
+<rect x="905" y="490" width="590" height="175" rx="15" class="box"/>
+<text x="1200" y="528" text-anchor="middle" class="head">Discrimination control</text>
+<text x="950" y="570" class="body">max |range_CA − range_CV| = 109.0755 m</text>
+<text x="950" y="606" class="body">max |rate_CA − rate_CV| = 67.6108 m/s</text>
+<text x="1200" y="642" text-anchor="middle" class="small muted">constructed maneuver challenge; not operational validation</text>
+<path d="M1200 665 L1200 720" class="arr"/>
+
+<rect x="905" y="720" width="590" height="135" rx="15" class="stop"/>
+<text x="1200" y="758" text-anchor="middle" class="head warning">AUTOMATIC INHERITANCE REJECTED</text>
+<text x="1200" y="796" text-anchor="middle" class="body">Unaffected evidence remains active</text>
+<text x="1200" y="827" text-anchor="middle" class="small muted">Fresh affected behavior / fitness evidence required</text>
+
+<rect x="275" y="900" width="1050" height="58" rx="11" class="note"/>
+<text x="800" y="936" text-anchor="middle" class="body"><tspan class="accent">Same contract ≠ same qualification.</tspan><tspan> Change class + evidence dependencies determine inheritance.</tspan></text>
+</svg>

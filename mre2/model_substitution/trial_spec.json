@@ -1,0 +1,40 @@
+{
+  "spec_version": "1.0.0",
+  "trial_id": "E2-TWS-MODEL-SUBSTITUTION-v1",
+  "research_question": "Can a frozen upper-level trial design substitute a second implementation of the same TWS tracking capability by changing only the TMSU capability binding?",
+  "capability_id": "sensor.tws.track",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "execution": {
+    "dt_s": 0.02,
+    "frames": 500
+  },
+  "scenario_matrix": {
+    "distance_m": [10000.0, 20000.0],
+    "azimuth_deg": [0.0, 20.0],
+    "rcs_m2": [1.0, 4.0],
+    "motion": ["static", "closing"],
+    "closing_speed_mps": 150.0
+  },
+  "canonical_observables": [
+    {"name": "track_count", "type": "integer", "unit": "1", "frame": "ownship-relative", "time": "simulation-frame"},
+    {"name": "track_id", "type": "integer", "unit": "1", "frame": "implementation-local", "time": "simulation-frame"},
+    {"name": "range_m", "type": "number", "unit": "m", "frame": "ownship-to-track", "time": "simulation-frame"},
+    {"name": "range_rate_mps", "type": "number", "unit": "m/s", "frame": "ownship-to-track; positive=increasing-range", "time": "simulation-frame"},
+    {"name": "relative_azimuth_rad", "type": "number", "unit": "rad", "frame": "ownship-relative", "time": "simulation-frame"},
+    {"name": "elevation_rad", "type": "number", "unit": "rad", "frame": "ownship-relative", "time": "simulation-frame"},
+    {"name": "quality", "type": "number", "unit": "1", "frame": "normalized [0,1]", "time": "simulation-frame"},
+    {"name": "average_signal_db", "type": "number", "unit": "dB", "frame": "RF track signal", "time": "simulation-frame"}
+  ],
+  "acceptance": {
+    "same_trial_spec_for_all_implementations": true,
+    "same_orchestrator_for_all_implementations": true,
+    "binding_is_only_run_selection_change": true,
+    "all_cases_execute": true,
+    "all_outputs_conform_to_contract": true,
+    "all_bindings_use_same_semantic_profile": true,
+    "implementation_provenance_must_be_distinct": true,
+    "behavioral_identity_required": false,
+    "at_least_one_cross_implementation_trace_must_differ": true
+  }
+}

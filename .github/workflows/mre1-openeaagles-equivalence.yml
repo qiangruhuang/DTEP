@@ -1,0 +1,216 @@
+name: MRE1 OpenEaagles Behavior Equivalence
+
+on:
+  push:
+    branches:
+      - mre1-openeaagles-behavior-equivalence
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  equivalence:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+
+      - name: Checkout frozen OpenEaagles
+        uses: actions/checkout@v4
+        with:
+          repository: doughodson/OpenEaagles
+          ref: b3d7e74a9bf52934e13fd6a11f45dc9767ac9192
+          path: upstream/OpenEaagles
+
+      - name: Checkout API-compatible JSBSim snapshot
+        uses: actions/checkout@v4
+        with:
+          repository: JSBSim-Team/jsbsim
+          ref: 140068895adf1b8981b45cc5e17a16d82990806d
+          path: upstream/jsbsim
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
+
+      - name: Apply documented compiler-compatibility fixes to JSBSim only
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          fixes = [
+              ('upstream/jsbsim/src/FGFDMExec.cpp',
+               'if (FDMctr > 0) (*FDMctr)--;',
+               'if (FDMctr != 0 && *FDMctr > 0) (*FDMctr)--;'),
+              ('upstream/jsbsim/src/input_output/FGInputSocket.cpp',
+               '} else if (node > 0) {',
+               '} else if (node != 0) {'),
+              ('upstream/jsbsim/src/simgear/props/propertyObject.cxx',
+               '#include <simgear/structure/exception.hxx>',
+               '#include <stdexcept>'),
+              ('upstream/jsbsim/src/simgear/props/propertyObject.cxx',
+               'throw sg_exception("Unknown property:" + path);',
+               'throw std::runtime_error("Unknown property:" + path);'),
+          ]
+          for filename, old, new in fixes:
+              p = Path(filename)
+              s = p.read_text()
+              assert s.count(old) == 1, f'expected historical expression not found exactly once in {filename}: {old}'
+              p.write_text(s.replace(old, new))
+          PY
+          git -C upstream/jsbsim diff -- src/FGFDMExec.cpp src/input_output/FGInputSocket.cpp src/simgear/props/propertyObject.cxx | tee jsbsim-build-compat.patch
+          sha256sum jsbsim-build-compat.patch
+
+      - name: Build JSBSim compatibility snapshot
+        run: |
+          set -euxo pipefail
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          cmake -S upstream/jsbsim -B build/jsbsim \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_INSTALL_PREFIX="$PREFIX" \
+            -DBUILD_SHARED_LIBS=ON
+          cmake --build build/jsbsim --parallel 2
+          cmake --install build/jsbsim
+
+      - name: Normalize legacy JSBSim include/library layout
+        run: |
+          set -euxo pipefail
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p "$PREFIX/include/JSBSim" "$PREFIX/lib"
+          if [ -d "$PREFIX/include/jsbsim" ]; then
+            cp -a "$PREFIX/include/jsbsim/." "$PREFIX/include/JSBSim/"
+          fi
+          if [ -d "$PREFIX/lib64" ]; then
+            cp -a "$PREFIX/lib64/." "$PREFIX/lib/"
+          fi
+
+      - name: Build only required OpenEaagles legacy libraries
+        run: |
+          set -euxo pipefail
+          export OE_ROOT="$GITHUB_WORKSPACE/upstream/OpenEaagles"
+          export OE_3RD_PARTY_ROOT="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p "$OE_ROOT/lib"
+          make -C "$OE_ROOT/src/base" -j2
+          make -C "$OE_ROOT/src/simulation" -j2
+          make -C "$OE_ROOT/src/terrain" -j2
+          make -C "$OE_ROOT/src/models" -j2
+          ls -lh "$OE_ROOT/lib"
+
+      - name: Compile deterministic native TWS probe
+        run: |
+          set -euxo pipefail
+          OE_ROOT="$GITHUB_WORKSPACE/upstream/OpenEaagles"
+          PREFIX="$GITHUB_WORKSPACE/oe3rd"
+          mkdir -p build/mre1
+          g++ -std=c++11 -O2 \
+            -I"$OE_ROOT/include" -I"$PREFIX/include" \
+            mre1/openeaagles/probe.cpp \
+            -L"$OE_ROOT/lib" -L"$PREFIX/lib" \
+            -Wl,-rpath,"$PREFIX/lib" \
+            -Wl,--start-group -loe_models -loe_terrain -loe_simulation -loe_base -lJSBSim -Wl,--end-group \
+            -lpthread -lrt -lX11 -ldl -lm \
+            -o build/mre1/oe_tws_probe
+          sha256sum build/mre1/oe_tws_probe mre1/openeaagles/scenario.edl mre1/openeaagles/scenario_matrix_template.edl
+
+      - name: Run untouched-model baseline twice under headless Station
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_1.tsv 2> build/mre1/baseline_1.stderr.txt
+          ./build/mre1/oe_tws_probe --config mre1/openeaagles/scenario.edl --frames 500 > build/mre1/baseline_2.tsv 2> build/mre1/baseline_2.stderr.txt
+          grep -q '^T' build/mre1/baseline_1.tsv
+          if grep -q 'unable to locate the Station class' build/mre1/baseline_1.stderr.txt build/mre1/baseline_2.stderr.txt; then
+            echo 'ERROR: headless Station host still emits missing-Station warning' >&2
+            exit 1
+          fi
+          python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/baseline_2.tsv --report build/mre1/g2a_reproducibility.json
+
+      - name: Run through TMSU process boundary
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre1/openeaagles/tmsu_wrapper.py \
+            --binary build/mre1/oe_tws_probe \
+            --config mre1/openeaagles/scenario.edl \
+            --frames 500 \
+            --output build/mre1/wrapped.tsv \
+            --evidence build/mre1/wrapper_evidence.json
+          python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/wrapped.tsv --report build/mre1/g2b_wrapper_transparency.json
+          python3 - <<'PY'
+          import json
+          e=json.load(open('build/mre1/wrapper_evidence.json'))
+          assert not e['station_warning_present'], 'wrapped process emitted missing-Station warning'
+          assert e['transformations_applied_to_stdout'] == 0
+          PY
+
+      - name: Negative-control sensitivity
+        run: |
+          set -euxo pipefail
+          python3 mre1/openeaagles/negative_control.py build/mre1/baseline_1.tsv build/mre1/negative.tsv
+          if python3 mre1/openeaagles/compare.py build/mre1/baseline_1.tsv build/mre1/negative.tsv --report build/mre1/g2d_negative_control.json; then
+            echo 'ERROR: comparator accepted deliberately changed behavior' >&2
+            exit 1
+          fi
+
+      - name: Run Behavior Preservation Evidence v1.0 matrix
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre1/openeaagles/behavior_matrix.py \
+            --binary build/mre1/oe_tws_probe \
+            --template mre1/openeaagles/scenario_matrix_template.edl \
+            --wrapper mre1/openeaagles/tmsu_wrapper.py \
+            --frames 500 \
+            --outdir build/mre1/behavior_matrix
+          cat build/mre1/behavior_matrix/behavior_preservation_v1.json
+
+      - name: Build evidence summary
+        if: always()
+        run: |
+          python3 - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          root=Path('build/mre1')
+          def sha(p):
+              p=Path(p)
+              return hashlib.sha256(p.read_bytes()).hexdigest() if p.exists() else None
+          matrix_path=root/'behavior_matrix'/'behavior_preservation_v1.json'
+          matrix=json.loads(matrix_path.read_text()) if matrix_path.exists() else None
+          summary={
+            'evidence_profile':'Behavior Preservation Evidence v1.0',
+            'open_eaagles_commit':'b3d7e74a9bf52934e13fd6a11f45dc9767ac9192',
+            'open_eaagles_examples_reference':'f90bac38bfbea168e746ce75fc46d641974c6076',
+            'jsbsim_commit':'140068895adf1b8981b45cc5e17a16d82990806d',
+            'jsbsim_build_compat_patch_sha256':sha('jsbsim-build-compat.patch'),
+            'open_eaagles_source_patch_count':0,
+            'probe_sha256':sha(root/'oe_tws_probe'),
+            'scenario_sha256':sha('mre1/openeaagles/scenario.edl'),
+            'matrix_template_sha256':sha('mre1/openeaagles/scenario_matrix_template.edl'),
+            'baseline_1_sha256':sha(root/'baseline_1.tsv'),
+            'baseline_2_sha256':sha(root/'baseline_2.tsv'),
+            'wrapped_sha256':sha(root/'wrapped.tsv'),
+            'negative_sha256':sha(root/'negative.tsv'),
+            'matrix_all_pass': matrix.get('all_pass') if matrix else None,
+            'matrix_case_count': matrix.get('case_count') if matrix else None,
+            'matrix_passed_cases': matrix.get('passed_cases') if matrix else None,
+            'matrix_all_D_byte_zero': matrix.get('all_D_byte_zero') if matrix else None,
+            'matrix_all_cases_have_tracks': matrix.get('all_cases_have_tracks') if matrix else None,
+            'matrix_station_warning_eliminated': matrix.get('station_warning_eliminated') if matrix else None,
+            'matrix_distinct_baseline_traces': matrix.get('distinct_baseline_traces') if matrix else None,
+          }
+          root.mkdir(parents=True,exist_ok=True)
+          (root/'evidence_summary.json').write_text(json.dumps(summary,indent=2,sort_keys=True)+'\n')
+          PY
+          cp jsbsim-build-compat.patch build/mre1/ 2>/dev/null || true
+          cat build/mre1/evidence_summary.json
+
+      - name: Upload evidence bundle
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: mre1-openeaagles-equivalence-evidence
+          path: build/mre1/

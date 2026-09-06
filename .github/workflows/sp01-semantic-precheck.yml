@@ -1,0 +1,50 @@
+name: SP01 Semantic Precheck Ablation
+
+on:
+  push:
+    branches:
+      - sp01-semantic-precheck-ablation
+    paths:
+      - 'sp01/**'
+      - 'mre2/model_substitution/trial_spec.json'
+      - 'mre2/model_substitution/orchestrator.py'
+      - 'mre2/model_substitution/capability_contract.json'
+      - '.github/workflows/sp01-semantic-precheck.yml'
+  workflow_dispatch:
+
+jobs:
+  semantic-precheck:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+
+      - name: Run preregistered SP-01 ablation
+        run: |
+          python3 sp01/semantic_precheck/semantic_precheck.py --out build/sp01
+
+      - name: Assert SP-01 PASS
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path('build/sp01/sp01_evidence.json')
+          d = json.loads(p.read_text())
+          assert d['decision'] == 'PASS', d
+          assert d['ablation']['injected_mismatch_correctly_rejected'] == 5, d
+          assert d['ablation']['semantic_detection_rate'] == 1.0, d
+          assert d['pass_conditions']['real_rf_ambiguity_returns_unknown'] is True, d
+          print(json.dumps({
+              'decision': d['decision'],
+              'semantic_detection_rate': d['ablation']['semantic_detection_rate'],
+              'injected_rejected': d['ablation']['injected_mismatch_correctly_rejected'],
+              'real_rf_ambiguity_unknown': d['pass_conditions']['real_rf_ambiguity_returns_unknown']
+          }, sort_keys=True))
+          PY
+
+      - name: Upload SP-01 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: sp01-semantic-precheck-evidence
+          path: build/sp01/
+          if-no-files-found: error

@@ -1,0 +1,38 @@
+{
+  "binding_version": "2.0.0-algorithm-change",
+  "capability_id": "sensor.tws.track",
+  "implementation_id": "radarsimpublic.radar-ca-kf@8b63f82",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "migration_path": "M2 Adapt",
+  "adapter": "mre2/model_substitution/radarsimpublic_adapter_ca.py",
+  "runtime": {
+    "upstream_repo": "Murmur-ops/RadarSimPublic",
+    "upstream_commit": "8b63f824a5744c1b3a3fca5e948fa7c59f897b17",
+    "upstream_root": "upstream/RadarSimPublic",
+    "algorithm_profile_id": "radarsimpublic.constant_acceleration_kf.v1",
+    "previous_algorithm_profile_id": "radarsimpublic.constant_velocity_kf.v1",
+    "model_components": [
+      "src.radar.Radar",
+      "src.radar.RadarParameters",
+      "src.tracking.kalman_filters.initialize_constant_acceleration_filter",
+      "src.tracking.tracker_base.Track",
+      "src.tracking.tracker_base.Measurement"
+    ],
+    "semantic_mapping": {
+      "average_signal_db": "Radar.snr(range_m, rcs_m2), interpreted as RF signal-to-noise ratio in dB",
+      "quality": "Track.track_score from upstream update_quality_metrics()",
+      "range_m": "norm of upstream Kalman-filter position state",
+      "range_rate_mps": "radial projection of upstream Kalman-filter velocity; positive means increasing range",
+      "relative_azimuth_rad": "atan2 of upstream Kalman-filter position state",
+      "elevation_rad": "0 for the frozen planar E2 trial"
+    },
+    "revision_scope": "substantive selected-model algorithm change: constant-velocity Kalman filter -> constant-acceleration Kalman filter; upstream repository commit, capability contract and declared semantic mapping remain frozen",
+    "previous_binding": "mre2/model_substitution/bindings/radarsimpublic_tws_v2.json"
+  },
+  "lifecycle": {
+    "change_class": "MODEL_ALGORITHM",
+    "automatic_carry_forward_allowed": false,
+    "reason": "The selected upstream tracking algorithm and implementation identity changed; previous behavior/fitness evidence cannot be inherited solely from provenance continuity."
+  }
+}

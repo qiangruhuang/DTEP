@@ -1,0 +1,80 @@
+{
+  "profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "version": "1.0.0",
+  "status": "frozen-for-sp01",
+  "capability_id": "sensor.tws.track",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "decision_states": ["COMPATIBLE", "INCOMPATIBLE", "UNKNOWN"],
+  "required_dimensions": [
+    "concept",
+    "datatype",
+    "unit",
+    "reference_frame",
+    "time_basis",
+    "sign_convention"
+  ],
+  "fields": {
+    "frame": {
+      "concept": "time.observation_index",
+      "datatype": "integer",
+      "unit": "frame",
+      "reference_frame": "simulation_clock",
+      "time_basis": "simulation_frame",
+      "sign_convention": "nonnegative"
+    },
+    "range_m": {
+      "concept": "kinematics.relative_range",
+      "datatype": "number",
+      "unit": "m",
+      "reference_frame": "ownship_relative",
+      "time_basis": "simulation_frame",
+      "sign_convention": "nonnegative"
+    },
+    "range_rate_mps": {
+      "concept": "kinematics.radial_range_rate",
+      "datatype": "number",
+      "unit": "m/s",
+      "reference_frame": "ownship_relative",
+      "time_basis": "simulation_frame",
+      "sign_convention": "positive=increasing_range"
+    },
+    "relative_azimuth_rad": {
+      "concept": "kinematics.relative_azimuth",
+      "datatype": "number",
+      "unit": "rad",
+      "reference_frame": "ownship_relative",
+      "time_basis": "simulation_frame",
+      "sign_convention": "positive=declared_canonical_azimuth"
+    },
+    "elevation_rad": {
+      "concept": "kinematics.relative_elevation",
+      "datatype": "number",
+      "unit": "rad",
+      "reference_frame": "ownship_relative",
+      "time_basis": "simulation_frame",
+      "sign_convention": "positive=declared_canonical_elevation"
+    },
+    "quality": {
+      "concept": "track.quality_score",
+      "datatype": "number",
+      "unit": "1",
+      "reference_frame": "not_applicable",
+      "time_basis": "simulation_frame",
+      "sign_convention": "higher=better"
+    },
+    "average_signal_db": {
+      "concept": "rf.track_average_signal",
+      "datatype": "number",
+      "unit": "dB",
+      "reference_frame": "receiver_track",
+      "time_basis": "simulation_frame",
+      "sign_convention": "higher=stronger"
+    }
+  },
+  "policy": {
+    "structural_validation_ignores_semantic_values": true,
+    "explicit_dimension_mismatch": "INCOMPATIBLE",
+    "unresolved_concept_relation": "UNKNOWN",
+    "unknown_is_not_compatible": true
+  }
+}

@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1060" viewBox="0 0 1600 1060" role="img" aria-labelledby="title desc">
+<title id="title">Evidence ladder and durable uncertainty</title>
+<desc id="desc">The main evidence chain progresses from behavior preservation to bounded inheritance. A parallel RF uncertainty strand remains UNKNOWN across subsequent positive results.</desc>
+<defs>
+  <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="3" orient="auto"><path d="M0,0 L0,6 L9,3 z" fill="#334155"/></marker>
+  <style>
+    text{font-family:Arial,Helvetica,sans-serif;fill:#17202a}.panel{font-size:26px;font-weight:700}.head{font-size:22px;font-weight:700}.body{font-size:18px}.small{font-size:16px}.box{fill:#fff;stroke:#475569;stroke-width:1.9}.pass{fill:#f7fafc;stroke:#355f7c;stroke-width:2}.fail{fill:#fff4f0;stroke:#9a3412;stroke-width:2.2}.unknown{fill:#fffaf0;stroke:#9a6b16;stroke-width:2.2;stroke-dasharray:7 5}.arrow{stroke:#334155;stroke-width:2.1;fill:none;marker-end:url(#arrow)}.u{stroke:#9a6b16;stroke-width:2.2;fill:none;stroke-dasharray:6 5;marker-end:url(#arrow)}.accent{fill:#355f7c;font-weight:700}.warning{fill:#9a3412;font-weight:700}.unktext{fill:#8a5a00;font-weight:700}.label{font-size:15px;fill:#64748b}
+  </style>
+</defs>
+<text x="80" y="72" class="panel">A</text>
+<text x="380" y="72" text-anchor="middle" class="head">Evidence chain</text>
+<text x="1245" y="72" text-anchor="middle" class="head">Durable uncertainty</text>
+
+<rect x="120" y="110" width="520" height="86" rx="13" class="pass"/>
+<text x="380" y="143" text-anchor="middle" class="head">BP-01 · Preserve behavior</text>
+<text x="380" y="173" text-anchor="middle" class="body">OpenEaagles direct vs wrapper: 16/16 exact</text>
+<path d="M380 196 L380 232" class="arrow"/>
+
+<rect x="120" y="232" width="520" height="86" rx="13" class="pass"/>
+<text x="380" y="265" text-anchor="middle" class="head">MS-01 · Substitute implementation</text>
+<text x="380" y="295" text-anchor="middle" class="body">OpenEaagles 16/16; RadarSimPublic 16/16</text>
+<path d="M380 318 L380 354" class="arrow"/>
+
+<rect x="120" y="354" width="520" height="105" rx="13" class="pass"/>
+<text x="380" y="387" text-anchor="middle" class="head">SP-01 · Qualify semantics</text>
+<text x="380" y="417" text-anchor="middle" class="body">5/5 injected semantic mismatches rejected</text>
+<text x="380" y="447" text-anchor="middle" class="body unktext">real RF relation = UNKNOWN</text>
+<path d="M380 459 L380 495" class="arrow"/>
+
+<rect x="120" y="495" width="520" height="105" rx="13" class="pass"/>
+<text x="380" y="528" text-anchor="middle" class="head">EQ-01 · Qualify intended use</text>
+<text x="380" y="558" text-anchor="middle" class="body">kinematic use = QUALIFIED_WITHIN_EVIDENCE</text>
+<text x="380" y="588" text-anchor="middle" class="body unktext">RF-performance use = UNKNOWN</text>
+<path d="M380 600 L380 636" class="arrow"/>
+
+<rect x="120" y="636" width="520" height="88" rx="13" class="pass"/>
+<text x="380" y="669" text-anchor="middle" class="head">EA-01 · Accumulate evidence</text>
+<text x="380" y="699" text-anchor="middle" class="body">history retained; current applicability selective</text>
+<path d="M380 724 L380 760" class="arrow"/>
+
+<rect x="120" y="760" width="520" height="92" rx="13" class="fail"/>
+<text x="380" y="793" text-anchor="middle" class="head warning">VU-01a · Comparator failure retained</text>
+<text x="380" y="823" text-anchor="middle" class="body">strict cross-run byte identity: 8/16 → FAIL</text>
+<path d="M380 852 L380 888" class="arrow"/>
+
+<rect x="120" y="888" width="520" height="98" rx="13" class="pass"/>
+<text x="380" y="921" text-anchor="middle" class="head">VU-01b · Typed carry-forward</text>
+<text x="380" y="951" text-anchor="middle" class="body">16/16 normalized; +1e-6 m control rejected</text>
+<path d="M640 937 L820 937" class="arrow"/>
+
+<rect x="820" y="888" width="470" height="98" rx="13" class="pass"/>
+<text x="1055" y="921" text-anchor="middle" class="head">LC-01 · Stop rule</text>
+<text x="1055" y="951" text-anchor="middle" class="body">algorithm change → automatic inheritance rejected</text>
+
+<text x="975" y="110" class="panel">B</text>
+<rect x="1010" y="354" width="470" height="82" rx="13" class="unknown"/>
+<text x="1245" y="385" text-anchor="middle" class="head unktext">RF semantic state</text>
+<text x="1245" y="415" text-anchor="middle" class="body unktext">UNKNOWN</text>
+<path d="M1245 436 L1245 501" class="u"/>
+<rect x="1010" y="501" width="470" height="82" rx="13" class="unknown"/>
+<text x="1245" y="532" text-anchor="middle" class="head unktext">RF intended use</text>
+<text x="1245" y="562" text-anchor="middle" class="body unktext">UNKNOWN</text>
+<path d="M1245 583 L1245 646" class="u"/>
+<rect x="1010" y="646" width="470" height="72" rx="13" class="unknown"/>
+<text x="1245" y="689" text-anchor="middle" class="body unktext">UNKNOWN retained after EA-01</text>
+<path d="M1245 718 L1245 774" class="u"/>
+<rect x="1010" y="774" width="470" height="72" rx="13" class="unknown"/>
+<text x="1245" y="817" text-anchor="middle" class="body unktext">UNKNOWN retained after VU-01b</text>
+<path d="M1245 846 L1245 894" class="u"/>
+<rect x="1010" y="894" width="470" height="92" rx="13" class="unknown"/>
+<text x="1245" y="927" text-anchor="middle" class="head unktext">LC-01 does not overwrite it</text>
+<text x="1245" y="957" text-anchor="middle" class="body unktext">RF state remains UNKNOWN</text>
+
+<text x="800" y="1030" text-anchor="middle" class="label">Later PASS results constrain other claims; they do not silently resolve an unrelated evidence gap.</text>
+</svg>

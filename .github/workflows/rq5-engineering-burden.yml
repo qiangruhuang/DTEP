@@ -1,0 +1,94 @@
+name: RQ5 EB01 Paired Engineering Burden
+
+on:
+  push:
+    branches:
+      - rq5-engineering-burden
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  burden:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DTEP with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout frozen RadarSimPublic
+        uses: actions/checkout@v4
+        with:
+          repository: Murmur-ops/RadarSimPublic
+          ref: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          path: upstream/RadarSimPublic
+
+      - name: Install runtime dependency
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Static check benchmark
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            rq5/engineering_burden/bespoke_orchestrator.py \
+            rq5/engineering_burden/measure_burden.py \
+            mre2/model_substitution/orchestrator.py \
+            mre2/model_substitution/radarsimpublic_adapter.py
+          test "$(git -C upstream/RadarSimPublic rev-parse HEAD)" = "8b63f824a5744c1b3a3fca5e948fa7c59f897b17"
+
+      - name: Execute TMSU binding arm
+        run: |
+          set -euxo pipefail
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/rq5/tmsu
+
+      - name: Execute bespoke direct-integration arm
+        run: |
+          set -euxo pipefail
+          python3 rq5/engineering_burden/bespoke_orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --upstream-root upstream/RadarSimPublic \
+            --outdir build/rq5/bespoke
+
+      - name: Evaluate paired engineering burden
+        run: |
+          set -euxo pipefail
+          python3 rq5/engineering_burden/measure_burden.py \
+            --tmsu-run build/rq5/tmsu \
+            --bespoke-run build/rq5/bespoke \
+            --generic-orchestrator mre2/model_substitution/orchestrator.py \
+            --bespoke-orchestrator rq5/engineering_burden/bespoke_orchestrator.py \
+            --adapter mre2/model_substitution/radarsimpublic_adapter.py \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
+            --outdir build/rq5/evidence
+          cat build/rq5/evidence/engineering_burden_result.json
+
+      - name: Assert bounded EB-01 conclusion
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('build/rq5/evidence/engineering_burden_result.json').read_text())
+          assert r['decision']=='PASS'
+          assert r['functional_equivalence']['byte_identical_output_cases']==16
+          assert r['initial_integration']['tmsu_binding_path']['upper_orchestrator_line_churn']==0
+          assert r['initial_integration']['bespoke_direct_path']['upper_orchestrator_line_churn']>0
+          assert r['h1_time_claim']=='NOT_DIRECTLY_TESTED'
+          PY
+
+      - name: Upload EB-01 evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: rq5-eb01-engineering-burden-evidence
+          path: |
+            build/rq5/evidence/
+            build/rq5/tmsu/run_summary.json
+            build/rq5/bespoke/run_summary.json

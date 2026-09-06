@@ -1,0 +1,64 @@
+name: EA01 Evidence Accumulation and Lifecycle Manageability
+
+on:
+  push:
+    branches:
+      - ea01-evidence-accumulation
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  evidence-lifecycle:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout DTEP with full history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Static-check EA-01 instrument
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile research/ea01/ea01_evidence_accumulation.py
+          python3 -m json.tool research/ea01/evidence_ledger.json >/dev/null
+          python3 -m json.tool research/ea01/change_events.json >/dev/null
+          git cat-file -e df40e7377a10ed7560437d11cea92685c440fce1^{commit}
+
+      - name: Run append-only evidence accumulation replay
+        run: |
+          set -euxo pipefail
+          rm -rf build/ea01
+          mkdir -p build/ea01
+          python3 research/ea01/ea01_evidence_accumulation.py \
+            --ledger research/ea01/evidence_ledger.json \
+            --changes research/ea01/change_events.json \
+            --outdir build/ea01
+          cat build/ea01/ea01_summary.json
+          cat build/ea01/stage_replay.csv
+          cat build/ea01/change_impact.csv
+
+      - name: Assert EA-01 bounded conclusion
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          s=json.loads(Path('build/ea01/ea01_summary.json').read_text())
+          assert s['decision']=='PASS'
+          assert s['frozen_evidence_records']==5
+          assert s['historical_retention_fraction']==1.0
+          assert s['real_unknown_preserved'] is True
+          assert s['changed_prior_reports']==[]
+          assert all(s['predicates'].values())
+          assert s['final_queries']['Q4_u1_kinematic_use']['state']=='QUALIFIED_WITHIN_EVIDENCE'
+          assert s['final_queries']['Q5_u2_rf_performance_use']['state']=='UNKNOWN'
+          PY
+
+      - name: Upload EA-01 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ea01-evidence-accumulation-lifecycle
+          path: build/ea01/

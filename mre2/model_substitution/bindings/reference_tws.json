@@ -1,0 +1,18 @@
+{
+  "binding_version": "1.0.0",
+  "capability_id": "sensor.tws.track",
+  "implementation_id": "dtep.reference_tws@1.0.0",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "migration_path": "M4 Native",
+  "adapter": "mre2/model_substitution/reference_tws.py",
+  "runtime": {
+    "model": "deterministic analytic reference tracker",
+    "first_track_frame": 51,
+    "note": "Independent Native-C research instrument; not an accredited operational sensor model"
+  },
+  "bp01": {
+    "required": false,
+    "reason": "Native implementation; no legacy wrapper is introduced"
+  }
+}

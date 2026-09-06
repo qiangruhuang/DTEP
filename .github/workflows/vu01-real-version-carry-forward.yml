@@ -1,0 +1,94 @@
+name: VU01b Corrected Real Version Carry-Forward
+
+on:
+  push:
+    branches:
+      - vu01-real-version-carry-forward
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  delta-requalification:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout DTEP with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout frozen RadarSimPublic
+        uses: actions/checkout@v4
+        with:
+          repository: Murmur-ops/RadarSimPublic
+          ref: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          path: upstream/RadarSimPublic
+
+      - name: Install runtime dependency
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Static-check VU-01b update
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            mre2/model_substitution/radarsimpublic_adapter.py \
+            mre2/model_substitution/radarsimpublic_adapter_v2.py \
+            mre2/model_substitution/orchestrator.py \
+            research/vu01/vu01_delta_requalification.py
+          python3 -m json.tool research/vu01/ms01_v2_radarsimpublic_trace_hashes.json >/dev/null
+          python3 -m json.tool mre2/model_substitution/bindings/radarsimpublic_tws_v2.json >/dev/null
+
+      - name: Execute updated binding under frozen upper trial
+        run: |
+          set -euxo pipefail
+          rm -rf build/vu01
+          mkdir -p build/vu01
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws_v2.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/vu01/run_v2
+          cat build/vu01/run_v2/run_summary.json
+
+      - name: Evaluate corrected selective delta requalification
+        run: |
+          set -euxo pipefail
+          python3 research/vu01/vu01_delta_requalification.py \
+            --baseline-hashes research/vu01/ms01_v2_radarsimpublic_trace_hashes.json \
+            --old-binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
+            --new-binding mre2/model_substitution/bindings/radarsimpublic_tws_v2.json \
+            --trial mre2/model_substitution/trial_spec.json \
+            --orchestrator mre2/model_substitution/orchestrator.py \
+            --contract mre2/model_substitution/capability_contract.json \
+            --new-run build/vu01/run_v2 \
+            --out build/vu01/vu01_result.json
+          cat build/vu01/vu01_result.json
+
+      - name: Assert VU-01b bounded conclusion
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r=json.loads(Path('build/vu01/vu01_result.json').read_text())
+          assert r['decision']=='PASS'
+          assert r['trace_comparison']['cases']==16
+          assert r['trace_comparison']['numeric_9dp_equivalent_cases']==16
+          assert r['trace_comparison']['negative_control']['rejected'] is True
+          assert r['trace_comparison']['all_new_cases_pass'] is True
+          assert all(r['predicates'].values())
+          assert r['current_decisions']['kinematic_intended_use']=='QUALIFIED_WITHIN_EVIDENCE'
+          assert r['current_decisions']['rf_performance_intended_use']=='UNKNOWN'
+          assert r['current_decisions']['rf_unknown_preserved'] is True
+          PY
+
+      - name: Upload VU-01b evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: vu01b-corrected-real-version-carry-forward-evidence
+          path: build/vu01/
