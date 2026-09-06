@@ -4,7 +4,13 @@
   "source_artifact_id": 9971118509,
   "source_artifact_sha256": "7e4f421b04bf7dd9ca40964657ec7dc789fedcff1a66d85cefb9b6f2c6183bb1",
   "implementation_id": "radarsimpublic.radar-kf@8b63f82",
-  "trace_hashes": {
+  "normalization": {
+    "name": "canonical_numeric_9dp_v1",
+    "rule": "META and S records exact; T frame/track_id exact; T floating fields normalized with decimal format .9f before SHA-256",
+    "purpose": "cross-run numerical reproducibility for lifecycle carry-forward; not a model-fidelity tolerance",
+    "negative_control_delta": 1e-6
+  },
+  "trace_hashes_exact": {
     "d10_a00_r01_closing": "5a38972b9c8dbce15ba0d79f7bd995741e7806f464025931b86920f8fbb6a60f",
     "d10_a00_r01_static": "8957a0b6f22103aed97db1f8dc0962955188bc64a4dd9793c03522ad879369dd",
     "d10_a00_r04_closing": "a0fc4816834499c6cb4e280b76d98bb6c40a938a671172eac898ebe112abb936",
@@ -21,5 +27,23 @@
     "d20_a20_r01_static": "948bbd44424a2b2421d63c123f5a418676db3ea7990f8065be88784232726234",
     "d20_a20_r04_closing": "214e01c32119e7438d3ecdcb6c6336d439f261db90e2afcd86bb6830ada1a3e5",
     "d20_a20_r04_static": "8751669fa0e47515f889824a12c1628facb4b0ef463aa7007ce6d808018adcff"
+  },
+  "trace_hashes_numeric_9dp": {
+    "d10_a00_r01_closing": "5019f456fa918d28e8b3794b8818c29760aa7d8b5f414214cd455469fac8b6a9",
+    "d10_a00_r01_static": "f73257f488a1653d377ea215837593587d580e1233d23015f5032979473f98af",
+    "d10_a00_r04_closing": "4e3d9ea95075d90512abdf67989fcc152886b70aab88dd7324556b768c90bc4b",
+    "d10_a00_r04_static": "53283e828579014e49f942a1ac1733913971446f39502be10085a5a517cbb3ba",
+    "d10_a20_r01_closing": "64b5fc8d279ec475377e6f3967e1bbb99d19c3181502fe3f72a3cf299c5f6660",
+    "d10_a20_r01_static": "f552180463baa773100932b29287e8e730053040d0e02fafc6db66ad80793da6",
+    "d10_a20_r04_closing": "64733dfb455502aa2bcde747de0e98db1001b66d55c846b0ec910172f280cbb8",
+    "d10_a20_r04_static": "95ff91048f883d50198df3ceb8f06f35bf499d693de109836598adb4f8967b03",
+    "d20_a00_r01_closing": "f3ccc5262843b0803e46c06d0a2a81669e57a5070abb88ae3c5ca1def55fb746",
+    "d20_a00_r01_static": "56165488b4ef0c3fa402e8b13e9b9963c16c4446a05c5a764f25d27d493aa18d",
+    "d20_a00_r04_closing": "41ed943166d837385b51cfc32e31a58165278a2d79033556cb39a77052452dbd",
+    "d20_a00_r04_static": "4d1d8eab775478312fe322c1d7daaf6b557878ad0aaeb9d8d4b4902494367dc0",
+    "d20_a20_r01_closing": "561e81874340f38e5faf29e1e1465166c21ea8bcbab86519d0e853ce7e7ef676",
+    "d20_a20_r01_static": "3fa45c63589cdd25ee74112082542eb042428bca3fb3a42ca4bf309e8d529796",
+    "d20_a20_r04_closing": "e50d96a780a235e987028128391136108f6032ec5ad8199603340e09473a71de",
+    "d20_a20_r04_static": "9f14f2be4f76bb9555424543805ca9561c4151736735448826a8ea0e34a48b4d"
   }
 }
