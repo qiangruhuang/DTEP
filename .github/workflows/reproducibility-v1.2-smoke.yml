@@ -1,0 +1,60 @@
+name: Reproducibility v1.2 Smoke
+
+on:
+  push:
+    branches:
+      - reproducibility-v1.2
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check reproduction scripts
+        run: |
+          set -euxo pipefail
+          bash -n scripts/build_openeaagles_stack.sh
+          bash -n scripts/reproduce_evidence_chain.sh
+          test -f REPRODUCE.md
+          test -f research/MANUSCRIPT_SUBMISSION_v1_2.md
+
+      - name: Install Python runtime dependency
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Run Python/RadarSim evidence chain
+        run: |
+          set -euxo pipefail
+          bash scripts/reproduce_evidence_chain.sh all-python
+
+      - name: Assert key reproduced outputs exist
+        run: |
+          set -euxo pipefail
+          test -f build/sp01/sp01_evidence.json
+          test -f build/eq01/eq01_results.json
+          test -f build/rq5/evidence/engineering_burden_result.json
+          test -f build/ea01/ea01_summary.json
+          test -f build/vu01/vu01_result.json
+          test -f build/lc01/lc01_result.json
+
+      - name: Upload smoke evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproducibility-v1.2-smoke-evidence
+          path: |
+            build/sp01/
+            build/eq01/
+            build/rq5/evidence/
+            build/ea01/
+            build/vu01/
+            build/lc01/
