@@ -39,16 +39,25 @@ jobs:
             mre2/model_substitution/radarsimpublic_adapter_v2.py \
             mre2/model_substitution/radarsimpublic_adapter_ca.py \
             mre2/model_substitution/orchestrator.py \
+            research/lc01/ca_state_probe.py \
             research/lc01/algorithm_discrimination_challenge.py \
             research/lc01/lc01_carry_forward_boundary.py
           python3 -m json.tool mre2/model_substitution/bindings/radarsimpublic_tws_v2.json >/dev/null
           python3 -m json.tool mre2/model_substitution/bindings/radarsimpublic_tws_ca.json >/dev/null
 
-      - name: Execute current CV configuration under frozen E2 trial
+      - name: Probe upstream CA state and matrix dimensions
         run: |
           set -euxo pipefail
           rm -rf build/lc01
           mkdir -p build/lc01
+          python3 research/lc01/ca_state_probe.py \
+            --upstream-root upstream/RadarSimPublic \
+            --out build/lc01/ca_state_probe.json
+          cat build/lc01/ca_state_probe.json
+
+      - name: Execute current CV configuration under frozen E2 trial
+        run: |
+          set -euxo pipefail
           python3 mre2/model_substitution/orchestrator.py \
             --trial mre2/model_substitution/trial_spec.json \
             --binding mre2/model_substitution/bindings/radarsimpublic_tws_v2.json \
