@@ -1,0 +1,80 @@
+{
+  "ledger_id": "dtep.wp1.evidence-ledger.v1",
+  "version": "1.0.0",
+  "status": "frozen-input",
+  "base_commit": "df40e7377a10ed7560437d11cea92685c440fce1",
+  "subject_capability": "sensor.tws.track",
+  "records": [
+    {
+      "stage": 1,
+      "evidence_id": "bp01.openeaagles.tws.2026-09-05.v1",
+      "gate": "BP-01",
+      "result": "PASS",
+      "evidence_class": "behavior_preservation",
+      "report_path": "mre1/openeaagles/BEHAVIOR_PRESERVATION_EVIDENCE_v1.md",
+      "depends_on": [],
+      "applicability_dependencies": ["legacy_implementation", "legacy_wrapper", "execution_envelope", "observational_domain"],
+      "claims": ["openeaagles_wrapper_behavior_preserved"]
+    },
+    {
+      "stage": 2,
+      "evidence_id": "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+      "gate": "MS-01",
+      "result": "PASS",
+      "evidence_class": "architectural_substitution",
+      "report_path": "mre2/model_substitution/E2_MODEL_SUBSTITUTION_REAL_EVIDENCE_v2.md",
+      "depends_on": ["bp01.openeaagles.tws.2026-09-05.v1"],
+      "applicability_dependencies": ["trial_spec", "orchestrator", "capability_contract", "implementation_binding", "radarsimpublic_adapter", "case_set"],
+      "claims": ["real_heterogeneous_binding_only_substitution"]
+    },
+    {
+      "stage": 3,
+      "evidence_id": "sp01.tws.semantic-precheck.2026-09-05.v1",
+      "gate": "SP-01",
+      "result": "PASS",
+      "evidence_class": "semantic_qualification",
+      "report_path": "research/SP01_SEMANTIC_PRECHECK_EVIDENCE_v1.md",
+      "depends_on": [],
+      "applicability_dependencies": ["capability_contract", "semantic_profile", "semantic_mapping"],
+      "claims": ["kinematic_semantics_compatible", "rf_average_signal_semantics_unknown"],
+      "semantic_states": {
+        "kinematic_observables": "COMPATIBLE",
+        "rf_average_signal": "UNKNOWN"
+      }
+    },
+    {
+      "stage": 4,
+      "evidence_id": "eq01.tws.evidence-aware-qualification.2026-09-06.v1",
+      "gate": "EQ-01",
+      "result": "PASS",
+      "evidence_class": "intended_use_qualification",
+      "report_path": "research/EQ01_EVIDENCE_AWARE_QUALIFICATION_EVIDENCE_v1.md",
+      "depends_on": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "sp01.tws.semantic-precheck.2026-09-05.v1"
+      ],
+      "applicability_dependencies": ["intended_use", "validity_domain", "required_evidence", "semantic_mapping", "trial_spec"],
+      "claims": ["u1_qualified_within_evidence", "u2_rf_use_unknown", "u3_out_of_domain_unknown", "u4_semantic_conflict_not_qualified"],
+      "qualification_states": {
+        "U1_kinematic_conformance_use": "QUALIFIED_WITHIN_EVIDENCE",
+        "U2_rf_performance_decision": "UNKNOWN",
+        "U3_50km_outside_envelope": "UNKNOWN",
+        "U4_explicit_semantic_conflict": "NOT_QUALIFIED"
+      }
+    },
+    {
+      "stage": 5,
+      "evidence_id": "eb01.tws.paired-engineering-burden.2026-09-06.v1",
+      "gate": "EB-01",
+      "result": "PASS",
+      "evidence_class": "change_and_requalification_burden",
+      "report_path": "research/EB01_ENGINEERING_BURDEN_EVIDENCE_v1.md",
+      "depends_on": [
+        "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+        "eq01.tws.evidence-aware-qualification.2026-09-06.v1"
+      ],
+      "applicability_dependencies": ["integration_task", "trial_spec", "orchestrator", "radarsimpublic_adapter", "implementation_binding", "semantic_mapping"],
+      "claims": ["shared_core_change_isolated", "requalification_radius_reduced"]
+    }
+  ]
+}
