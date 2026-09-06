@@ -41,6 +41,13 @@ def behavior_hash(path: Path, decimals: int = 9) -> str:
     return hashlib.sha256(payload).hexdigest()
 
 
+def has_component(binding: dict[str, Any], terminal_name: str) -> bool:
+    return any(
+        str(component).rsplit(".", 1)[-1] == terminal_name
+        for component in binding["runtime"].get("model_components", [])
+    )
+
+
 def main() -> int:
     ap = argparse.ArgumentParser(description="LC-01 carry-forward boundary evaluator")
     ap.add_argument("--old-binding", required=True, type=Path)
@@ -87,8 +94,9 @@ def main() -> int:
     semantic_mapping_same = old_binding["runtime"]["semantic_mapping"] == new_binding["runtime"]["semantic_mapping"]
     upstream_same = old_binding["runtime"]["upstream_commit"] == new_binding["runtime"]["upstream_commit"]
     algorithm_changed = (
-        "initialize_constant_velocity_filter" in old_binding["runtime"]["model_components"]
-        and "initialize_constant_acceleration_filter" in new_binding["runtime"]["model_components"]
+        has_component(old_binding, "initialize_constant_velocity_filter")
+        and has_component(new_binding, "initialize_constant_acceleration_filter")
+        and not has_component(new_binding, "initialize_constant_velocity_filter")
     )
     implementation_changed = old_binding["implementation_id"] != new_binding["implementation_id"]
 
