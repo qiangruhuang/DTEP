@@ -1,0 +1,35 @@
+{
+  "binding_version": "1.1.0",
+  "capability_id": "sensor.tws.track",
+  "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+  "contract_id": "tmsu.sensor.tws.track.v1",
+  "semantic_profile_id": "tmsu.sensor.tws.track.semantic.v1",
+  "migration_path": "M2 Adapt",
+  "adapter": "mre2/model_substitution/radarsimpublic_adapter_v2.py",
+  "runtime": {
+    "upstream_repo": "Murmur-ops/RadarSimPublic",
+    "upstream_commit": "8b63f824a5744c1b3a3fca5e948fa7c59f897b17",
+    "upstream_root": "upstream/RadarSimPublic",
+    "model_components": [
+      "src.radar.Radar",
+      "src.radar.RadarParameters",
+      "src.tracking.kalman_filters.initialize_constant_velocity_filter",
+      "src.tracking.tracker_base.Track",
+      "src.tracking.tracker_base.Measurement"
+    ],
+    "semantic_mapping": {
+      "average_signal_db": "Radar.snr(range_m, rcs_m2), interpreted as RF signal-to-noise ratio in dB",
+      "quality": "Track.track_score from upstream update_quality_metrics()",
+      "range_m": "norm of upstream Kalman-filter position state",
+      "range_rate_mps": "radial projection of upstream Kalman-filter velocity; positive means increasing range",
+      "relative_azimuth_rad": "atan2 of upstream Kalman-filter position state",
+      "elevation_rad": "0 for the frozen planar E2 trial"
+    },
+    "revision_scope": "binding and adapter provenance revision only; model commit, contract, semantic profile and semantic mapping are unchanged",
+    "previous_binding": "mre2/model_substitution/bindings/radarsimpublic_tws.json"
+  },
+  "bp01": {
+    "required": false,
+    "reason": "The independent RadarSimPublic implementation remains unchanged; VU-01 is a controlled adapter/binding lifecycle update."
+  }
+}
