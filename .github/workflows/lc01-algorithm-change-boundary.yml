@@ -1,0 +1,116 @@
+name: LC01 Algorithm Change Carry-Forward Boundary
+
+on:
+  push:
+    branches:
+      - lc01-algorithm-change-boundary
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  carry-forward-boundary:
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout frozen RadarSimPublic
+        uses: actions/checkout@v4
+        with:
+          repository: Murmur-ops/RadarSimPublic
+          ref: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          path: upstream/RadarSimPublic
+
+      - name: Install runtime dependency
+        run: |
+          set -euxo pipefail
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Static-check LC-01 instruments
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            mre2/model_substitution/radarsimpublic_adapter.py \
+            mre2/model_substitution/radarsimpublic_adapter_v2.py \
+            mre2/model_substitution/radarsimpublic_adapter_ca.py \
+            mre2/model_substitution/orchestrator.py \
+            research/lc01/algorithm_discrimination_challenge.py \
+            research/lc01/lc01_carry_forward_boundary.py
+          python3 -m json.tool mre2/model_substitution/bindings/radarsimpublic_tws_v2.json >/dev/null
+          python3 -m json.tool mre2/model_substitution/bindings/radarsimpublic_tws_ca.json >/dev/null
+
+      - name: Execute current CV configuration under frozen E2 trial
+        run: |
+          set -euxo pipefail
+          rm -rf build/lc01
+          mkdir -p build/lc01
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws_v2.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/lc01/cv
+          cat build/lc01/cv/run_summary.json
+
+      - name: Execute changed CA algorithm under the same frozen E2 trial
+        run: |
+          set -euxo pipefail
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws_ca.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/lc01/ca
+          cat build/lc01/ca/run_summary.json
+
+      - name: Run discriminating maneuver challenge
+        run: |
+          set -euxo pipefail
+          python3 research/lc01/algorithm_discrimination_challenge.py \
+            --upstream-root upstream/RadarSimPublic \
+            --out build/lc01/algorithm_challenge.json
+          cat build/lc01/algorithm_challenge.json
+
+      - name: Evaluate lifecycle carry-forward boundary
+        run: |
+          set -euxo pipefail
+          python3 research/lc01/lc01_carry_forward_boundary.py \
+            --old-binding mre2/model_substitution/bindings/radarsimpublic_tws_v2.json \
+            --new-binding mre2/model_substitution/bindings/radarsimpublic_tws_ca.json \
+            --trial mre2/model_substitution/trial_spec.json \
+            --orchestrator mre2/model_substitution/orchestrator.py \
+            --contract mre2/model_substitution/capability_contract.json \
+            --old-run build/lc01/cv \
+            --new-run build/lc01/ca \
+            --challenge build/lc01/algorithm_challenge.json \
+            --out build/lc01/lc01_result.json
+          cat build/lc01/lc01_result.json
+
+      - name: Assert bounded conclusion
+        run: |
+          set -euxo pipefail
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          r = json.loads(Path('build/lc01/lc01_result.json').read_text())
+          assert r['decision'] == 'PASS'
+          assert all(r['predicates'].values())
+          assert r['carry_forward']['automatic_carry_forward_allowed'] is False
+          assert r['carry_forward']['decision'] == 'REJECTED_FRESH_IMPLEMENTATION_QUALIFICATION_REQUIRED'
+          assert r['current_evidence_state']['BP-01'] == 'ACTIVE_FROM_ORIGINAL_EVIDENCE'
+          assert r['current_evidence_state']['SP-01'] == 'ACTIVE_FROM_ORIGINAL_EVIDENCE'
+          assert r['current_evidence_state']['MS-01-CA'] == 'PASS_FRESH_EXECUTION'
+          assert r['current_evidence_state']['kinematic_intended_use_CA'] == 'UNKNOWN_PENDING_FRESH_FITNESS_EVIDENCE'
+          assert r['current_evidence_state']['RF_semantic_relation'] == 'UNKNOWN'
+          assert r['discriminating_challenge']['materially_discriminating'] is True
+          PY
+
+      - name: Upload LC-01 evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: lc01-algorithm-change-carry-forward-boundary-evidence
+          path: build/lc01/
