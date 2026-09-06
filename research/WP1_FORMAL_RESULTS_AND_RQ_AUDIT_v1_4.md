@@ -1,10 +1,10 @@
 # WP1 Formal Results and Research-Question Audit v1.4
 
-Status: **Post-EA-01 / VU-01 evidence audit**
+Status: **Corrected post-EA-01 / VU-01b evidence audit**
 
 Date: 2026-09-06
 
-This update retains BP-01, MS-01, SP-01, EQ-01 and EB-01, adds EA-01 as the formal evidence-accumulation result, and adds VU-01 as the first real lifecycle carry-forward result. No additional model class, transport, broker, registry runtime or orchestration mechanism is introduced.
+This update retains BP-01, MS-01, SP-01, EQ-01, EB-01 and EA-01, and records both the failed strict-byte VU-01a and corrected VU-01b lifecycle experiment. No additional model class, transport, broker, registry runtime or orchestration mechanism is introduced.
 
 ## 1. Formal WP1 evidence chain
 
@@ -42,7 +42,7 @@ The TMSU path did not use less total boundary code, but it isolated model-specif
 
 `EA-01 = PASS`
 
-Five existing evidence sets were registered in a closed, acyclic evidence graph without modifying the frozen reports. Stage replay accumulated the evidence record set monotonically from 1 to 5 while retaining every prior record.
+Five existing evidence sets were registered in a closed, acyclic evidence graph without modifying the frozen reports. Stage replay accumulated the evidence-record set monotonically from 1 to 5 while retaining every prior record.
 
 Six final decision queries were reconstructed from explicit evidence provenance. The real RF semantic `UNKNOWN` introduced by SP-01 persisted through later EQ-01 and EB-01 evidence.
 
@@ -56,27 +56,44 @@ while
 qualification remains configuration- and intended-use-dependent
 ```
 
-### R7 — VU-01 Real Version Update & Evidence Carry-Forward
+### R7 — VU-01a / VU-01b Real Version Update & Evidence Carry-Forward
 
-`VU-01 = PASS`
+The lifecycle update changes only the RadarSimPublic adapter/binding provenance layer while preserving the upstream model commit, upper trial, contract, semantic profile and declared semantic mapping.
 
-A real RadarSimPublic adapter/binding revision was introduced while preserving the upstream model commit, upper trial, capability contract, semantic profile and declared semantic mapping.
+The original VU-01a cross-run criterion required exact floating-trace SHA identity. A final-head rerun disproved the reproducibility of that criterion:
 
-Immediately after change, BP-01 and SP-01 remained active while MS-01, EQ-01 and EB-01 were conservatively stale for the changed configuration. All prior evidence remained historically retained.
+```text
+VU-01a strict byte criterion:
+FAIL
+Run 34001315535
+Exact identity: 8 / 16
+```
 
-The updated binding then executed the same 16 frozen cases successfully and produced canonical traces byte-identical to the prior MS-01 RadarSimPublic traces in 16/16 cases.
+Artifact comparison showed only machine-precision-scale differences in moving-target floating values. This is retained as a negative methodological result rather than discarded.
 
-The current architectural-substitution and kinematic intended-use decisions were restored through delta evidence without rerunning BP-01 or SP-01. The RF-performance state remained `UNKNOWN`.
+The corrected VU-01b uses exact discrete trace structure plus 9-decimal normalization of floating fields, with a `1e-6 m` negative perturbation that the comparator must reject.
+
+Corrected result:
+
+```text
+VU-01b = PASS
+Run 34001585171
+updated cases:                 16 / 16 PASS
+normalized cross-run equality: 16 / 16
+negative control:              rejected
+```
+
+BP-01 and SP-01 were reused without re-execution; the affected architectural-substitution/intended-use path was delta-reassessed. EB-01-v1 remains historical for the revised configuration. The RF-performance decision remains `UNKNOWN`.
 
 Supported inference:
 
-> selective evidence carry-forward works for at least one real, controlled version-update event and does not require either complete evidentiary reset or blind inheritance.
+> selective evidence carry-forward is feasible for one real controlled version update, but the comparison rule itself must match the numerical/reproducibility properties of the evidence being carried forward.
 
 ## 2. Revised research interpretation
 
-The primary engineering value demonstrated by WP1 is no longer framed as "less code" or "less time."
+The primary engineering value demonstrated by WP1 is not "less code" or "less time."
 
-The stronger empirical story is:
+The empirically supported story is:
 
 ```text
 model-specific change
@@ -91,106 +108,108 @@ explicit dependencies
         ↓
 selective staleness / reuse
         ↓
+evidence-type-aware reassessment
+        ↓
 current intended-use decision
 ```
 
-This is **manageability and cumulative evidence**, not raw implementation minimization.
+This is **manageability, traceability and cumulative evidence**.
 
-## 3. RQ audit after EA-01 and VU-01
+## 3. RQ audit after EA-01 and corrected VU-01b
 
 | RQ | Status | Current evidence | Remaining gap |
 |---|---|---|---|
 | **RQ1 Minimum contract** | Partially answered | One stable capability/contract/semantic declaration supports two heterogeneous implementations and survives one controlled binding revision. | Sufficiency shown for one capability class; minimality not proven. |
-| **RQ2 Composition / substitution** | Substitution strongly supported | Real heterogeneous binding-only substitution demonstrated; VU-01 shows the substitution decision can be selectively carried forward after a controlled adapter/binding revision. | Multi-capability composition remains untested and should not be claimed unless central to the final paper. |
-| **RQ3 Semantic interoperability** | Bounded positive answer | 5/5 injected mismatches rejected; real unresolved RF concept quarantined as `UNKNOWN`; VU-01 shows later successful version maintenance does not erase that uncertainty. | No automatic ontology inference/completeness claim; RF concept equivalence remains unresolved. |
-| **RQ4 Trust / evidence reuse** | **Strong bounded positive answer within WP1** | EQ-01 gives intended-use-relative screening; EA-01 demonstrates cumulative, traceable evidence management; VU-01 demonstrates selective carry-forward under an actual version change. | No authoritative accreditation, no large organizational history, no enterprise-scale repository performance. |
-| **RQ5 T&E engineering benefit** | **Bounded positive answer for manageability/change propagation** | EB-01 shows stable upper core and smaller reassessment radius; EA-01/VU-01 show that evidence can be accumulated, retained and selectively requalified after change. | Engineer-hours, calendar time and organization-wide cost remain unmeasured and are no longer treated as the primary value proposition. |
+| **RQ2 Composition / substitution** | Substitution strongly supported | Real heterogeneous binding-only substitution; VU-01b shows the substitution claim can be selectively restored after a controlled adapter/binding revision. | Multi-capability composition remains untested and should not be claimed unless central to the paper. |
+| **RQ3 Semantic interoperability** | Bounded positive answer | 5/5 injected mismatches rejected; real unresolved RF concept quarantined as `UNKNOWN`; later successful maintenance does not erase it. | No automatic ontology inference/completeness claim; RF concept equivalence remains unresolved. |
+| **RQ4 Trust / evidence reuse** | **Strong bounded positive answer within WP1** | EQ-01 gives intended-use-relative screening; EA-01 demonstrates cumulative/traceable evidence management; VU-01a exposes a bad carry-forward criterion; VU-01b demonstrates corrected selective carry-forward under an actual code/binding change. | No authoritative accreditation, large organizational history, or enterprise-scale evidence repository. |
+| **RQ5 T&E engineering benefit** | **Bounded positive answer for manageability/change propagation** | EB-01 isolates model-specific change; EA/VU show evidence can be retained, selectively made stale and restored with typed delta evidence rather than reset wholesale. | Engineer-hours/calendar time/cost remain unmeasured and are no longer the primary value proposition. |
 
 ## 4. Hypothesis audit
 
 | Hypothesis | Status | Evidence |
 |---|---|---|
-| **H1 integration time lower** | Not directly tested and de-emphasized | No human engineer-time measurement. Current paper should not claim percentage time reduction. |
-| **H2 upper-level change cost approaches zero on swap** | Supported in one bounded real heterogeneous case | zero upper-trial edits for implementation substitution; VU-01 preserves the frozen upper trial across one adapter/binding revision. |
-| **H3 reuse rate higher** | Not proven as a comparative cross-project outcome | Evidence reuse/retention is demonstrated mechanistically and in one real version update, but no external baseline establishes a higher portfolio-wide reuse rate. |
+| **H1 integration time lower** | Not directly tested; de-emphasized | No human engineer-time measurement; no percentage time-saving claim should be made. |
+| **H2 upper-level change cost approaches zero on swap** | Supported in one bounded real heterogeneous case | zero upper-trial edits for substitution; upper trial also remained frozen through VU adapter/binding revision. |
+| **H3 reuse rate higher** | Not proven as a cross-project comparative outcome | Evidence carry-forward is demonstrated mechanistically and through one real revision, but no portfolio baseline establishes a higher organization-wide reuse rate. |
 | **H4 semantic precheck detects structural-valid mismatch** | Supported | SP-01 5/5 mismatch detection; real `UNKNOWN` retained. |
-| **H5 machine-assisted fitness-for-use screening** | Boundedly supported | EQ-01 4/4 intended-use cases; EA/VU maintain qualification provenance through evidence accumulation and change. |
-| **H6 Golden Scenario preservation** | Partially supported | BP-01 16/16 exact identity within the deterministic wrapper envelope. |
+| **H5 machine-assisted fitness-for-use screening** | Boundedly supported | EQ-01 4/4 intended-use cases; EA/VU maintain qualification provenance across evidence accumulation/change. |
+| **H6 Golden Scenario preservation** | Partially supported | BP-01 16/16 exact identity within deterministic OpenEaagles wrapper envelope. |
 
-## 5. The paper-level role of UNKNOWN
+## 5. Paper-level role of `UNKNOWN`
 
-The `UNKNOWN` result is now more than a semantic-edge case.
-
-Across SP-01, EQ-01, EA-01 and VU-01 it demonstrates four distinct properties:
+Across SP-01, EQ-01, EA-01 and VU-01b:
 
 ```text
 SP-01:
-UNKNOWN can be generated when semantic equivalence evidence is absent.
+UNKNOWN is generated when semantic-equivalence evidence is absent.
 
 EQ-01:
-UNKNOWN becomes decision-relevant only when the intended use requires that unresolved concept/evidence.
+UNKNOWN becomes decision-relevant when intended use requires that unresolved evidence.
 
 EA-01:
-UNKNOWN persists as later unrelated evidence accumulates.
+UNKNOWN persists as unrelated evidence accumulates.
 
-VU-01:
+VU-01b:
 UNKNOWN survives a successful version update and selective requalification.
 ```
 
-This supports the paper-level proposition:
+Thus:
 
-> An explicit unknown state is a durable representation of evidence insufficiency, not a temporary integration failure and not a value that later successful tests may overwrite implicitly.
+> An explicit unknown state is a durable representation of evidence insufficiency, not a temporary integration failure and not a value later successful tests may overwrite implicitly.
 
-## 6. The paper-level role of accumulation
+## 6. Paper-level role of accumulation
 
-The strongest new conceptual result is:
+Two results now define the evidence-management contribution:
 
 ```text
 Evidence history is provenance-monotonic.
 Qualification is not monotonic.
 ```
 
-A mature T&E evidence system should therefore allow:
+and:
 
-- evidence to accumulate without deletion;
-- evidence applicability to become stale after relevant change;
-- unaffected evidence to remain active;
-- stale evidence to remain historically auditable;
-- delta evidence to restore a current decision when justified;
-- unresolved evidence gaps to persist until explicitly addressed.
+```text
+Evidence criteria are typed by numerical/execution behavior.
+```
 
-This is a more defensible modernization claim than generic statements about reuse or integration efficiency.
+A T&E evidence system should therefore allow evidence to accumulate without deletion, become stale after relevant change, retain unaffected evidence as active, preserve stale evidence historically, restore claims with justified delta evidence, and leave unresolved evidence gaps unresolved until explicitly addressed.
 
 ## 7. Integrated WP1 claim
 
-WP1 now supports the following bounded statement:
+WP1 now supports the bounded statement:
 
-> A SAL-aligned TMSU approach can preserve a wrapped legacy capability, substitute an independently implemented heterogeneous model without rewriting the upper trial, reject or quarantine semantic incompatibility and uncertainty, condition qualification on intended use and evidence scope, isolate model-specific change from shared trial logic, and accumulate versioned evidence such that affected claims can be selectively requalified while historical evidence and unresolved uncertainties remain traceable.
+> A SAL-aligned TMSU approach can preserve a wrapped legacy capability, substitute an independently implemented heterogeneous model without rewriting the upper trial, reject or quarantine semantic incompatibility and uncertainty, condition qualification on intended use and evidence scope, isolate model-specific change from shared trial logic, and accumulate versioned evidence such that affected claims can be selectively requalified with evidence-type-appropriate criteria while historical evidence and unresolved uncertainties remain traceable.
 
-## 8. What WP1 still cannot claim
+## 8. Important negative result retained
 
-WP1 does not establish:
+The VU-01a failure should remain in the paper or supplement because it prevents an overly simplistic evidence-reuse story.
 
-- enterprise-wide contract optimality;
-- multi-capability composition;
-- automatic semantic understanding;
-- operational/acquisition model accreditation;
-- organization-wide time/cost reduction;
-- universal delta requalification for major model-algorithm changes;
-- enterprise-scale evidence repository performance.
-
-## 9. Research stopping rule for WP1
-
-The main WP1 mechanism is now sufficiently evidenced for the intended paper story.
-
-Adding a third sensor model, another transport, or more API mechanisms has low marginal value.
-
-The only additional experiment with clear value would be a **larger semantic/model-algorithm version change** to test where delta requalification stops being sufficient and a fuller reassessment becomes necessary. That experiment should be treated as optional sensitivity/limit evidence rather than a new main branch of the study.
-
-Otherwise the recommended next phase is manuscript evidence integration and figure design around the chain:
+It shows:
 
 ```text
-BP-01 -> MS-01 -> SP-01 -> EQ-01 -> EB-01 -> EA-01 -> VU-01
+same model logic
++ same trial
++ same intended behavior
+!= guaranteed cross-run byte identity
+```
+
+For numerical simulation evidence, management rules must distinguish bitwise reproducibility from numerical equivalence. This is directly relevant to long-lived T&E evidence archives that may be replayed across runners/platforms.
+
+## 9. What WP1 still cannot claim
+
+WP1 does not establish enterprise-wide contract optimality, multi-capability composition, automatic semantic understanding, authoritative operational/acquisition accreditation, organization-wide time/cost reduction, universal delta requalification for major model-algorithm changes, or enterprise-scale evidence-store performance.
+
+## 10. Research stopping rule for WP1
+
+The main WP1 mechanism is now sufficiently evidenced for the intended paper story. Adding a third sensor model, another transport, or additional API machinery has low marginal value.
+
+The only optional limit experiment with clear value is a **substantive model-algorithm/semantic version change** that should deliberately exceed the current carry-forward envelope and demonstrate when selective delta evidence is insufficient and fuller reassessment is required.
+
+Otherwise the recommended next phase is manuscript evidence integration and figure design around:
+
+```text
+BP-01 -> MS-01 -> SP-01 -> EQ-01 -> EB-01 -> EA-01 -> VU-01a/b
 ```
 
 with the primary narrative:
@@ -202,5 +221,6 @@ Preserve
 -> Qualify intended use
 -> Bound change
 -> Accumulate evidence
--> Carry evidence forward under controlled change
+-> Carry forward selectively
+-> Use evidence-type-appropriate requalification
 ```
