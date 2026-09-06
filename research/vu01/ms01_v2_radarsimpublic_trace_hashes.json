@@ -1,0 +1,25 @@
+{
+  "source_evidence_id": "ms01.tws.openeaagles-radarsimpublic.2026-09-05.v2",
+  "source_ci_run": 33971627414,
+  "source_artifact_id": 9971118509,
+  "source_artifact_sha256": "7e4f421b04bf7dd9ca40964657ec7dc789fedcff1a66d85cefb9b6f2c6183bb1",
+  "implementation_id": "radarsimpublic.radar-kf@8b63f82",
+  "trace_hashes": {
+    "d10_a00_r01_closing": "5a38972b9c8dbce15ba0d79f7bd995741e7806f464025931b86920f8fbb6a60f",
+    "d10_a00_r01_static": "8957a0b6f22103aed97db1f8dc0962955188bc64a4dd9793c03522ad879369dd",
+    "d10_a00_r04_closing": "a0fc4816834499c6cb4e280b76d98bb6c40a938a671172eac898ebe112abb936",
+    "d10_a00_r04_static": "70aa352702a189f281279fe68d5bb5a0bc692eaeb7648c50d18937bfa7e635b1",
+    "d10_a20_r01_closing": "c0dc8fcb5fa40e6b4553c7c54c689236d3fc6e96392ef6d5a4dbb4732bd40a35",
+    "d10_a20_r01_static": "a6641e07fa94d8e2caf1f42b7933b2295f7fd7d690fe0b4d369faf00a91f1816",
+    "d10_a20_r04_closing": "f103c86c688ee9c61a82ff7a1e9dc163951ed2a4554b5c47edd417122f1f6a63",
+    "d10_a20_r04_static": "30bf2ee5fd4dc7432a49596c4c8f4e17c9cbc9da52331e4779d0445bdf9ce85a",
+    "d20_a00_r01_closing": "c93a26bc8e106775ab672f10d14146c4e1893d829d98b3249ae525172c2e2b5d",
+    "d20_a00_r01_static": "eb83c0004af955564b25915d94237b055735056beb578a3b476a0e0e42cb6b3a",
+    "d20_a00_r04_closing": "eb69c12a914fc11a04e56ba1ad63a2d91cc61e94291c686de57c0a73db0dffa9",
+    "d20_a00_r04_static": "2b1d309ba599dbd2dab6aefc333b65fed8b44c01843a2272bce37149d0bb4b46",
+    "d20_a20_r01_closing": "148c753db42b46495f5a414cf0018111df4b173d6f90d78f0f8e5fa2e56d3091",
+    "d20_a20_r01_static": "948bbd44424a2b2421d63c123f5a418676db3ea7990f8065be88784232726234",
+    "d20_a20_r04_closing": "214e01c32119e7438d3ecdcb6c6336d439f261db90e2afcd86bb6830ada1a3e5",
+    "d20_a20_r04_static": "8751669fa0e47515f889824a12c1628facb4b0ef463aa7007ce6d808018adcff"
+  }
+}
