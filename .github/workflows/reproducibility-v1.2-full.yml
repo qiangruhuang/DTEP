@@ -1,0 +1,100 @@
+name: Reproducibility v1.2 Full Legacy + Substitution
+
+on:
+  push:
+    branches:
+      - reproducibility-v1.2
+    paths:
+      - 'scripts/build_openeaagles_stack.sh'
+      - 'mre1/**'
+      - 'mre2/**'
+      - '.github/workflows/reproducibility-v1.2-full.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  full-legacy-substitution:
+    runs-on: ubuntu-22.04
+    timeout-minutes: 45
+    steps:
+      - name: Checkout DTEP
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install system/runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential cmake libx11-dev libexpat1-dev
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Build frozen OpenEaagles and JSBSim stack with helper
+        run: |
+          set -euxo pipefail
+          bash scripts/build_openeaagles_stack.sh
+
+      - name: Reproduce BP-01 behavior matrix
+        run: |
+          set -euxo pipefail
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre1/openeaagles/behavior_matrix.py \
+            --binary build/mre1/oe_tws_probe \
+            --template mre1/openeaagles/scenario_matrix_template.edl \
+            --wrapper mre1/openeaagles/tmsu_wrapper.py \
+            --frames 500 \
+            --outdir build/repro-bp01
+          python3 - <<'PY'
+          import json
+          r=json.load(open('build/repro-bp01/behavior_preservation_v1.json'))
+          assert r['all_pass'] is True
+          assert r['case_count']==16
+          assert r['passed_cases']==16
+          assert r['all_D_byte_zero'] is True
+          print('BP-01 reproduction PASS')
+          PY
+
+      - name: Reproduce MS-01 heterogeneous substitution
+        run: |
+          set -euxo pipefail
+          if [ ! -d upstream/RadarSimPublic/.git ]; then
+            git clone https://github.com/Murmur-ops/RadarSimPublic.git upstream/RadarSimPublic
+          fi
+          git -C upstream/RadarSimPublic checkout --detach 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          export LD_LIBRARY_PATH="$GITHUB_WORKSPACE/oe3rd/lib:${LD_LIBRARY_PATH:-}"
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/openeaagles_tws.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/repro-ms01/openeaagles
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/repro-ms01/radarsimpublic
+          python3 mre2/model_substitution/evaluate_substitution.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --orchestrator mre2/model_substitution/orchestrator.py \
+            --run-a build/repro-ms01/openeaagles \
+            --run-b build/repro-ms01/radarsimpublic \
+            --report build/repro-ms01/result.json
+          python3 - <<'PY'
+          import json
+          r=json.load(open('build/repro-ms01/result.json'))
+          assert r['decision']=='PASS'
+          assert r['case_count_each']==16
+          assert r['upper_trial_artifacts_modified_for_swap']==0
+          print('MS-01 reproduction PASS')
+          PY
+
+      - name: Upload full reproduction evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: reproducibility-v1.2-full-legacy-substitution
+          path: |
+            build/repro-bp01/
+            build/repro-ms01/
+            jsbsim-build-compat.patch
