@@ -1,0 +1,167 @@
+name: v2.5 Experimental Revision Freeze — FMI + Plain Facade
+
+on:
+  push:
+    branches:
+      - v2.5-experimental-freeze
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  wp-fmi-bl:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout DTEP with history
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Checkout frozen RadarSimPublic
+        uses: actions/checkout@v4
+        with:
+          repository: Murmur-ops/RadarSimPublic
+          ref: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          path: upstream/RadarSimPublic
+
+      - name: Install Python dependency
+        run: |
+          python3 -m pip install --upgrade pip
+          python3 -m pip install numpy
+
+      - name: Static checks
+        run: |
+          set -euxo pipefail
+          python3 -m py_compile \
+            fmi/fmi01/fmi01_extract.py \
+            rq5/plain_facade/plain_facade.py \
+            rq5/plain_facade/facade_orchestrator.py \
+            rq5/plain_facade/bl01_measure.py \
+            rq5/engineering_burden/bespoke_orchestrator.py \
+            mre2/model_substitution/orchestrator.py \
+            mre2/model_substitution/radarsimpublic_adapter.py
+          test "$(git -C upstream/RadarSimPublic rev-parse HEAD)" = "8b63f824a5744c1b3a3fca5e948fa7c59f897b17"
+
+      - name: WP-FMI — fetch pinned FMI reference asset and fmusim
+        run: |
+          set -euxo pipefail
+          mkdir -p build/v25/fmi/downloads build/v25/fmi/ref build/v25/fmi/fmusim
+          curl -L --fail --retry 3 \
+            https://github.com/modelica/Reference-FMUs/releases/download/v0.0.40/Reference-FMUs.zip \
+            -o build/v25/fmi/downloads/Reference-FMUs.zip
+          echo "6efe688afe1b2802fe0f011259788396a370f78f2f115b7897285503a884741c  build/v25/fmi/downloads/Reference-FMUs.zip" | sha256sum -c -
+          unzip -q build/v25/fmi/downloads/Reference-FMUs.zip -d build/v25/fmi/ref
+          FMU="$(find build/v25/fmi/ref -type f -name BouncingBall.fmu | head -n1)"
+          test -n "$FMU"
+          cp "$FMU" build/v25/fmi/BouncingBall.fmu
+
+          curl -L --fail --retry 3 \
+            https://github.com/modelica/fmusim/releases/download/v0.10.0/fmusim-x86_64-linux.zip \
+            -o build/v25/fmi/downloads/fmusim-x86_64-linux.zip
+          echo "dc18f9cb46ea7a628cc3846f4cb8ca2bd95095a9221abc502c14e75a49be5604  build/v25/fmi/downloads/fmusim-x86_64-linux.zip" | sha256sum -c -
+          unzip -q build/v25/fmi/downloads/fmusim-x86_64-linux.zip -d build/v25/fmi/fmusim
+          FMUSIM="$(find build/v25/fmi/fmusim -type f -name fmusim | head -n1)"
+          test -n "$FMUSIM"
+          chmod +x "$FMUSIM"
+          echo "$FMUSIM" > build/v25/fmi/fmusim_path.txt
+          "$FMUSIM" --version | tee build/v25/fmi/fmusim_version.txt
+
+      - name: WP-FMI — validate, execute FMI 3 Co-Simulation, map metadata to TMSU
+        run: |
+          set -euxo pipefail
+          FMUSIM="$(cat build/v25/fmi/fmusim_path.txt)"
+          "$FMUSIM" validate build/v25/fmi/BouncingBall.fmu | tee build/v25/fmi/validate.txt
+          "$FMUSIM" info build/v25/fmi/BouncingBall.fmu | tee build/v25/fmi/info.txt
+          "$FMUSIM" simulate build/v25/fmi/BouncingBall.fmu \
+            --interface-type cs \
+            --stop-time 1 \
+            --output-interval 0.01 \
+            --output-variable h \
+            --output-variable v \
+            --output-file build/v25/fmi/bouncing_ball_cs.csv
+          python3 fmi/fmi01/fmi01_extract.py \
+            --fmu build/v25/fmi/BouncingBall.fmu \
+            --sidecar fmi/fmi01/tmsu_sidecar.json \
+            --simulation-csv build/v25/fmi/bouncing_ball_cs.csv \
+            --fmusim-version "$(head -n1 build/v25/fmi/fmusim_version.txt)" \
+            --outdir build/v25/fmi/evidence
+          cat build/v25/fmi/evidence/fmi_tmsu_mapping.json
+
+      - name: WP-BL — execute SAL/TMSU arm
+        run: |
+          set -euxo pipefail
+          python3 mre2/model_substitution/orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --outdir build/v25/bl/tmsu
+
+      - name: WP-BL — execute competent plain-facade arm
+        run: |
+          set -euxo pipefail
+          python3 rq5/plain_facade/facade_orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --facade rq5/plain_facade/plain_facade.py \
+            --upstream-root upstream/RadarSimPublic \
+            --outdir build/v25/bl/facade
+
+      - name: WP-BL — execute direct-coupling arm
+        run: |
+          set -euxo pipefail
+          python3 rq5/engineering_burden/bespoke_orchestrator.py \
+            --trial mre2/model_substitution/trial_spec.json \
+            --contract mre2/model_substitution/capability_contract.json \
+            --upstream-root upstream/RadarSimPublic \
+            --outdir build/v25/bl/direct
+
+      - name: WP-BL — evaluate three-arm ablation
+        run: |
+          set -euxo pipefail
+          python3 rq5/plain_facade/bl01_measure.py \
+            --direct-run build/v25/bl/direct \
+            --facade-run build/v25/bl/facade \
+            --tmsu-run build/v25/bl/tmsu \
+            --direct-core rq5/engineering_burden/bespoke_orchestrator.py \
+            --facade-core rq5/plain_facade/facade_orchestrator.py \
+            --tmsu-core mre2/model_substitution/orchestrator.py \
+            --facade-boundary rq5/plain_facade/plain_facade.py \
+            --tmsu-adapter mre2/model_substitution/radarsimpublic_adapter.py \
+            --tmsu-binding mre2/model_substitution/bindings/radarsimpublic_tws.json \
+            --outdir build/v25/bl/evidence
+          cat build/v25/bl/evidence/bl01_result.json
+
+      - name: Freeze assertions
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          fmi=json.loads(Path('build/v25/fmi/evidence/fmi_tmsu_mapping.json').read_text())
+          bl=json.loads(Path('build/v25/bl/evidence/bl01_result.json').read_text())
+          assert fmi['decision']=='PASS'
+          assert fmi['fmi']['version'].startswith('3.')
+          assert fmi['fmi']['interface_type']=='CoSimulation'
+          assert fmi['m3_native_criteria']['canonical_variables_resolved_from_machine_readable_fmi_metadata']
+          assert bl['decision']=='PASS'
+          assert bl['functional_equivalence']['all_three_byte_identical_cases']==16
+          assert bl['software_localization']['plain_facade']['upper_core_direct_model_refs']==0
+          assert bl['software_localization']['sal_tmsu']['upper_core_direct_model_refs']==0
+          assert bl['software_localization']['direct']['upper_core_direct_model_refs']>0
+          assert bl['t_and_e_governance_features']['plain_facade']['semantic_profile'] is False
+          assert bl['t_and_e_governance_features']['sal_tmsu']['semantic_profile'] is True
+          PY
+
+      - name: Upload v2.5 FMI + BL evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: v25-fmi-bl-experimental-freeze-evidence
+          path: |
+            build/v25/fmi/evidence/
+            build/v25/fmi/validate.txt
+            build/v25/fmi/info.txt
+            build/v25/fmi/fmusim_version.txt
+            build/v25/fmi/bouncing_ball_cs.csv
+            build/v25/bl/evidence/
+            build/v25/bl/tmsu/run_summary.json
+            build/v25/bl/facade/run_summary.json
+            build/v25/bl/direct/run_summary.json
