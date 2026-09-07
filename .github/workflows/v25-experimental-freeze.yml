@@ -144,9 +144,9 @@ jobs:
           assert fmi['m3_native_criteria']['canonical_variables_resolved_from_machine_readable_fmi_metadata']
           assert bl['decision']=='PASS'
           assert bl['functional_equivalence']['all_three_byte_identical_cases']==16
-          assert bl['software_localization']['plain_facade']['upper_core_direct_model_refs']==0
-          assert bl['software_localization']['sal_tmsu']['upper_core_direct_model_refs']==0
-          assert bl['software_localization']['direct']['upper_core_direct_model_refs']>0
+          assert bl['software_localization']['plain_facade']['upper_core_executable_model_refs']==0
+          assert bl['software_localization']['sal_tmsu']['upper_core_executable_model_refs']==0
+          assert bl['software_localization']['direct']['upper_core_executable_model_refs']>0
           assert bl['t_and_e_governance_features']['plain_facade']['semantic_profile'] is False
           assert bl['t_and_e_governance_features']['sal_tmsu']['semantic_profile'] is True
           PY
