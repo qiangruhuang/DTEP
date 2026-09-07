@@ -1,4 +1,4 @@
-name: v2.5 Experimental Revision Freeze — FMI + Plain Facade
+name: v2.5 Experimental Revision Freeze — FMI + Plain Facade + ENV
 
 on:
   push:
@@ -10,7 +10,7 @@ permissions:
   contents: read
 
 jobs:
-  wp-fmi-bl:
+  wp-fmi-bl-env:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout DTEP with history
@@ -40,7 +40,8 @@ jobs:
             rq5/plain_facade/bl01_measure.py \
             rq5/engineering_burden/bespoke_orchestrator.py \
             mre2/model_substitution/orchestrator.py \
-            mre2/model_substitution/radarsimpublic_adapter.py
+            mre2/model_substitution/radarsimpublic_adapter.py \
+            research/env01/env01_execution_environment.py
           test "$(git -C upstream/RadarSimPublic rev-parse HEAD)" = "8b63f824a5744c1b3a3fca5e948fa7c59f897b17"
 
       - name: WP-FMI — fetch pinned FMI reference asset and fmusim
@@ -131,6 +132,74 @@ jobs:
             --outdir build/v25/bl/evidence
           cat build/v25/bl/evidence/bl01_result.json
 
+      - name: WP-ENV — fetch source runtime and freeze environment identities
+        run: |
+          set -euxo pipefail
+          mkdir -p build/v25/env/downloads build/v25/env/fmusim09 build/v25/env/source build/v25/env/changed build/v25/env/evidence
+          curl -L --fail --retry 3 \
+            https://github.com/modelica/fmusim/releases/download/v0.9.0/fmusim-x86_64-linux.zip \
+            -o build/v25/env/downloads/fmusim-0.9.0-x86_64-linux.zip
+          echo "fe882ca7a05748beaf65680319995c3da12f731430277d860a61df83c313b4a2  build/v25/env/downloads/fmusim-0.9.0-x86_64-linux.zip" | sha256sum -c -
+          unzip -q build/v25/env/downloads/fmusim-0.9.0-x86_64-linux.zip -d build/v25/env/fmusim09
+          FMUSIM09="$(find build/v25/env/fmusim09 -type f -name fmusim | head -n1)"
+          FMUSIM10="$(cat build/v25/fmi/fmusim_path.txt)"
+          test -n "$FMUSIM09"
+          test -n "$FMUSIM10"
+          chmod +x "$FMUSIM09" "$FMUSIM10"
+          echo "$FMUSIM09" > build/v25/env/fmusim09_path.txt
+          echo "$FMUSIM10" > build/v25/env/fmusim10_path.txt
+          "$FMUSIM09" --version
+          "$FMUSIM10" --version
+          python3 - <<'PY'
+          import hashlib, json, os, platform, subprocess
+          from pathlib import Path
+          fmu=Path('build/v25/fmi/BouncingBall.fmu')
+          def sha(p): return hashlib.sha256(Path(p).read_bytes()).hexdigest()
+          def make(binary):
+              return {
+                  'os': platform.system(),
+                  'kernel': platform.release(),
+                  'architecture': platform.machine(),
+                  'runner_name': os.environ.get('RUNNER_NAME'),
+                  'fmusim_version': subprocess.check_output([binary, '--version'], text=True).strip(),
+                  'fmusim_binary_sha256': sha(binary),
+                  'fmu_sha256': sha(fmu),
+                  'interface_type': 'FMI3-CoSimulation',
+              }
+          b09=Path('build/v25/env/fmusim09_path.txt').read_text().strip()
+          b10=Path('build/v25/env/fmusim10_path.txt').read_text().strip()
+          Path('build/v25/env/source_environment.json').write_text(json.dumps(make(b09), indent=2, sort_keys=True)+'\n')
+          Path('build/v25/env/changed_environment.json').write_text(json.dumps(make(b10), indent=2, sort_keys=True)+'\n')
+          PY
+
+      - name: WP-ENV — same-machine repeats under both runtime versions
+        run: |
+          set -euxo pipefail
+          FMUSIM09="$(cat build/v25/env/fmusim09_path.txt)"
+          FMUSIM10="$(cat build/v25/env/fmusim10_path.txt)"
+          for i in $(seq -w 1 10); do
+            "$FMUSIM09" simulate build/v25/fmi/BouncingBall.fmu \
+              --interface-type cs --stop-time 1 --output-interval 0.01 \
+              --output-variable h --output-variable v \
+              --output-file "build/v25/env/source/run_${i}.csv"
+            "$FMUSIM10" simulate build/v25/fmi/BouncingBall.fmu \
+              --interface-type cs --stop-time 1 --output-interval 0.01 \
+              --output-variable h --output-variable v \
+              --output-file "build/v25/env/changed/run_${i}.csv"
+          done
+
+      - name: WP-ENV — evaluate dependency hit, staleness and delta restoration
+        run: |
+          set -euxo pipefail
+          python3 research/env01/env01_execution_environment.py \
+            --baseline-dir build/v25/env/source \
+            --changed-dir build/v25/env/changed \
+            --baseline-env build/v25/env/source_environment.json \
+            --changed-env build/v25/env/changed_environment.json \
+            --dependency-map tmsu/evidence/change_dependency_mapping_v1.json \
+            --outdir build/v25/env/evidence
+          cat build/v25/env/evidence/env01_result.json
+
       - name: Freeze assertions
         run: |
           python3 - <<'PY'
@@ -138,6 +207,7 @@ jobs:
           from pathlib import Path
           fmi=json.loads(Path('build/v25/fmi/evidence/fmi_tmsu_mapping.json').read_text())
           bl=json.loads(Path('build/v25/bl/evidence/bl01_result.json').read_text())
+          env=json.loads(Path('build/v25/env/evidence/env01_result.json').read_text())
           assert fmi['decision']=='PASS'
           assert fmi['fmi']['version'].startswith('3.')
           assert fmi['fmi']['interface_type']=='CoSimulation'
@@ -149,12 +219,20 @@ jobs:
           assert bl['software_localization']['direct']['upper_core_executable_model_refs']>0
           assert bl['t_and_e_governance_features']['plain_facade']['semantic_profile'] is False
           assert bl['t_and_e_governance_features']['sal_tmsu']['semantic_profile'] is True
+          assert env['decision']=='PASS'
+          assert env['same_machine_repeat']['source_all_byte_identical']
+          assert env['same_machine_repeat']['changed_all_byte_identical']
+          assert env['cross_environment_delta']['all_changed_runs_numerically_equivalent_to_source_reference']
+          assert env['negative_control']['detected']
+          assert env['lifecycle_transition']['source_execution_evidence']['after_environment_change']=='STALE'
+          assert env['lifecycle_transition']['restored_current_claim']['decision']=='PASS_CARRIED_FORWARD_BY_DELTA_EVIDENCE'
+          assert env['lifecycle_transition']['unaffected_semantic_control']['after_environment_change']=='ACTIVE'
           PY
 
-      - name: Upload v2.5 FMI + BL evidence
+      - name: Upload v2.5 FMI + BL + ENV evidence
         uses: actions/upload-artifact@v4
         with:
-          name: v25-fmi-bl-experimental-freeze-evidence
+          name: v25-fmi-bl-env-experimental-freeze-evidence
           path: |
             build/v25/fmi/evidence/
             build/v25/fmi/validate.txt
@@ -165,3 +243,6 @@ jobs:
             build/v25/bl/tmsu/run_summary.json
             build/v25/bl/facade/run_summary.json
             build/v25/bl/direct/run_summary.json
+            build/v25/env/source_environment.json
+            build/v25/env/changed_environment.json
+            build/v25/env/evidence/
