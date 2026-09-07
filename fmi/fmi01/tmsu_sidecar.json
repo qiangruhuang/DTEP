@@ -1,0 +1,41 @@
+{
+  "profile_version": "0.1.0",
+  "capability_id": "platform.motion.vertical_state",
+  "contract_id": "tmsu.platform.motion.vertical_state.v1",
+  "semantic_profile_id": "tmsu.platform.motion.vertical_state.semantic.v1",
+  "migration_path": "M3 Native FMI micro-demonstration",
+  "execution_profile": {
+    "standard": "FMI",
+    "fmi_version": "3.0",
+    "interface_type": "CoSimulation"
+  },
+  "canonical_variables": {
+    "height_m": {
+      "fmi_variable": "h",
+      "required_type": "Float64",
+      "required_unit": "m",
+      "concept": "vertical position above the contact plane",
+      "frame": "local vertical, positive upward"
+    },
+    "vertical_velocity_mps": {
+      "fmi_variable": "v",
+      "required_type": "Float64",
+      "required_unit": "m/s",
+      "concept": "vertical velocity",
+      "sign_convention": "positive upward"
+    }
+  },
+  "intended_use": {
+    "id": "IU-FMI-TRANSPORT-01",
+    "purpose": "FMI-to-TMSU onboarding and metadata-mapping mechanism demonstration",
+    "excludes": [
+      "vehicle-dynamics fidelity claims",
+      "weapons-system accreditation",
+      "cross-capability performance generalization"
+    ]
+  },
+  "provenance": {
+    "upstream": "modelica/Reference-FMUs v0.0.40 BouncingBall",
+    "release_asset_sha256": "6efe688afe1b2802fe0f011259788396a370f78f2f115b7897285503a884741c"
+  }
+}
