@@ -1,0 +1,46 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/qiangruhuang/DTEP/blob/reproducibility-v1.2/tmsu/evidence/tmsu_evidence_record_schema_v1.json",
+  "title": "TMSU Evidence Record Research Schema v1",
+  "description": "Non-normative research schema used to make the conceptual evidence record explicit. It is not a deployable interface or accreditation specification.",
+  "type": "object",
+  "required": ["evidence_id", "claim", "configuration", "intended_use", "domain", "method", "result", "dependencies", "provenance"],
+  "properties": {
+    "evidence_id": {"type": "string"},
+    "claim": {"type": "string"},
+    "configuration": {
+      "type": "object",
+      "properties": {
+        "capability_id": {"type": "string"},
+        "contract_id": {"type": "string"},
+        "semantic_profile_id": {"type": "string"},
+        "implementation_id": {"type": "string"}
+      },
+      "required": ["capability_id", "contract_id", "implementation_id"]
+    },
+    "intended_use": {"type": "string"},
+    "domain": {"type": ["object", "array", "string"]},
+    "method": {"type": ["object", "string"]},
+    "result": {"type": ["object", "string"]},
+    "dependencies": {
+      "description": "Logical, typed and versioned prerequisites whose change can affect applicability.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["artifact_type", "artifact_id", "version_or_hash"],
+        "properties": {
+          "artifact_type": {"enum": ["CAPABILITY", "CONTRACT", "SEMANTIC_PROFILE", "IMPLEMENTATION", "ADAPTER_BINDING", "TRIAL", "ORCHESTRATOR", "EXECUTION_ENVIRONMENT", "SCENARIO_DATA", "EVIDENCE_METHOD"]},
+          "artifact_id": {"type": "string"},
+          "version_or_hash": {"type": "string"}
+        }
+      }
+    },
+    "provenance": {
+      "description": "Historical facts describing how, when and from which versioned artifacts the evidence was produced.",
+      "type": "object"
+    },
+    "lifecycle_status": {"enum": ["ACTIVE", "STALE", "HISTORICAL"]},
+    "qualification_state": {"enum": ["QUALIFIED_WITHIN_EVIDENCE", "UNKNOWN", "NOT_QUALIFIED"]}
+  },
+  "additionalProperties": true
+}
