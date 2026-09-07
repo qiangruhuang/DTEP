@@ -1,0 +1,19 @@
+{
+  "profile_id": "tmsu.change-dependency.research.v1",
+  "status": "non-normative research profile",
+  "note": "This mapping operationalizes the conceptual change-impact mechanism used in the manuscript. It does not define a universal M&S change taxonomy.",
+  "artifact_types": ["CAPABILITY", "CONTRACT", "SEMANTIC_PROFILE", "IMPLEMENTATION", "ADAPTER_BINDING", "TRIAL", "ORCHESTRATOR", "EXECUTION_ENVIRONMENT", "SCENARIO_DATA", "EVIDENCE_METHOD"],
+  "change_classes": {
+    "DISPLAY_METADATA": ["ADAPTER_BINDING"],
+    "SEMANTIC_MAPPING": ["SEMANTIC_PROFILE", "ADAPTER_BINDING"],
+    "ADAPTER_PROVENANCE": ["ADAPTER_BINDING", "EXECUTION_ENVIRONMENT"],
+    "MODEL_ALGORITHM": ["IMPLEMENTATION"],
+    "IMPLEMENTATION_IDENTITY": ["IMPLEMENTATION"],
+    "UPPER_TRIAL": ["TRIAL", "ORCHESTRATOR", "SCENARIO_DATA"],
+    "CAPABILITY_CONTRACT": ["CAPABILITY", "CONTRACT"],
+    "EXECUTION_ENVIRONMENT": ["EXECUTION_ENVIRONMENT"]
+  },
+  "applicability_rule": "evidence is directly reusable only when its typed dependencies do not intersect changed typed artifacts",
+  "contract_version_rule": "evidence is bound to the exact contract version; a contract-version change makes dependent evidence non-active for the new configuration unless explicit compatibility evidence is supplied",
+  "capability_identity_rule": "retain Capability_ID only when the trial-facing capability meaning remains materially unchanged; allocate a new Capability_ID when the capability meaning changes rather than only its implementation or contract representation"
+}
