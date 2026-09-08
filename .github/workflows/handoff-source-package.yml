@@ -1,0 +1,106 @@
+name: Handoff Source Package
+
+on:
+  push:
+    branches:
+      - v2.5-experimental-freeze
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  package:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout frozen DTEP source
+        uses: actions/checkout@v4
+        with:
+          repository: qiangruhuang/DTEP
+          ref: e35dfdbea47ac0deddfc1e7193276b3aa41325ec
+          path: DTEP
+          fetch-depth: 1
+
+      - name: Checkout frozen OpenEaagles
+        uses: actions/checkout@v4
+        with:
+          repository: doughodson/OpenEaagles
+          ref: b3d7e74a9bf52934e13fd6a11f45dc9767ac9192
+          path: upstream/OpenEaagles
+          fetch-depth: 1
+
+      - name: Checkout frozen JSBSim compatibility snapshot
+        uses: actions/checkout@v4
+        with:
+          repository: JSBSim-Team/jsbsim
+          ref: 140068895adf1b8981b45cc5e17a16d82990806d
+          path: upstream/jsbsim
+          fetch-depth: 1
+
+      - name: Checkout frozen RadarSimPublic
+        uses: actions/checkout@v4
+        with:
+          repository: Murmur-ops/RadarSimPublic
+          ref: 8b63f824a5744c1b3a3fca5e948fa7c59f897b17
+          path: upstream/RadarSimPublic
+          fetch-depth: 1
+
+      - name: Fetch frozen FMI assets
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p external_fmi
+          curl -L --fail --retry 3 \
+            https://github.com/modelica/Reference-FMUs/releases/download/v0.0.40/Reference-FMUs.zip \
+            -o external_fmi/Reference-FMUs-v0.0.40.zip
+          echo "6efe688afe1b2802fe0f011259788396a370f78f2f115b7897285503a884741c  external_fmi/Reference-FMUs-v0.0.40.zip" | sha256sum -c -
+          curl -L --fail --retry 3 \
+            https://github.com/modelica/fmusim/releases/download/v0.9.0/fmusim-x86_64-linux.zip \
+            -o external_fmi/fmusim-0.9.0-x86_64-linux.zip
+          echo "fe882ca7a05748beaf65680319995c3da12f731430277d860a61df83c313b4a2  external_fmi/fmusim-0.9.0-x86_64-linux.zip" | sha256sum -c -
+          curl -L --fail --retry 3 \
+            https://github.com/modelica/fmusim/releases/download/v0.10.0/fmusim-x86_64-linux.zip \
+            -o external_fmi/fmusim-0.10.0-x86_64-linux.zip
+          echo "dc18f9cb46ea7a628cc3846f4cb8ca2bd95095a9221abc502c14e75a49be5604  external_fmi/fmusim-0.10.0-x86_64-linux.zip" | sha256sum -c -
+
+      - name: Create source manifest
+        shell: bash
+        run: |
+          cat > SOURCE_MANIFEST.md <<'EOF'
+          # DTEP frozen source manifest
+
+          - DTEP scientific/manuscript freeze: `e35dfdbea47ac0deddfc1e7193276b3aa41325ec`
+          - OpenEaagles: `b3d7e74a9bf52934e13fd6a11f45dc9767ac9192`
+          - JSBSim compatibility snapshot: `140068895adf1b8981b45cc5e17a16d82990806d`
+          - RadarSimPublic: `8b63f824a5744c1b3a3fca5e948fa7c59f897b17`
+          - Reference-FMUs: `v0.0.40`
+          - fmusim source runtime: `0.9.0`
+          - fmusim changed runtime: `0.10.0`
+
+          The DTEP repository intentionally does not vendor these upstream projects in normal development. They are included in this handoff artifact only to make the frozen research state easy to inspect offline.
+          EOF
+          printf 'DTEP HEAD: '; git -C DTEP rev-parse HEAD
+          printf 'OpenEaagles HEAD: '; git -C upstream/OpenEaagles rev-parse HEAD
+          printf 'JSBSim HEAD: '; git -C upstream/jsbsim rev-parse HEAD
+          printf 'RadarSimPublic HEAD: '; git -C upstream/RadarSimPublic rev-parse HEAD
+
+      - name: Remove Git metadata and package
+        shell: bash
+        run: |
+          set -euxo pipefail
+          find DTEP upstream -type d -name .git -prune -exec rm -rf {} +
+          mkdir -p handoff_source_bundle
+          mv DTEP upstream external_fmi SOURCE_MANIFEST.md handoff_source_bundle/
+          find handoff_source_bundle -type f -print0 | sort -z | xargs -0 sha256sum > handoff_source_bundle/SHA256SUMS.txt
+          zip -qr DTEP_v2.5_frozen_source_and_upstreams.zip handoff_source_bundle
+          sha256sum DTEP_v2.5_frozen_source_and_upstreams.zip > DTEP_v2.5_frozen_source_and_upstreams.zip.sha256
+          du -sh handoff_source_bundle DTEP_v2.5_frozen_source_and_upstreams.zip
+
+      - name: Upload source package
+        uses: actions/upload-artifact@v4
+        with:
+          name: DTEP-v2.5-frozen-source-and-upstreams
+          path: |
+            DTEP_v2.5_frozen_source_and_upstreams.zip
+            DTEP_v2.5_frozen_source_and_upstreams.zip.sha256
+          retention-days: 90
