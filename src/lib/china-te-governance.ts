@@ -1,7 +1,5 @@
 import { governanceRole, resolveCaseOntologyContext, type CaseRelationEntry } from '@/lib/case-ontology-context'
 
-type Entry = { pk: string; title: string; data: Record<string, any> }
-
 export type GovernanceStatus = 'ready' | 'partial' | 'blocked' | 'missing'
 
 export type GovernanceCriterion = {
