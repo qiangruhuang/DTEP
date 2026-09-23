@@ -61,7 +61,7 @@ async function main() {
 
   check(snapshot.dataAcceptance.length === 4, 'four data-acceptance paths must remain explicit')
   check(
-    snapshot.dataAcceptance.every((item) => item.status !== 'ready'),
+    snapshot.dataAcceptance.every((item) => ['missing', 'partial'].includes(String(item.status))),
     'candidate digital/LVC data must not be auto-promoted into formally accepted evidence',
   )
 
