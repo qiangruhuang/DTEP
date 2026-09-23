@@ -1,3 +1,4 @@
+import { readFile } from 'node:fs/promises'
 import {
   buildChinaTeGovernanceSnapshot,
 } from '../src/lib/china-te-governance'
@@ -7,7 +8,7 @@ function check(condition: unknown, message: string): asserts condition {
 }
 
 async function sourceText(path: string) {
-  return Bun.file(path).text()
+  return readFile(path, 'utf8')
 }
 
 async function main() {
