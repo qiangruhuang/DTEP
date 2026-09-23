@@ -43,6 +43,10 @@ jobs:
         run: bun scripts/validate_v22.ts
       - name: Frozen architecture / evidence audit
         run: python scripts/validate_v21.py
+      - name: China T&E governance semantic validation
+        env:
+          DATABASE_URL: file:${{ github.workspace }}/db/custom.db
+        run: bun scripts/validate_v23_governance.ts
       - name: TypeScript typecheck
         run: bunx tsc --noEmit
       - name: ESLint
