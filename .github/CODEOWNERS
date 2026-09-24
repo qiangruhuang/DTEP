@@ -1,0 +1,8 @@
+# Frozen architecture / governance requires explicit review.
+/ARCHITECTURE_FREEZE_v2.1.* @qiangruhuang
+/EVIDENCE_AUDIT_v2.1.md @qiangruhuang
+/src/lib/case01-governance.ts @qiangruhuang
+/src/lib/expert-review.ts @qiangruhuang
+/src/lib/event-to-measure.ts @qiangruhuang
+/src/lib/security/ @qiangruhuang
+/.github/workflows/ @qiangruhuang

@@ -1,0 +1,68 @@
+name: Build Release / GHCR
+
+on:
+  push:
+    tags:
+      - 'v2.1.*'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+  id-token: write
+  attestations: write
+
+jobs:
+  container-release:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=tag
+            type=sha
+
+      - name: Build and push application image
+        id: build
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: deploy/Dockerfile.app
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+
+      - name: Generate release checksum bundle
+        shell: bash
+        run: |
+          mkdir -p release-evidence
+          cp ARCHITECTURE_FREEZE_v2.1.json END_TO_END_DEMO_v2.1.json EVIDENCE_AUDIT_v2.1.md release-evidence/
+          sha256sum release-evidence/* > release-evidence/SHA256SUMS.txt
+          printf 'image_digest=%s\ncommit=%s\n' '${{ steps.build.outputs.digest }}' '${{ github.sha }}' > release-evidence/container.txt
+
+      - name: Upload release evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: dtep-release-evidence-${{ github.ref_name }}
+          path: release-evidence/
+
+      - name: GitHub build provenance attestation (when repository plan/visibility permits)
+        if: ${{ vars.ENABLE_GITHUB_ATTESTATION == 'true' }}
+        uses: actions/attest-build-provenance@v3
+        with:
+          subject-name: ghcr.io/${{ github.repository }}
+          subject-digest: ${{ steps.build.outputs.digest }}
+          push-to-registry: true

@@ -1,0 +1,17 @@
+{
+  "name": "DTEP v2.1.x Engineering",
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:1-22-bookworm",
+  "features": {
+    "ghcr.io/devcontainers/features/python:1": { "version": "3.13" },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": { "version": "latest", "moby": true }
+  },
+  "forwardPorts": [3000, 8091, 8092, 8093],
+  "portsAttributes": {
+    "3000": { "label": "DTEP" },
+    "8091": { "label": "Engineering OIDC" },
+    "8092": { "label": "Engineering Signer" },
+    "8093": { "label": "Adapter Daemon" }
+  },
+  "postCreateCommand": "curl -fsSL https://bun.com/install | bash -s 'bun-v1.3.4' && ~/.bun/bin/bun ci && python -m pip install fastapi uvicorn cryptography pydantic playwright && python -m playwright install chromium && ~/.bun/bin/bunx prisma generate",
+  "remoteUser": "node"
+}
