@@ -229,6 +229,10 @@ function byType(nodes: Node[], type: string) {
   return nodes.filter((node) => node.type === type)
 }
 
+function uniqueNodes(items: Node[]) {
+  return Array.from(new Map(items.map((node) => [node.id, node] as const)).values())
+}
+
 export async function buildChinaTeGovernanceSnapshotV231(caseId = 'CASE-01') {
   const [graph, availableCases] = await Promise.all([resolveCaseGraph(caseId), listCases()])
   const { root, nodes, edges } = graph
@@ -261,12 +265,12 @@ export async function buildChinaTeGovernanceSnapshotV231(caseId = 'CASE-01') {
 
   const performanceEvents = events.filter(isPerformanceEvent)
   const operationalEvents = events.filter(isOperationalEvent)
-  const performanceMeasures = Array.from(new Map(
-    performanceEvents.flatMap((event) => outgoingTargets(event.pk, 'assesses')).map((node) => [node.id, node]),
-  ).values())
-  const operationalMeasures = Array.from(new Map(
-    operationalEvents.flatMap((event) => outgoingTargets(event.pk, 'assesses')).map((node) => [node.id, node]),
-  ).values())
+  const performanceMeasures = uniqueNodes(
+    performanceEvents.flatMap((event) => outgoingTargets(event.pk, 'assesses')),
+  )
+  const operationalMeasures = uniqueNodes(
+    operationalEvents.flatMap((event) => outgoingTargets(event.pk, 'assesses')),
+  )
   const completedPerformance = performanceEvents.filter((event) => event.data.status === '已完成')
   const completedOperational = operationalEvents.filter((event) => event.data.status === '已完成')
   const openDeficiencies = deficiencies.filter((item) => !statusIsClosed(item.data.status))
