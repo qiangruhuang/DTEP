@@ -39,7 +39,22 @@ type Summary = { evidenceCoverage: number; ready: number; partial: number; block
 type Action = { apiName: string; label: string; stage: string; allowed: boolean; requiredAuthority: string; blockers: string[] }
 type Snapshot = {
   version: string
-  rootObject: { pk: string; title: string; status: string } | null
+  availableCases: { pk: string; title: string; taskProfile: string }[]
+  rootObject: { pk: string; title: string; status: string; taskProfile: string } | null
+  transportabilityGate: {
+    decision: 'PASS' | 'BLOCKED'
+    reasoningMode: string
+    relationDerived: boolean
+    caseId: string
+    taskProfile: string
+    directRelationCount: number
+    linkedNodeCount: number
+    linkCount: number
+    requiredRelationCoverage: { type: string; present: boolean; refs: string[] }[]
+    leakageCheck: 'PASS' | 'BLOCKED'
+    foreignCaseRefs: string[]
+    note: string
+  }
   authoritativeContext: {
     regulation: string
     programMainline: string
@@ -153,14 +168,15 @@ function DecisionVocabulary({ title, values }: { title: string; values: string[]
 
 export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: ModuleKey) => void }) {
   const [data, setData] = useState<Snapshot | null>(null)
+  const [selectedCaseId, setSelectedCaseId] = useState('CASE-01')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
 
-  const load = async () => {
+  const load = async (caseId: string) => {
     setLoading(true)
     setError('')
     try {
-      setData(await api<Snapshot>('/api/china-te-governance'))
+      setData(await api<Snapshot>(`/api/china-te-governance?caseId=${encodeURIComponent(caseId)}`))
     } catch (err) {
       setError(err instanceof Error ? err.message : '治理快照加载失败')
     } finally {
@@ -168,13 +184,13 @@ export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: Module
     }
   }
 
-  useEffect(() => { load() }, [])
+  useEffect(() => { void load(selectedCaseId) }, [selectedCaseId])
 
   return (
     <div className="space-y-5">
       <ModuleHeader
         title="试验鉴定治理工作台"
-        desc="把中国装备试验鉴定的流程、审查标准、技术状态、数据采信、数字化模型与审批权限绑定到同一 Ontology Case：不是再做一张看板，而是让系统解释当前证据能支撑什么、还缺什么、为什么某个业务动作现在不能提交。"
+        desc="把中国装备试验鉴定的流程、审查标准、技术状态、数据采信、数字化模型与审批权限绑定到 Ontology Case。v2.3.1 用第二个不同任务类型 Case 验证同一治理函数能否仅依赖 caseId + ontology relations 迁移，而不是把 CASE-01 规则复制成另一张看板。"
         actions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => onNavigate('ontology')}><Network className="mr-1.5 h-3.5 w-3.5" />对象与关系</Button>
@@ -188,6 +204,51 @@ export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: Module
         <div className="rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">{error}</div>
       ) : data ? (
         <>
+          <section className="rounded-lg border border-indigo-200 bg-indigo-50/40 p-4">
+            <div className="flex flex-wrap items-start justify-between gap-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <GitBranch className="h-4 w-4 text-indigo-700" />
+                  <h2 className="text-sm font-semibold text-zinc-900">Second-Case Transportability Gate</h2>
+                  <Badge variant="outline" className={cn('font-mono text-[10px]', data.transportabilityGate.decision === 'PASS' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700')}>
+                    {data.transportabilityGate.decision}
+                  </Badge>
+                </div>
+                <p className="mt-1 max-w-4xl text-[11px] leading-5 text-zinc-600">{data.transportabilityGate.note}</p>
+                <div className="mt-2 flex flex-wrap gap-1.5 text-[10px] text-zinc-500">
+                  <Badge variant="secondary" className="font-mono">{data.transportabilityGate.reasoningMode}</Badge>
+                  <span>direct relations {data.transportabilityGate.directRelationCount}</span>
+                  <span>· linked nodes {data.transportabilityGate.linkedNodeCount}</span>
+                  <span>· leakage {data.transportabilityGate.leakageCheck}</span>
+                </div>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {data.availableCases.map((item) => (
+                  <Button
+                    key={item.pk}
+                    size="sm"
+                    variant={selectedCaseId === item.pk ? 'default' : 'outline'}
+                    onClick={() => setSelectedCaseId(item.pk)}
+                    title={item.taskProfile}
+                  >
+                    {item.pk}
+                  </Button>
+                ))}
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 md:grid-cols-3">
+              {data.transportabilityGate.requiredRelationCoverage.map((item) => (
+                <div key={item.type} className="rounded-md border border-indigo-100 bg-white px-3 py-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-mono text-[10px] text-zinc-700">{item.type}</span>
+                    <span className={cn('text-[10px] font-medium', item.present ? 'text-emerald-700' : 'text-red-700')}>{item.present ? 'RELATION OK' : 'MISSING'}</span>
+                  </div>
+                  <p className="mt-1 truncate text-[9px] text-zinc-400">{item.refs.join(', ') || '—'}</p>
+                </div>
+              ))}
+            </div>
+          </section>
+
           <section className="rounded-lg border border-zinc-200 bg-white p-4">
             <div className="flex flex-wrap items-start justify-between gap-4">
               <div>
