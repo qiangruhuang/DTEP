@@ -59,7 +59,7 @@ with sync_playwright() as pw:
     check(governance_response.status == 200, 'China T&E governance API', f'HTTP {governance_response.status}', checks)
     governance = governance_response.json()
     check(
-        governance.get('version') == 'v2.3-prototype'
+        governance.get('version') == 'v2.3.1'
         and isinstance(governance.get('actions'), list)
         and len(governance.get('actions', [])) == 3,
         'China T&E governed action contract',
@@ -71,6 +71,28 @@ with sync_playwright() as pw:
         [item.get('label') for item in lifecycle] == ['性能试验', '状态鉴定', '作战试验', '列装定型', '在役考核'],
         'China T&E lifecycle semantics',
         'five-stage lifecycle returned in current-process order',
+        checks,
+    )
+
+    case02_response = page.request.get(f'{APP}/api/china-te-governance?caseId=CASE-02', timeout=30000)
+    check(case02_response.status == 200, 'Second-case governance API', f'HTTP {case02_response.status}', checks)
+    case02 = case02_response.json()
+    gate02 = case02.get('transportabilityGate', {})
+    check(
+        case02.get('rootObject', {}).get('pk') == 'CASE-02'
+        and case02.get('version') == 'v2.3.1'
+        and gate02.get('reasoningMode') == 'caseId+ontology-relations'
+        and gate02.get('decision') == 'PASS'
+        and gate02.get('leakageCheck') == 'PASS'
+        and not gate02.get('foreignCaseRefs'),
+        'Second-Case Transportability Gate',
+        'CASE-02 recovered from ontology relations with PASS and no foreign direct refs',
+        checks,
+    )
+    check(
+        case02.get('rootObject', {}).get('taskProfile') != governance.get('rootObject', {}).get('taskProfile'),
+        'Independent task profile',
+        'CASE-02 software interoperability differs from CASE-01 mission-effectiveness task',
         checks,
     )
 
@@ -147,6 +169,11 @@ with sync_playwright() as pw:
     assessment_heading = page.get_by_role('paragraph').filter(has_text='8 项专项评估')
     check(assessment_heading.is_visible(), 'Fielding finalization special assessments', 'eight-assessment panel rendered', checks)
     check(page.get_by_text('数据采信入口', exact=False).is_visible(), 'Data acceptance UI', 'four legal data-acceptance paths exposed', checks)
+    check(page.get_by_text('Second-Case Transportability Gate', exact=True).is_visible(), 'Transportability Gate UI', 'relation-driven gate rendered', checks)
+    page.get_by_role('button', name='CASE-02', exact=True).click()
+    page.get_by_text('D7 数据链终端软件升级互操作性状态鉴定', exact=True).wait_for(timeout=30000)
+    check(page.get_by_text('D7 数据链终端软件升级互操作性状态鉴定', exact=True).is_visible(), 'CASE-02 UI switch', 'second case rendered through same governance workspace', checks)
+    check('caseId+ontology-relations' in page.locator('body').inner_text(), 'CASE-02 relation-driven UI', 'reasoning mode visible after case switch', checks)
     blocked_action = page.get_by_role('button', name='当前不可提交').first
     check(blocked_action.is_visible() and blocked_action.is_disabled(), 'Governed action submission criteria UI', 'blocked business action is explained and disabled', checks)
 
