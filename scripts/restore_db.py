@@ -21,8 +21,10 @@ Business objects, hashes stored inside dataJson, rule-set content and evidence
 semantics are not changed.
 
 The v2.2 ontology graph hardening migration is then applied idempotently. It
-adds LinkEntry and the ObjectEntry (objectTypeId, pk) uniqueness constraint;
-it aborts on duplicate object keys instead of rewriting frozen business data.
+adds LinkEntry and the ObjectEntry (objectTypeId, pk) uniqueness constraint.
+The additive v2.3.1 migration then materializes legacy implicit CASE relations
+and adds a minimal DEMO/SYNTHETIC CASE-02 for transportability validation. It
+does not rewrite CASE-01 business values or frozen rule hashes.
 """
 from __future__ import annotations
 
@@ -32,6 +34,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from migrate_v22 import migrate_connection
+from migrate_v231_transportability import migrate_connection as migrate_v231_transportability_connection
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_SQL = ROOT / "db" / "custom.sql"
@@ -108,6 +111,7 @@ def restore(sql_path: Path, db_path: Path, force: bool = False) -> None:
         con.executescript(script)
         converted = normalize_legacy_datetime_cells(con)
         migrate_connection(con)
+        migrate_v231_transportability_connection(con)
         con.commit()
 
         con.execute("PRAGMA foreign_keys=ON")
@@ -121,7 +125,7 @@ def restore(sql_path: Path, db_path: Path, force: bool = False) -> None:
         con.close()
     print(
         f"restored {db_path} from {sql_path}; normalized {converted} textual DATETIME cells "
-        "to epoch milliseconds; applied v2.2 ontology graph hardening"
+        "to epoch milliseconds; applied v2.2 graph hardening + v2.3.1 transportability fixture"
     )
 
 
