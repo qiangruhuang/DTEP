@@ -175,8 +175,16 @@ async function resolveCaseGraph(caseId: string) {
     const ids = [...frontier]
     const rows = await db.linkEntry.findMany({
       where: {
-        OR: [{ sourceObjectId: { in: ids } }, { targetObjectId: { in: ids } }],
-        linkType: { apiName: { in: [...GRAPH_LINKS] } },
+        OR: [
+          {
+            sourceObjectId: { in: ids },
+            linkType: { apiName: { in: [...GRAPH_LINKS] } },
+          },
+          {
+            targetObjectId: { in: ids },
+            linkType: { apiName: { in: ['baselineInstantiatesAssembly'] } },
+          },
+        ],
       },
       include: {
         linkType: true,
