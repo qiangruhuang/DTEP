@@ -56,8 +56,6 @@ jobs:
           python -m playwright install --with-deps chromium
       - name: Restore frozen synthetic demo database
         run: python scripts/restore_db.py --force
-      - name: Apply v2.3.1 case-relation fixture
-        run: python scripts/migrate_v231.py
       - name: Generate Prisma client and build product
         run: |
           bunx prisma generate
@@ -85,6 +83,8 @@ jobs:
           PY
       - name: Run real Chromium engineering integration E2E
         run: python scripts/e2e/browser_engineering_v211.py
+      - name: Apply v2.3.1 case-relation fixture for product governance
+        run: python scripts/migrate_v231.py
       - name: Start built DTEP product
         shell: bash
         run: |
