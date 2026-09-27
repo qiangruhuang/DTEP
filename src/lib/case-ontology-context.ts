@@ -134,6 +134,33 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
     orderBy: { createdAt: 'asc' },
   })
 
+  const targetIds = [...new Set(rows.map((row) => row.targetObjectId))]
+  const foreignCaseLinks = targetIds.length
+    ? await db.linkEntry.findMany({
+        where: {
+          targetObjectId: { in: targetIds },
+          sourceObjectId: { not: root.id },
+          linkType: { apiName: { in: relationNames } },
+          sourceObject: { objectTypeId: caseType.id },
+        },
+        include: {
+          linkType: true,
+          sourceObject: true,
+        },
+      })
+    : []
+
+  const foreignOwners = new Map<string, Array<{ caseId: string; properties: Record<string, any> }>>()
+  for (const link of foreignCaseLinks) {
+    const key = `${link.linkType.apiName}::${link.targetObjectId}`
+    const owners = foreignOwners.get(key) ?? []
+    owners.push({
+      caseId: link.sourceObject.pk,
+      properties: parseJson(link.propertiesJson),
+    })
+    foreignOwners.set(key, owners)
+  }
+
   const buckets: Record<RelationBucket, CaseRelationEntry[]> = {
     missionThreads: [],
     scenarios: [],
@@ -178,6 +205,21 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
         relationApiName: apiName,
         targetPk: row.targetObject.pk,
         detail: `${apiName} 指向显式归属于 ${declaredCaseId} 的对象，不能作为 ${caseId} 的治理证据`,
+      })
+      continue
+    }
+
+    const ownershipKey = `${apiName}::${row.targetObjectId}`
+    const otherOwners = foreignOwners.get(ownershipKey) ?? []
+    const currentExplicitlyShared = properties.sharedAcrossCases === true
+    const foreignExplicitlyShared = otherOwners.length > 0
+      && otherOwners.every((owner) => owner.properties.sharedAcrossCases === true)
+    if (otherOwners.length > 0 && !(currentExplicitlyShared && foreignExplicitlyShared)) {
+      hardErrors.push({
+        code: 'REL-CROSS-CASE',
+        relationApiName: apiName,
+        targetPk: row.targetObject.pk,
+        detail: `${apiName} 的目标对象同时被其他 Case（${otherOwners.map((owner) => owner.caseId).sort().join(', ')}）引用；未形成双方显式 sharedAcrossCases 许可`,
       })
       continue
     }
