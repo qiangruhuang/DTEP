@@ -142,22 +142,28 @@ async function main() {
   await withInsertedLink(
     () => insertNegativeLink(
       'CASE-01',
-      'caseUsesModelBaseline',
-      'ModelBaseline',
-      'MB-RMS-01',
+      'caseUsesEvent',
+      'TestEvent',
+      'TE-RMS-001',
       'v232-negative-cross-case',
+      { governanceRole: 'qualification-performance-anchor' },
     ),
     async () => {
       const snapshot = await buildChinaTeGovernanceSnapshot('CASE-01')
       check(snapshot.transportability.integrity.status === 'invalid', 'cross-case relation must invalidate relation graph')
       check(
         snapshot.transportability.integrity.hardErrors.some((item) => item.code === 'REL-CROSS-CASE'),
-        'cross-case contamination must be explicit',
+        'cross-case contamination must be explicit even when the legacy target has no caseId field',
       )
       check(hasIntegrityBlocker(snapshot, 'REL-CROSS-CASE'), 'cross-case contamination must hard-block every governed action')
       check(
-        !snapshot.technicalState.currentModelBaselines.includes('MB-RMS-01'),
-        'cross-case object must be excluded from accepted governance evidence',
+        snapshot.objectCoverage.events === baseline01.objectCoverage.events,
+        'cross-case event must be excluded from accepted governance evidence',
+      )
+      check(
+        snapshot.transportability.semanticRoleCounts.qualificationPerformanceAnchors
+          === baseline01.transportability.semanticRoleCounts.qualificationPerformanceAnchors,
+        'cross-case event must not change qualification semantic-role evidence',
       )
     },
   )
