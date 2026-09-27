@@ -59,7 +59,7 @@ with sync_playwright() as pw:
     check(governance_response.status == 200, 'China T&E governance API', f'HTTP {governance_response.status}', checks)
     governance = governance_response.json()
     check(
-        governance.get('version') == 'v2.3-prototype'
+        governance.get('version') == 'v2.3.2-prototype'
         and isinstance(governance.get('actions'), list)
         and len(governance.get('actions', [])) == 3,
         'China T&E governed action contract',

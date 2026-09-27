@@ -53,6 +53,10 @@ jobs:
         env:
           DATABASE_URL: file:${{ github.workspace }}/db/custom.db
         run: bun scripts/validate_v231_transportability.ts
+      - name: Relation completeness / negative transport gate
+        env:
+          DATABASE_URL: file:${{ github.workspace }}/db/custom.db
+        run: bun scripts/validate_v232_negative_transport.ts
       - name: TypeScript typecheck
         run: bunx tsc --noEmit
       - name: ESLint

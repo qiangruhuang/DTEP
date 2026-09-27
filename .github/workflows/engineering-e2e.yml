@@ -83,6 +83,8 @@ jobs:
           PY
       - name: Run real Chromium engineering integration E2E
         run: python scripts/e2e/browser_engineering_v211.py
+      - name: Apply v2.3.1 case-relation fixture for product governance
+        run: python scripts/migrate_v231.py
       - name: Start built DTEP product
         shell: bash
         run: |
