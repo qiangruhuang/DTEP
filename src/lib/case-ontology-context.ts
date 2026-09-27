@@ -12,6 +12,13 @@ export type CaseRelationEntry = {
   }
 }
 
+export type CaseRelationIntegrityIssue = {
+  code: 'REL-TYPE-MISMATCH' | 'REL-CROSS-CASE' | 'REL-ROLE-NOT-ALLOWED' | 'REL-ROLE-CONFLICT'
+  relationApiName: string
+  targetPk: string
+  detail: string
+}
+
 export type CaseOntologyContext = {
   currentCase: {
     id: string
@@ -20,6 +27,12 @@ export type CaseOntologyContext = {
     data: Record<string, any>
   }
   relationCount: number
+  integrity: {
+    status: 'valid' | 'invalid'
+    acceptedRelationCount: number
+    rejectedRelationCount: number
+    hardErrors: CaseRelationIntegrityIssue[]
+  }
   missionThreads: CaseRelationEntry[]
   scenarios: CaseRelationEntry[]
   events: CaseRelationEntry[]
@@ -42,23 +55,36 @@ export type CaseOntologyContext = {
   }>
 }
 
-const CASE_RELATIONS = {
-  caseUsesMissionThread: 'missionThreads',
-  caseUsesScenario: 'scenarios',
-  caseUsesEvent: 'events',
-  caseAssessesMeasure: 'measures',
-  caseUsesModel: 'models',
-  caseControlledByGate: 'evidenceGates',
-  caseHasRun: 'runs',
-  caseHasEvidencePackage: 'evidencePackages',
-  caseHasDeficiency: 'deficiencies',
-  caseHasReport: 'reports',
-  caseUsesModelBaseline: 'modelBaselines',
-  caseUsesModelAssembly: 'assemblies',
-  caseUsesInterfaceContract: 'interfaces',
+const CASE_RELATION_CONTRACTS = {
+  caseUsesMissionThread: { bucket: 'missionThreads', targetType: 'MissionThread' },
+  caseUsesScenario: { bucket: 'scenarios', targetType: 'TestScenario' },
+  caseUsesEvent: {
+    bucket: 'events',
+    targetType: 'TestEvent',
+    governanceRoles: ['qualification-performance-anchor', 'operational-evidence-anchor'],
+  },
+  caseAssessesMeasure: {
+    bucket: 'measures',
+    targetType: 'Measure',
+    governanceRoles: ['qualification-performance-measure', 'operational-effectiveness-measure'],
+  },
+  caseUsesModel: {
+    bucket: 'models',
+    targetType: 'ModelAsset',
+    governanceRoles: ['formal-digital-model-review-input'],
+  },
+  caseControlledByGate: { bucket: 'evidenceGates', targetType: 'EvidenceGate' },
+  caseHasRun: { bucket: 'runs', targetType: 'TestRun' },
+  caseHasEvidencePackage: { bucket: 'evidencePackages', targetType: 'EvidencePackage' },
+  caseHasDeficiency: { bucket: 'deficiencies', targetType: 'Deficiency' },
+  caseHasReport: { bucket: 'reports', targetType: 'Report' },
+  caseUsesModelBaseline: { bucket: 'modelBaselines', targetType: 'ModelBaseline' },
+  caseUsesModelAssembly: { bucket: 'assemblies', targetType: 'TestModelAssembly' },
+  caseUsesInterfaceContract: { bucket: 'interfaces', targetType: 'InterfaceContract' },
 } as const
 
-type RelationBucket = (typeof CASE_RELATIONS)[keyof typeof CASE_RELATIONS]
+type RelationApiName = keyof typeof CASE_RELATION_CONTRACTS
+type RelationBucket = (typeof CASE_RELATION_CONTRACTS)[RelationApiName]['bucket']
 
 function parseJson(value: string | null | undefined) {
   try {
@@ -68,7 +94,7 @@ function parseJson(value: string | null | undefined) {
   }
 }
 
-function serializeRelated(row: any): CaseRelationEntry {
+function serializeRelated(row: any, properties: Record<string, any>): CaseRelationEntry {
   return {
     id: row.targetObject.id,
     pk: row.targetObject.pk,
@@ -76,7 +102,7 @@ function serializeRelated(row: any): CaseRelationEntry {
     data: parseJson(row.targetObject.dataJson),
     relation: {
       apiName: row.linkType.apiName,
-      properties: parseJson(row.propertiesJson),
+      properties,
       sourceRef: row.sourceRef,
     },
   }
@@ -95,7 +121,7 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
   })
   if (!root) throw new Error(`DigitalTestCase/${caseId} 不存在`)
 
-  const relationNames = Object.keys(CASE_RELATIONS)
+  const relationNames = Object.keys(CASE_RELATION_CONTRACTS)
   const rows = await db.linkEntry.findMany({
     where: {
       sourceObjectId: root.id,
@@ -123,11 +149,92 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
     assemblies: [],
     interfaces: [],
   }
+  const hardErrors: CaseRelationIntegrityIssue[] = []
+  const accepted: Array<{ bucket: RelationBucket; item: CaseRelationEntry }> = []
 
   for (const row of rows) {
-    const bucket = CASE_RELATIONS[row.linkType.apiName as keyof typeof CASE_RELATIONS]
-    if (!bucket) continue
-    buckets[bucket].push(serializeRelated(row))
+    const apiName = row.linkType.apiName as RelationApiName
+    const contract = CASE_RELATION_CONTRACTS[apiName]
+    if (!contract) continue
+
+    const targetData = parseJson(row.targetObject.dataJson)
+    const properties = parseJson(row.propertiesJson)
+    const targetType = row.targetObject.objectType.apiName
+
+    if (targetType !== contract.targetType) {
+      hardErrors.push({
+        code: 'REL-TYPE-MISMATCH',
+        relationApiName: apiName,
+        targetPk: row.targetObject.pk,
+        detail: `${apiName} 期望目标类型 ${contract.targetType}，实际为 ${targetType}`,
+      })
+      continue
+    }
+
+    const declaredCaseId = targetData.caseId
+    if (typeof declaredCaseId === 'string' && declaredCaseId && declaredCaseId !== caseId) {
+      hardErrors.push({
+        code: 'REL-CROSS-CASE',
+        relationApiName: apiName,
+        targetPk: row.targetObject.pk,
+        detail: `${apiName} 指向显式归属于 ${declaredCaseId} 的对象，不能作为 ${caseId} 的治理证据`,
+      })
+      continue
+    }
+
+    const role = properties.governanceRole
+    const allowedRoles = 'governanceRoles' in contract ? contract.governanceRoles : undefined
+    if (typeof role === 'string' && (!allowedRoles || !allowedRoles.includes(role as never))) {
+      hardErrors.push({
+        code: 'REL-ROLE-NOT-ALLOWED',
+        relationApiName: apiName,
+        targetPk: row.targetObject.pk,
+        detail: `${apiName} 不允许 governanceRole=${role}`,
+      })
+      continue
+    }
+
+    accepted.push({
+      bucket: contract.bucket,
+      item: serializeRelated(row, properties),
+    })
+  }
+
+  const rolesByTarget = new Map<string, Set<string>>()
+  for (const { item } of accepted) {
+    const role = item.relation.properties.governanceRole
+    if (typeof role !== 'string' || !role) continue
+    const key = `${item.relation.apiName}::${item.id}`
+    const roles = rolesByTarget.get(key) ?? new Set<string>()
+    roles.add(role)
+    rolesByTarget.set(key, roles)
+  }
+
+  const conflictedTargets = new Set<string>()
+  for (const [key, roles] of rolesByTarget) {
+    if (roles.size <= 1) continue
+    conflictedTargets.add(key)
+    const sample = accepted.find(({ item }) => `${item.relation.apiName}::${item.id}` === key)?.item
+    if (!sample) continue
+    hardErrors.push({
+      code: 'REL-ROLE-CONFLICT',
+      relationApiName: sample.relation.apiName,
+      targetPk: sample.pk,
+      detail: `${sample.pk} 同时绑定互斥治理角色：${[...roles].sort().join(' / ')}`,
+    })
+  }
+
+  const dedupe = new Set<string>()
+  let acceptedRelationCount = 0
+  for (const { bucket, item } of accepted) {
+    const role = item.relation.properties.governanceRole ?? ''
+    const semanticRole = item.relation.properties.semanticRole ?? ''
+    const identity = `${item.relation.apiName}::${item.id}::${role}::${semanticRole}`
+    const conflictKey = `${item.relation.apiName}::${item.id}`
+    if (conflictedTargets.has(conflictKey) || dedupe.has(identity)) continue
+    dedupe.add(identity)
+    buckets[bucket].push(item)
+    acceptedRelationCount += 1
   }
 
   const datasetRefs = new Set<string>()
@@ -155,6 +262,12 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
       data: parseJson(root.dataJson),
     },
     relationCount: rows.length,
+    integrity: {
+      status: hardErrors.length ? 'invalid' : 'valid',
+      acceptedRelationCount,
+      rejectedRelationCount: rows.length - acceptedRelationCount,
+      hardErrors,
+    },
     ...buckets,
     datasets,
   }
