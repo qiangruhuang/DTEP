@@ -184,7 +184,7 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
 
     const role = properties.governanceRole
     const allowedRoles = 'governanceRoles' in contract ? contract.governanceRoles : undefined
-    if (typeof role === 'string' && (!allowedRoles || !allowedRoles.includes(role as never))) {
+    if (typeof role === 'string' && (!allowedRoles || !(allowedRoles as readonly string[]).includes(role))) {
       hardErrors.push({
         code: 'REL-ROLE-NOT-ALLOWED',
         relationApiName: apiName,
