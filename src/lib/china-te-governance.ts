@@ -395,6 +395,9 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
   const operationalSummary = summarize(operationalTestCriteria)
   const finalizationSummary = summarize([...finalizationCriteria, ...specialAssessments])
 
+  const relationIntegrityBlockers = context.integrity.hardErrors.map(
+    (issue) => `ONTOLOGY-${issue.code}：${issue.detail}`,
+  )
   const equipmentClassificationBlocker = '未建模装备分类（重要/一般/单独立项分系统设备）和军工产品级别，系统无法自动解析审批/备案权限。'
   const stateApprovalBlocker = '未发现正式“状态鉴定审批/批复”对象，不能自动授权进入作战试验。'
 
@@ -405,7 +408,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       '状态鉴定',
       '装备部门 / 装备试验鉴定管理机构',
       stateQualificationCriteria,
-      [equipmentClassificationBlocker],
+      [...relationIntegrityBlockers, equipmentClassificationBlocker],
     ),
     actionFromCriteria(
       'authorizeOperationalTest',
@@ -413,7 +416,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       '作战试验',
       '装备试验鉴定管理机构 / 装备部门会同本级参谋部门',
       operationalTestCriteria,
-      [stateApprovalBlocker, equipmentClassificationBlocker],
+      [...relationIntegrityBlockers, stateApprovalBlocker, equipmentClassificationBlocker],
     ),
     actionFromCriteria(
       'submitFieldingFinalizationReview',
@@ -421,7 +424,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       '列装定型',
       '二级定委 / 一级或二级定委按装备级别审批',
       [...finalizationCriteria, ...specialAssessments],
-      [equipmentClassificationBlocker],
+      [...relationIntegrityBlockers, equipmentClassificationBlocker],
     ),
   ]
 
@@ -434,7 +437,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
   }
 
   return {
-    version: 'v2.3.1-prototype',
+    version: 'v2.3.2-prototype',
     rootObject: {
       pk: currentCase.pk,
       title: currentCase.title,
@@ -445,6 +448,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       caseId: currentCase.pk,
       relationDriven: true,
       relationCount: context.relationCount,
+      integrity: context.integrity,
       semanticRoleCounts,
       resolver: 'DigitalTestCase(caseId) -> LinkEntry ontology relations -> governance semantic roles',
     },
