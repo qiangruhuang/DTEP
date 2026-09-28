@@ -1,0 +1,81 @@
+{
+  "protocol": {
+    "name": "ORED Governance Compiler × PAS 2161 Road-Condition-Monitoring Approval Process",
+    "version": "1.0",
+    "freezeDate": "2026-09-28",
+    "freezeCommit": "1cbfc7885adfce8b3d3c1556dea841f71c3b2db7",
+    "fileBlobSha": "e5c7ac1216b6d8214540bde07bfe43595e7586b1",
+    "path": "docs/paper/EXTERNAL_VALIDATION_PAS2161_PROTOCOL.md"
+  },
+  "acquisitionSnapshot": {
+    "observedAt": "2026-09-28T18:45:00+08:00",
+    "currentTier": "C",
+    "fullTierAAvailable": false,
+    "reason": "2026 PAS 2161 assessment is still in progress. TRL plans to provide benchmark calibration data on 2026-10-02, receive calibrated technology submissions on 2026-11-06, and announce demonstrated/not-demonstrated results on 2026-12-18."
+  },
+  "prospectiveHoldoutSelection": {
+    "primaryCandidate": {
+      "provider": "WDM Limited",
+      "technology": "Type S / Road Assessment Vehicle (RAV)-based PAS 2161 method",
+      "selectionTime": "2026-09-28T18:45:00+08:00",
+      "selectionBasis": "Provider publicly stated before 2026 outcomes that it intended to enter its Type S RAV-based methodology in the 2026 PAS 2161 demonstration.",
+      "outcomeKnownAtSelection": false,
+      "prior2025InformationAllowedButNotUsedAs2026Outcome": "WDM disclosed that its 2025 Type S submission did not meet acceptance criteria and that it intended to refine the method for the 2026 submission."
+    },
+    "fallbackRule": "If the primary candidate does not participate in 2026 or no complete Tier-A package is obtainable for it, use the first complete 2026 Tier-A technology package publicly released by TRL/DfT in chronological order; if multiple packages are released simultaneously, choose lexicographically by provider then technology name.",
+    "noOutcomeBasedSelection": true
+  },
+  "currentlyAvailableArtifacts": [
+    {
+      "id": "TRL-2026-FAQ",
+      "role": "process schedule, route lengths, benchmark/calibration design, pass-mark expectation, QA/outcome timing",
+      "url": "https://pas2161.trl.co.uk/pas-2161-faqs/",
+      "tierContribution": "C"
+    },
+    {
+      "id": "TRL-2026-ROUTES",
+      "role": "2026 trial route package with shapefiles, section lists, engineer guidance and gap-report template",
+      "url": "https://pas2161.trl.co.uk/demonstration-trial-routes/",
+      "tierContribution": "C"
+    },
+    {
+      "id": "TRL-2026-QA",
+      "role": "technology-type QA templates and method/consistency fields",
+      "url": "https://pas2161.trl.co.uk/quality-assurance-forms/",
+      "tierContribution": "C"
+    },
+    {
+      "id": "TRL-2026-BRIEFING2",
+      "role": "2026 provider briefing and submission process",
+      "url": "https://pas2161.trl.co.uk/wp-content/uploads/2026/07/PAS-2161-Technology-Providers-16-07-2026.pdf",
+      "tierContribution": "C"
+    },
+    {
+      "id": "TRL-PPR2083",
+      "role": "frozen 2025 assessment-rule precedent and threshold definitions used to preregister 2026 decision mapping",
+      "url": "https://www.trl.co.uk/uploads/trl/documents/TRL-PAS2161-2025-RCM-Trials-Final-Report.pdf",
+      "tierContribution": "protocol-design-only"
+    },
+    {
+      "id": "WDM-2026-INTENT",
+      "role": "prospective primary holdout identity and declared 2026 Type S participation intent",
+      "url": "https://www.wdm.co.uk/insights/pas-2161-compliance-and-2026-27-road-condition-surveying/",
+      "tierContribution": "candidate-lock"
+    }
+  ],
+  "missingForTierA": [
+    "2026 technology-level official assessment report containing all decision metrics",
+    "official 2026 demonstrated/not-demonstrated outcome for the selected technology",
+    "selected technology's submitted QA/method identity sufficient to bind the approval to a configuration",
+    "official final 2026 criteria/version if changed from the frozen 2025 thresholds",
+    "where needed for independent reconstruction, technology-level benchmark/repeat assessment values or official metric table"
+  ],
+  "executionState": {
+    "mappingEndpoint": "ready",
+    "decisionReconstructionEndpoint": "blocked_waiting_for_TierA",
+    "negativeControlsEndpoint": "blocked_waiting_for_external_technology_graph",
+    "changePropagationEndpoint": "blocked_waiting_for_TierA_method_QA_state",
+    "oredCoreModified": false,
+    "claimStatus": "No external-validation pass claim permitted at Tier C."
+  }
+}
