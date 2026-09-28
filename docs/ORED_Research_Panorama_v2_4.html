@@ -68,8 +68,8 @@ h1 .grad{background:linear-gradient(100deg,var(--cyan),#8bb8ff 45%,#c6a6ff);-web
 .ored-flow{display:grid;grid-template-columns:repeat(7,1fr);align-items:stretch;gap:8px}
 .layer{appearance:none;color:inherit;text-align:left;font:inherit;cursor:pointer;grid-column:span 1;min-width:0;border-radius:18px;padding:18px 14px;border:1px solid #2b4967;background:linear-gradient(180deg,#0c1d32,#091727);position:relative}
 .layer strong{font-size:17px;display:block}
-.layer .q{font-size:11px;color:#b7cde0;margin:8px 0}
-.layer .desc{font-size:11px;color:#849cb5}
+.layer .q{display:block;font-size:11px;color:#b7cde0;margin:8px 0}
+.layer .desc{display:block;font-size:11px;color:#849cb5}
 .layer .num{position:absolute;right:12px;top:10px;font:800 30px/1 ui-monospace;color:#203b59}
 .arrow{display:flex;align-items:center;justify-content:center;color:#4f6f8d;font-size:27px}
 .layer.object{border-color:#52708e}.layer.relation{border-color:#388fc0}.layer.evidence{border-color:#7869c7}.layer.decision{border-color:#4d9c72}
@@ -311,14 +311,15 @@ body.focus-mode .section.focus-target{opacity:1}
       <span class="route-status" id="routeStatus">READY · 点击任一层也可单步解释</span>
     </div>
     <div class="ored-flow" id="oredFlow">
-      <button type="button" class="layer object" data-route-step="0" data-layer="object"><span class="num">1</span><strong>Object</strong><div class="q">治理对象是谁？</div><div class="desc">DigitalTestCase(caseId) 作为根；场景、事件、指标、模型、报告、缺陷等均为一等对象。</div></button>
+      <button type="button" class="layer object" data-route-step="0" data-layer="object"><span class="num">1</span><strong>Object</strong><span class="q">治理对象是谁？</span><span class="desc">DigitalTestCase(caseId) 作为根；场景、事件、指标、模型、报告、缺陷等均为一等对象。</span></button>
       <div class="arrow">→</div>
-      <button type="button" class="layer relation" data-route-step="1" data-layer="relation"><span class="num">2</span><strong>Relation</strong><div class="q">对象如何参与当前 Case？</div><div class="desc">typed LinkEntry + governanceRole；检查 target type、角色合法性、冲突与 cross-case ownership。</div></button>
+      <button type="button" class="layer relation" data-route-step="1" data-layer="relation"><span class="num">2</span><strong>Relation</strong><span class="q">对象如何参与当前 Case？</span><span class="desc">typed LinkEntry + governanceRole；检查 target type、角色合法性、冲突与 cross-case ownership。</span></button>
       <div class="arrow">→</div>
-      <button type="button" class="layer evidence" data-route-step="2" data-layer="evidence"><span class="num">3</span><strong>Evidence</strong><div class="q">现在可以信什么？</div><div class="desc">准入、provenance、授权复用、适用域、来源摘要、撤销/过期/stale ledger。</div></button>
+      <button type="button" class="layer evidence" data-route-step="2" data-layer="evidence"><span class="num">3</span><strong>Evidence</strong><span class="q">现在可以信什么？</span><span class="desc">准入、provenance、授权复用、适用域、来源摘要、撤销/过期/stale ledger。</span></button>
       <div class="arrow">→</div>
-      <button type="button" class="layer decision" data-route-step="3" data-layer="decision"><span class="num">4</span><strong>Decision</strong><div class="q">系统现在允许做什么？</div><div class="desc">只消费 admitted evidence；criterion → blocker → governed action，且 hard prerequisite 不能被“覆盖率”平均掉。</div></div>
+      <button type="button" class="layer decision" data-route-step="3" data-layer="decision"><span class="num">4</span><strong>Decision</strong><span class="q">系统现在允许做什么？</span><span class="desc">只消费 admitted evidence；criterion → blocker → governed action，且 hard prerequisite 不能被“覆盖率”平均掉。</span></button>
     </div>
+    <div class="route-detail" id="routeDetail" aria-live="polite"><div class="eyebrow">Interactive route</div><strong>Object → Relation → Evidence → Decision</strong><p>点击任一层，或播放路线，观察治理语义如何逐层收紧；错误在进入 Decision 前被隔离或撤销。</p></div>
     <div class="formula expert-only">
       R(e)=1：关系类型、语义角色、ownership 均合法<br>
       A(v,c,t)=1：证据在当前 Case、当前时间满足准入/复用/有效性合同<br>
@@ -342,11 +343,11 @@ body.focus-mode .section.focus-target{opacity:1}
   <div class="grid2">
     <div class="panel">
       <div class="timeline">
-        <button type="button" class="titem" data-gate="transport"><div class="top"><span class="badge">v2.3.1</span><h3>Second-Case Transportability</h3><span class="badge ok">PASS</span></div><p>CASE-02 使用完全不同的可靠性/维修性任务类型，但复用同一治理 resolver / action vocabulary；核心代码静态检查不含 CASE 专属证据 ID。</p></button>
-        <button type="button" class="titem" data-gate="integrity"><div class="top"><span class="badge">v2.3.2</span><h3>Relation Completeness & Negative Transport</h3><span class="badge ok">PASS</span></div><p>缺关系只导致相应 criterion 不完整；错类型、非法角色、角色冲突、跨 Case 污染作为结构错误，在进入可信证据桶之前 fail closed。</p></button>
-        <button type="button" class="titem" data-gate="reuse"><div class="top"><span class="badge">v2.3.3</span><h3>Governed Cross-Case Evidence Reuse</h3><span class="badge ok">PASS</span></div><p>跨 Case 证据必须有匹配来源/目标/对象/角色/适用域/provenance/双侧批准的授权。允许复用 ≠ 继承来源 Case 结论。</p></button>
-        <button type="button" class="titem" data-gate="change"><div class="top"><span class="badge">v2.3.4</span><h3>Reuse Revocation & Change Propagation</h3><span class="badge ok">PASS</span></div><p>授权撤销、过期、source digest 漂移、validationDomain 漂移 → stale ledger → 证据移除 → criterion 降级 → action blocker。</p></button>
-        <button type="button" class="titem" data-gate="consolidation"><div class="top"><span class="badge">v2.4</span><h3>Governance Architecture Consolidation</h3><span class="badge ok">PASS</span></div><p>后端、前端、runtime counts、criteria/actions 和论文故事统一为 ORED 四层架构，不新增平行治理实现。</p></button>
+        <div class="titem" data-gate="transport" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.1</span><h3>Second-Case Transportability</h3><span class="badge ok">PASS</span></div><p>CASE-02 使用完全不同的可靠性/维修性任务类型，但复用同一治理 resolver / action vocabulary；核心代码静态检查不含 CASE 专属证据 ID。</p></div>
+        <div class="titem" data-gate="integrity" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.2</span><h3>Relation Completeness & Negative Transport</h3><span class="badge ok">PASS</span></div><p>缺关系只导致相应 criterion 不完整；错类型、非法角色、角色冲突、跨 Case 污染作为结构错误，在进入可信证据桶之前 fail closed。</p></div>
+        <div class="titem" data-gate="reuse" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.3</span><h3>Governed Cross-Case Evidence Reuse</h3><span class="badge ok">PASS</span></div><p>跨 Case 证据必须有匹配来源/目标/对象/角色/适用域/provenance/双侧批准的授权。允许复用 ≠ 继承来源 Case 结论。</p></div>
+        <div class="titem" data-gate="change" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.4</span><h3>Reuse Revocation & Change Propagation</h3><span class="badge ok">PASS</span></div><p>授权撤销、过期、source digest 漂移、validationDomain 漂移 → stale ledger → 证据移除 → criterion 降级 → action blocker。</p></div>
+        <div class="titem" data-gate="consolidation" role="button" tabindex="0"><div class="top"><span class="badge">v2.4</span><h3>Governance Architecture Consolidation</h3><span class="badge ok">PASS</span></div><p>后端、前端、runtime counts、criteria/actions 和论文故事统一为 ORED 四层架构，不新增平行治理实现。</p></div>
       </div>
     </div>
     <div class="panel">
@@ -371,8 +372,8 @@ body.focus-mode .section.focus-target{opacity:1}
         <span class="kpi">ESLint · pass</span>
         <span class="kpi">Next.js build · pass</span>
       </div>
-
     </div>
+  </div>
     <div class="evidence-dashboard">
       <div class="chart-card">
         <div class="chart-title"><h3>研究证据状态 · 点击联动</h3><span>bar length = endpoint completion state, not performance</span></div>
@@ -731,7 +732,9 @@ body.focus-mode .section.focus-target{opacity:1}
     el.addEventListener('click',function(){selectEvidence(el.getAttribute('data-link'),el);});
   });
   document.querySelectorAll('.titem').forEach(function(el){
-    el.addEventListener('click',function(){selectEvidence(el.getAttribute('data-gate'),el);});
+    function activate(){selectEvidence(el.getAttribute('data-gate'),el);}
+    el.addEventListener('click',activate);
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});
   });
 
   // Paper figure explanations: hover previews, click locks
