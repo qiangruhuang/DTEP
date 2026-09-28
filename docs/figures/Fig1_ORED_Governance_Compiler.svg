@@ -1,0 +1,127 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="900" viewBox="0 0 1600 900" role="img" aria-labelledby="title desc">
+  <title id="title">ORED governance compiler for digital test and evaluation</title>
+  <desc id="desc">Four-layer architecture from objects through typed relations and admissible evidence to governed decisions, with validation gates and fail-closed paths.</desc>
+  <defs>
+    <marker id="arrow" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#334155"/>
+    </marker>
+    <marker id="arrowRed" markerWidth="10" markerHeight="10" refX="8" refY="5" orient="auto" markerUnits="strokeWidth">
+      <path d="M0,0 L10,5 L0,10 z" fill="#b91c1c"/>
+    </marker>
+    <style>
+      .title{font:700 34px Inter,Arial,sans-serif;fill:#0f172a}
+      .subtitle{font:400 18px Inter,Arial,sans-serif;fill:#475569}
+      .layerTitle{font:700 23px Inter,Arial,sans-serif;fill:#0f172a}
+      .layerQ{font:600 16px Inter,Arial,sans-serif;fill:#334155}
+      .body{font:400 14px Inter,Arial,sans-serif;fill:#475569}
+      .small{font:400 12px Inter,Arial,sans-serif;fill:#64748b}
+      .gate{font:700 14px Inter,Arial,sans-serif;fill:#0f172a}
+      .gateBody{font:400 12px Inter,Arial,sans-serif;fill:#475569}
+      .fail{font:600 13px Inter,Arial,sans-serif;fill:#991b1b}
+      .decision{font:700 15px Inter,Arial,sans-serif;fill:#14532d}
+      .mono{font:600 12px ui-monospace,SFMono-Regular,Menlo,monospace;fill:#334155}
+    </style>
+  </defs>
+
+  <rect x="0" y="0" width="1600" height="900" fill="#ffffff"/>
+  <text x="80" y="72" class="title">ORED Governance Compiler</text>
+  <text x="80" y="108" class="subtitle">Object → Relation → Evidence → Decision: admissibility is evaluated before evidence can influence a governed action</text>
+
+  <!-- Object -->
+  <rect x="80" y="170" rx="18" ry="18" width="310" height="350" fill="#f8fafc" stroke="#94a3b8" stroke-width="2"/>
+  <circle cx="120" cy="210" r="20" fill="#e2e8f0"/>
+  <text x="114" y="216" class="gate">1</text>
+  <text x="155" y="216" class="layerTitle">Object</text>
+  <text x="110" y="258" class="layerQ">What is the governed case?</text>
+  <text x="110" y="292" class="body">DigitalTestCase(caseId) is the root.</text>
+  <text x="110" y="322" class="body">First-class objects:</text>
+  <text x="126" y="350" class="small">• scenario / event / measure</text>
+  <text x="126" y="374" class="small">• model / baseline / report</text>
+  <text x="126" y="398" class="small">• deficiency / evidence package</text>
+  <rect x="110" y="430" rx="10" ry="10" width="250" height="60" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="125" y="454" class="mono">stable identity</text>
+  <text x="125" y="476" class="small">case-scoped root + explicit type</text>
+
+  <!-- Relation -->
+  <rect x="455" y="170" rx="18" ry="18" width="310" height="350" fill="#f0f9ff" stroke="#7dd3fc" stroke-width="2"/>
+  <circle cx="495" cy="210" r="20" fill="#bae6fd"/>
+  <text x="489" y="216" class="gate">2</text>
+  <text x="530" y="216" class="layerTitle">Relation</text>
+  <text x="485" y="258" class="layerQ">How does each object participate?</text>
+  <text x="485" y="292" class="body">Typed LinkEntry relations + roles.</text>
+  <text x="501" y="326" class="small">• target-type contract</text>
+  <text x="501" y="350" class="small">• governance-role contract</text>
+  <text x="501" y="374" class="small">• cross-case ownership isolation</text>
+  <text x="501" y="398" class="small">• role-conflict detection</text>
+  <rect x="485" y="430" rx="10" ry="10" width="250" height="60" fill="#ffffff" stroke="#bae6fd"/>
+  <text x="500" y="454" class="mono">case-generic semantics</text>
+  <text x="500" y="476" class="small">no CASE-specific reasoning branch</text>
+
+  <!-- Evidence -->
+  <rect x="830" y="170" rx="18" ry="18" width="310" height="350" fill="#f5f3ff" stroke="#c4b5fd" stroke-width="2"/>
+  <circle cx="870" cy="210" r="20" fill="#ddd6fe"/>
+  <text x="864" y="216" class="gate">3</text>
+  <text x="905" y="216" class="layerTitle">Evidence</text>
+  <text x="860" y="258" class="layerQ">What may be trusted now?</text>
+  <text x="860" y="292" class="body">Admission precedes decision use.</text>
+  <text x="876" y="326" class="small">• bounded reuse authorization</text>
+  <text x="876" y="350" class="small">• provenance + source snapshot</text>
+  <text x="876" y="374" class="small">• task / validation-domain fit</text>
+  <text x="876" y="398" class="small">• revocation / expiry / drift</text>
+  <rect x="860" y="430" rx="10" ry="10" width="250" height="60" fill="#ffffff" stroke="#ddd6fe"/>
+  <text x="875" y="454" class="mono">trusted evidence buckets</text>
+  <text x="875" y="476" class="small">accepted reuse + stale ledger</text>
+
+  <!-- Decision -->
+  <rect x="1205" y="170" rx="18" ry="18" width="310" height="350" fill="#f0fdf4" stroke="#86efac" stroke-width="2"/>
+  <circle cx="1245" cy="210" r="20" fill="#bbf7d0"/>
+  <text x="1239" y="216" class="gate">4</text>
+  <text x="1280" y="216" class="layerTitle">Decision</text>
+  <text x="1235" y="258" class="layerQ">What may the system submit?</text>
+  <text x="1235" y="292" class="body">Criteria consume admitted evidence only.</text>
+  <text x="1251" y="326" class="small">• state qualification criteria</text>
+  <text x="1251" y="350" class="small">• operational-test criteria</text>
+  <text x="1251" y="374" class="small">• finalization criteria</text>
+  <text x="1251" y="398" class="small">• explicit action blockers</text>
+  <rect x="1235" y="430" rx="10" ry="10" width="250" height="60" fill="#ffffff" stroke="#bbf7d0"/>
+  <text x="1250" y="454" class="decision">allowed / blocked</text>
+  <text x="1250" y="476" class="small">with traceable reasons</text>
+
+  <!-- arrows -->
+  <line x1="390" y1="345" x2="445" y2="345" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="765" y1="345" x2="820" y2="345" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+  <line x1="1140" y1="345" x2="1195" y2="345" stroke="#334155" stroke-width="3" marker-end="url(#arrow)"/>
+
+  <!-- boundary validation gates -->
+  <text x="80" y="590" class="layerTitle">Boundary validation</text>
+
+  <rect x="80" y="620" rx="12" ry="12" width="340" height="105" fill="#ffffff" stroke="#cbd5e1"/>
+  <text x="100" y="648" class="gate">v2.3.1 · Transportability</text>
+  <text x="100" y="674" class="gateBody">Different task types reuse the same governance code.</text>
+  <text x="100" y="697" class="gateBody">Tests Object → Relation portability.</text>
+
+  <rect x="445" y="620" rx="12" ry="12" width="340" height="105" fill="#ffffff" stroke="#7dd3fc"/>
+  <text x="465" y="648" class="gate">v2.3.2 · Negative transport</text>
+  <text x="465" y="674" class="gateBody">Malformed, foreign, or conflicting relations are rejected.</text>
+  <text x="465" y="697" class="gateBody">Tests Relation → Evidence isolation.</text>
+
+  <rect x="810" y="620" rx="12" ry="12" width="340" height="105" fill="#ffffff" stroke="#c4b5fd"/>
+  <text x="830" y="648" class="gate">v2.3.3 · Governed reuse</text>
+  <text x="830" y="674" class="gateBody">Foreign evidence requires bounded authorization.</text>
+  <text x="830" y="697" class="gateBody">Tests admission, provenance, and applicability.</text>
+
+  <rect x="1175" y="620" rx="12" ry="12" width="340" height="105" fill="#ffffff" stroke="#86efac"/>
+  <text x="1195" y="648" class="gate">v2.3.4 · Change propagation</text>
+  <text x="1195" y="674" class="gateBody">Revocation, expiry, or source drift removes evidence.</text>
+  <text x="1195" y="697" class="gateBody">Tests Evidence → Decision rollback.</text>
+
+  <!-- fail closed -->
+  <rect x="80" y="770" rx="14" ry="14" width="1040" height="78" fill="#fff7ed" stroke="#fdba74"/>
+  <text x="102" y="800" class="fail">Fail-closed path</text>
+  <text x="102" y="826" class="body">invalid relation / unauthorized reuse / stale source → excluded from trusted evidence → affected criterion recomputed → governed action blocked with an explicit reason</text>
+
+  <!-- external validation -->
+  <rect x="1150" y="770" rx="14" ry="14" width="365" height="78" fill="#f8fafc" stroke="#64748b" stroke-dasharray="7 5"/>
+  <text x="1172" y="800" class="gate">External holdout</text>
+  <text x="1172" y="826" class="small">Independent PAS 2161 engineering approval workflow</text>
+</svg>
