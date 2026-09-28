@@ -13,10 +13,31 @@ export type CaseRelationEntry = {
 }
 
 export type CaseRelationIntegrityIssue = {
-  code: 'REL-TYPE-MISMATCH' | 'REL-CROSS-CASE' | 'REL-ROLE-NOT-ALLOWED' | 'REL-ROLE-CONFLICT'
+  code:
+    | 'REL-TYPE-MISMATCH'
+    | 'REL-CROSS-CASE'
+    | 'REL-ROLE-NOT-ALLOWED'
+    | 'REL-ROLE-CONFLICT'
+    | 'REL-REUSE-AUTH-MISSING'
+    | 'REL-REUSE-AUTH-MISMATCH'
+    | 'REL-REUSE-AUTH-INACTIVE'
+    | 'REL-REUSE-DOMAIN-MISMATCH'
+    | 'REL-REUSE-PROVENANCE-INCOMPLETE'
   relationApiName: string
   targetPk: string
   detail: string
+}
+
+export type CrossCaseReuseTrace = {
+  authorizationRef: string
+  sourceCaseId: string
+  targetCaseId: string
+  relationApiName: string
+  targetPk: string
+  governanceRole: string | null
+  provenanceRef: string
+  sourceSnapshotRef: string
+  requalificationTriggers: string[]
 }
 
 export type CaseOntologyContext = {
@@ -33,6 +54,11 @@ export type CaseOntologyContext = {
     rejectedRelationCount: number
     hardErrors: CaseRelationIntegrityIssue[]
   }
+  crossCaseReuse: {
+    authorizationCount: number
+    acceptedReuseCount: number
+    accepted: CrossCaseReuseTrace[]
+  }
   missionThreads: CaseRelationEntry[]
   scenarios: CaseRelationEntry[]
   events: CaseRelationEntry[]
@@ -46,6 +72,7 @@ export type CaseOntologyContext = {
   modelBaselines: CaseRelationEntry[]
   assemblies: CaseRelationEntry[]
   interfaces: CaseRelationEntry[]
+  reuseAuthorizations: CaseRelationEntry[]
   datasets: Array<{
     path: string
     name: string
@@ -81,6 +108,10 @@ const CASE_RELATION_CONTRACTS = {
   caseUsesModelBaseline: { bucket: 'modelBaselines', targetType: 'ModelBaseline' },
   caseUsesModelAssembly: { bucket: 'assemblies', targetType: 'TestModelAssembly' },
   caseUsesInterfaceContract: { bucket: 'interfaces', targetType: 'InterfaceContract' },
+  caseHasReuseAuthorization: {
+    bucket: 'reuseAuthorizations',
+    targetType: 'EvidenceReuseAuthorization',
+  },
 } as const
 
 type RelationApiName = keyof typeof CASE_RELATION_CONTRACTS
@@ -92,6 +123,14 @@ function parseJson(value: string | null | undefined) {
   } catch {
     return {}
   }
+}
+
+function stringArray(value: unknown): string[] {
+  return Array.isArray(value) ? value.filter((item): item is string => typeof item === 'string') : []
+}
+
+function nonEmptyString(value: unknown): value is string {
+  return typeof value === 'string' && value.trim().length > 0
 }
 
 function serializeRelated(row: any, properties: Record<string, any>): CaseRelationEntry {
@@ -120,6 +159,7 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
     where: { objectTypeId_pk: { objectTypeId: caseType.id, pk: caseId } },
   })
   if (!root) throw new Error(`DigitalTestCase/${caseId} 不存在`)
+  const rootData = parseJson(root.dataJson)
 
   const relationNames = Object.keys(CASE_RELATION_CONTRACTS)
   const rows = await db.linkEntry.findMany({
@@ -161,6 +201,16 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
     foreignOwners.set(key, owners)
   }
 
+  const rawReuseAuthorizations = new Map<string, Record<string, any>>()
+  for (const row of rows) {
+    if (
+      row.linkType.apiName === 'caseHasReuseAuthorization'
+      && row.targetObject.objectType.apiName === 'EvidenceReuseAuthorization'
+    ) {
+      rawReuseAuthorizations.set(row.targetObject.pk, parseJson(row.targetObject.dataJson))
+    }
+  }
+
   const buckets: Record<RelationBucket, CaseRelationEntry[]> = {
     missionThreads: [],
     scenarios: [],
@@ -175,9 +225,12 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
     modelBaselines: [],
     assemblies: [],
     interfaces: [],
+    reuseAuthorizations: [],
   }
   const hardErrors: CaseRelationIntegrityIssue[] = []
   const accepted: Array<{ bucket: RelationBucket; item: CaseRelationEntry }> = []
+  const acceptedReuse: CrossCaseReuseTrace[] = []
+  const now = Date.now()
 
   for (const row of rows) {
     const apiName = row.linkType.apiName as RelationApiName
@@ -198,32 +251,6 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
       continue
     }
 
-    const declaredCaseId = targetData.caseId
-    if (typeof declaredCaseId === 'string' && declaredCaseId && declaredCaseId !== caseId) {
-      hardErrors.push({
-        code: 'REL-CROSS-CASE',
-        relationApiName: apiName,
-        targetPk: row.targetObject.pk,
-        detail: `${apiName} 指向显式归属于 ${declaredCaseId} 的对象，不能作为 ${caseId} 的治理证据`,
-      })
-      continue
-    }
-
-    const ownershipKey = `${apiName}::${row.targetObjectId}`
-    const otherOwners = foreignOwners.get(ownershipKey) ?? []
-    const currentExplicitlyShared = properties.sharedAcrossCases === true
-    const foreignExplicitlyShared = otherOwners.length > 0
-      && otherOwners.every((owner) => owner.properties.sharedAcrossCases === true)
-    if (otherOwners.length > 0 && !(currentExplicitlyShared && foreignExplicitlyShared)) {
-      hardErrors.push({
-        code: 'REL-CROSS-CASE',
-        relationApiName: apiName,
-        targetPk: row.targetObject.pk,
-        detail: `${apiName} 的目标对象同时被其他 Case（${otherOwners.map((owner) => owner.caseId).sort().join(', ')}）引用；未形成双方显式 sharedAcrossCases 许可`,
-      })
-      continue
-    }
-
     const role = properties.governanceRole
     const allowedRoles = 'governanceRoles' in contract ? contract.governanceRoles : undefined
     if (typeof role === 'string' && (!allowedRoles || !(allowedRoles as readonly string[]).includes(role))) {
@@ -234,6 +261,138 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
         detail: `${apiName} 不允许 governanceRole=${role}`,
       })
       continue
+    }
+
+    if (apiName !== 'caseHasReuseAuthorization') {
+      const ownershipKey = `${apiName}::${row.targetObjectId}`
+      const otherOwners = foreignOwners.get(ownershipKey) ?? []
+      const declaredCaseId = targetData.caseId
+      const sourceCaseIds = new Set(
+        otherOwners.map((owner) => owner.caseId).filter((ownerCaseId) => ownerCaseId !== caseId),
+      )
+      if (nonEmptyString(declaredCaseId) && declaredCaseId !== caseId) {
+        sourceCaseIds.add(declaredCaseId)
+      }
+
+      if (sourceCaseIds.size > 0) {
+        if (properties.sharedAcrossCases !== true) {
+          hardErrors.push({
+            code: 'REL-CROSS-CASE',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `${apiName} 指向其他 Case（${[...sourceCaseIds].sort().join(', ')}）的对象，且未声明受控跨 Case 复用`,
+          })
+          continue
+        }
+
+        const authorizationRef = properties.reuseAuthorizationRef
+        if (!nonEmptyString(authorizationRef)) {
+          hardErrors.push({
+            code: 'REL-REUSE-AUTH-MISSING',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `${apiName}/${row.targetObject.pk} 声明跨 Case 复用，但缺少 reuseAuthorizationRef`,
+          })
+          continue
+        }
+
+        const authorization = rawReuseAuthorizations.get(authorizationRef)
+        if (!authorization) {
+          hardErrors.push({
+            code: 'REL-REUSE-AUTH-MISSING',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `未找到接收 Case 关联的 EvidenceReuseAuthorization/${authorizationRef}`,
+          })
+          continue
+        }
+
+        const authorizedSource = authorization.sourceCaseId
+        const authorizedRoleList = stringArray(authorization.allowedGovernanceRoles)
+        const mismatch =
+          !nonEmptyString(authorizedSource)
+          || sourceCaseIds.size !== 1
+          || !sourceCaseIds.has(authorizedSource)
+          || authorization.targetCaseId !== caseId
+          || authorization.sourceObjectType !== targetType
+          || authorization.sourceObjectPk !== row.targetObject.pk
+          || authorization.relationApiName !== apiName
+          || (nonEmptyString(role) && !authorizedRoleList.includes(role))
+
+        if (mismatch) {
+          hardErrors.push({
+            code: 'REL-REUSE-AUTH-MISMATCH',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 与来源 Case、目标 Case、对象、关系或治理角色不一致`,
+          })
+          continue
+        }
+
+        const validFrom = Date.parse(String(authorization.validFrom ?? ''))
+        const validTo = Date.parse(String(authorization.validTo ?? ''))
+        const activeWindow =
+          Number.isFinite(validFrom)
+          && Number.isFinite(validTo)
+          && validFrom <= now
+          && now <= validTo
+        if (
+          authorization.status !== 'approved'
+          || authorization.decision !== 'accept-for-reuse'
+          || !activeWindow
+        ) {
+          hardErrors.push({
+            code: 'REL-REUSE-AUTH-INACTIVE',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 未批准、已撤销/过期或尚未生效`,
+          })
+          continue
+        }
+
+        const targetTaskTypes = stringArray(authorization.targetTaskTypes)
+        const targetTaskType = rootData.taskType
+        if (!nonEmptyString(targetTaskType) || !targetTaskTypes.includes(targetTaskType)) {
+          hardErrors.push({
+            code: 'REL-REUSE-DOMAIN-MISMATCH',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 未覆盖当前 Case taskType=${targetTaskType ?? '未定义'}`,
+          })
+          continue
+        }
+
+        const requalificationTriggers = stringArray(authorization.requalificationTriggers)
+        const provenanceComplete =
+          nonEmptyString(authorization.equivalenceBasis)
+          && nonEmptyString(authorization.provenanceRef)
+          && nonEmptyString(authorization.sourceSnapshotRef)
+          && nonEmptyString(authorization.sourceApprovedBy)
+          && nonEmptyString(authorization.targetApprovedBy)
+          && nonEmptyString(authorization.approvedAt)
+          && requalificationTriggers.length > 0
+        if (!provenanceComplete) {
+          hardErrors.push({
+            code: 'REL-REUSE-PROVENANCE-INCOMPLETE',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 缺少等效性依据、来源快照、双侧批准或重新鉴定触发条件`,
+          })
+          continue
+        }
+
+        acceptedReuse.push({
+          authorizationRef,
+          sourceCaseId: authorizedSource,
+          targetCaseId: caseId,
+          relationApiName: apiName,
+          targetPk: row.targetObject.pk,
+          governanceRole: nonEmptyString(role) ? role : null,
+          provenanceRef: authorization.provenanceRef,
+          sourceSnapshotRef: authorization.sourceSnapshotRef,
+          requalificationTriggers,
+        })
+      }
     }
 
     accepted.push({
@@ -301,7 +460,7 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
       id: root.id,
       pk: root.pk,
       title: root.title,
-      data: parseJson(root.dataJson),
+      data: rootData,
     },
     relationCount: rows.length,
     integrity: {
@@ -309,6 +468,11 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
       acceptedRelationCount,
       rejectedRelationCount: rows.length - acceptedRelationCount,
       hardErrors,
+    },
+    crossCaseReuse: {
+      authorizationCount: rawReuseAuthorizations.size,
+      acceptedReuseCount: acceptedReuse.length,
+      accepted: acceptedReuse,
     },
     ...buckets,
     datasets,
