@@ -1,4 +1,5 @@
 import { governanceRole, resolveCaseOntologyContext, type CaseRelationEntry } from '@/lib/case-ontology-context'
+import { GOVERNANCE_ARCHITECTURE_V24 } from '@/lib/governance-architecture'
 
 export type GovernanceStatus = 'ready' | 'partial' | 'blocked' | 'missing'
 
@@ -454,14 +455,50 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
     operationalEffectivenessMeasures: operationalMeasures.length,
     formalDigitalModelReviewInputs: digitalReviewModels.length,
   }
+  const allCriteria = [
+    ...stateQualificationCriteria,
+    ...operationalTestCriteria,
+    ...finalizationCriteria,
+    ...specialAssessments,
+  ]
+  const trustedEvidenceRoleCount = Object.values(semanticRoleCounts).reduce((sum, value) => sum + value, 0)
 
   return {
-    version: 'v2.3.4-prototype',
+    version: 'v2.4-prototype',
     rootObject: {
       pk: currentCase.pk,
       title: currentCase.title,
       status: currentCase.data.status ?? '未知',
       taskType: currentCase.data.taskType ?? null,
+    },
+    governanceArchitecture: {
+      ...GOVERNANCE_ARCHITECTURE_V24,
+      runtime: {
+        caseId: currentCase.pk,
+        objectCount: Object.values({
+          scenarios: scenarios.length,
+          events: events.length,
+          measures: measures.length,
+          models: models.length,
+          modelBaselines: modelBaselines.length,
+          assemblies: assemblies.length,
+          interfaces: interfaces.length,
+          evidencePackages: evidencePackages.length,
+          reports: reports.length,
+          deficiencies: deficiencies.length,
+        }).reduce((sum, value) => sum + value, 0),
+        relationCount: context.relationCount,
+        acceptedRelationCount: context.integrity.acceptedRelationCount,
+        rejectedRelationCount: context.integrity.rejectedRelationCount,
+        hardErrorCount: context.integrity.hardErrors.length,
+        trustedEvidenceRoleCount,
+        acceptedReuseCount: context.crossCaseReuse.acceptedReuseCount,
+        staleReuseCount: context.crossCaseReuse.staleReuseCount,
+        criterionCount: allCriteria.length,
+        blockingCriterionCount: allCriteria.filter((item) => item.blocking).length,
+        governedActionCount: actions.length,
+        blockedActionCount: actions.filter((item) => !item.allowed).length,
+      },
     },
     transportability: {
       caseId: currentCase.pk,
@@ -470,7 +507,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       integrity: context.integrity,
       crossCaseReuse: context.crossCaseReuse,
       semanticRoleCounts,
-      resolver: 'DigitalTestCase(caseId) -> LinkEntry ontology relations -> governance semantic roles',
+      resolver: 'DigitalTestCase(caseId) -> LinkEntry ontology relations -> evidence admission -> governance criteria/actions',
     },
     authoritativeContext: {
       regulation: '《军队装备试验鉴定规定》：军队装备试验鉴定基本法规',
