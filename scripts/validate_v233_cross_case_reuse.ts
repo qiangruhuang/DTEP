@@ -1,5 +1,6 @@
 import { PrismaClient } from '@prisma/client'
 import { buildChinaTeGovernanceSnapshot } from '../src/lib/china-te-governance'
+import { sourceSnapshotDigest } from '../src/lib/case-ontology-context'
 
 const db = new PrismaClient()
 const SOURCE_CASE = 'CASE-01'
@@ -53,6 +54,8 @@ type AuthorizationPatch = Partial<{
 async function createAuthorization(ref: string, patch: AuthorizationPatch = {}) {
   const type = await db.objectType.findUnique({ where: { apiName: 'EvidenceReuseAuthorization' } })
   check(type, 'EvidenceReuseAuthorization type must be installed by migrate_v233.py')
+  const source = await object('ModelAsset', SOURCE_MODEL)
+  const sourceData = JSON.parse(source.dataJson || '{}')
 
   const data = {
     code: ref,
@@ -69,6 +72,8 @@ async function createAuthorization(ref: string, patch: AuthorizationPatch = {}) 
     equivalenceBasis: '目标 Case 仅复用模型已完成的 VV&A 结论；模型用途被限制为共同的数字模型审验输入，目标任务结论仍独立形成。',
     provenanceRef: 'CASE-01/ModelAsset/MD-01/VV&A',
     sourceSnapshotRef: 'MD-01@FC-7.2#vva-approved',
+    sourceSnapshotDigest: sourceSnapshotDigest(sourceData),
+    sourceValidationDomain: String(sourceData.validationDomain ?? ''),
     sourceApprovedBy: 'SRC-VVA-AUTHORITY',
     targetApprovedBy: 'TGT-TE-AUTHORITY',
     approvedAt: '2026-09-28T00:00:00Z',
