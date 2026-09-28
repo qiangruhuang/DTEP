@@ -437,7 +437,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
   }
 
   return {
-    version: 'v2.3.2-prototype',
+    version: 'v2.3.3-prototype',
     rootObject: {
       pk: currentCase.pk,
       title: currentCase.title,
@@ -449,6 +449,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       relationDriven: true,
       relationCount: context.relationCount,
       integrity: context.integrity,
+      crossCaseReuse: context.crossCaseReuse,
       semanticRoleCounts,
       resolver: 'DigitalTestCase(caseId) -> LinkEntry ontology relations -> governance semantic roles',
     },
