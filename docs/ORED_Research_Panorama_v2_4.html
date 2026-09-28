@@ -705,7 +705,7 @@ body.focus-mode .section.focus-target{opacity:1}
     'external-map':{title:'PAS 2161 · Architecture Mapping',text:'12/12 公开 artifact classes 可映射到现有四层，未增加第五层；这只是 Tier-C mapping，不是 external validation pass。',target:'external'},
     'external-full':{title:'PAS 2161 · Tier-A Full Gate',text:'当前 BLOCKED：缺 technology-level metrics、官方 outcome 与 method/QA identity，因此不能执行 exact reconstruction、NC1–NC4 与 change propagation。',target:'external'}
   };
-  var linkedInspector=document.getElementById('linkedInspector'),linkedJump=document.getElementById('linkedJump');
+  var linkedInspector=document.getElementById('linkedInspector'),linkedJump=document.getElementById('linkedJumpDynamic');
   var selectedLink=null;
   function selectEvidence(key,sourceEl){
     selectedLink=key;
@@ -716,7 +716,7 @@ body.focus-mode .section.focus-target{opacity:1}
       el.classList.toggle('route-muted',!match && ['transport','integrity','reuse','change','consolidation'].indexOf(key)>=0);
     });
     var d=gateDetails[key];
-    linkedInspector.innerHTML='<div class="tag">Linked evidence inspector</div><h4>'+d.title+'</h4><p>'+d.text+'</p><button type="button" class="jump" id="linkedJump">跳转到对应章节</button>';
+    linkedInspector.innerHTML='<div class="tag">Linked evidence inspector</div><h4>'+d.title+'</h4><p>'+d.text+'</p><button type="button" class="jump" id="linkedJumpDynamic">跳转到对应章节</button>';
     linkedJump=document.getElementById('linkedJump');
     linkedJump.addEventListener('click',function(){jumpEvidence(key);});
     if(sourceEl){sourceEl.classList.add('link-flash');setTimeout(function(){sourceEl.classList.remove('link-flash');},1500);}
