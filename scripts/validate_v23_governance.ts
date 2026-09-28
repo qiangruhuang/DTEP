@@ -13,7 +13,7 @@ function check(condition: unknown, message: string): asserts condition {
 async function main() {
   const snapshot = await buildChinaTeGovernanceSnapshot('CASE-01')
 
-  check(snapshot.version === 'v2.3.2-prototype', 'snapshot version must remain explicit prototype semantics')
+  check(snapshot.version === 'v2.3.3-prototype', 'snapshot version must remain explicit prototype semantics')
   check(snapshot.rootObject?.pk === 'CASE-01', 'explicit CASE-01 governance evaluation must remain available')
   check(snapshot.transportability.relationDriven === true, 'governance scope must be resolved from ontology relations')
 
