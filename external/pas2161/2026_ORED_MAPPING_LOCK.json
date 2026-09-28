@@ -1,0 +1,295 @@
+{
+  "schemaVersion": "1.0",
+  "frozenAt": "2026-09-28T18:45:00+08:00",
+  "protocolRef": {
+    "path": "docs/paper/EXTERNAL_VALIDATION_PAS2161_PROTOCOL.md",
+    "freezeCommit": "1cbfc7885adfce8b3d3c1556dea841f71c3b2db7"
+  },
+  "architecture": "ORED",
+  "noNewLayer": true,
+  "objects": [
+    {
+      "externalClass": "Technology",
+      "oredLayer": "object",
+      "oredType": "ExternalTechnology"
+    },
+    {
+      "externalClass": "Provider",
+      "oredLayer": "object",
+      "oredType": "ExternalProvider"
+    },
+    {
+      "externalClass": "LocalAuthorityNetwork",
+      "oredLayer": "object",
+      "oredType": "ExternalTestNetwork"
+    },
+    {
+      "externalClass": "TrialRouteSection",
+      "oredLayer": "object",
+      "oredType": "ExternalTestSection"
+    },
+    {
+      "externalClass": "EngineerBenchmark",
+      "oredLayer": "object",
+      "oredType": "ExternalBenchmark"
+    },
+    {
+      "externalClass": "ProviderBenchmark",
+      "oredLayer": "object",
+      "oredType": "ExternalBenchmark"
+    },
+    {
+      "externalClass": "TechnologyMainSubmission",
+      "oredLayer": "object",
+      "oredType": "ExternalEvidenceArtifact"
+    },
+    {
+      "externalClass": "TechnologyRepeatSubmission",
+      "oredLayer": "object",
+      "oredType": "ExternalEvidenceArtifact"
+    },
+    {
+      "externalClass": "QualityAssuranceForm",
+      "oredLayer": "object",
+      "oredType": "ExternalEvidenceArtifact"
+    },
+    {
+      "externalClass": "GapReport",
+      "oredLayer": "object",
+      "oredType": "ExternalEvidenceArtifact"
+    },
+    {
+      "externalClass": "TechnologyAssessmentReport",
+      "oredLayer": "object",
+      "oredType": "ExternalAssessment"
+    },
+    {
+      "externalClass": "DemonstrationCertificate",
+      "oredLayer": "object",
+      "oredType": "ExternalDecisionRecord"
+    }
+  ],
+  "relations": [
+    {
+      "name": "technologyProvidedBy",
+      "source": "Technology",
+      "target": "Provider",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "technologySurveysNetwork",
+      "source": "Technology",
+      "target": "LocalAuthorityNetwork",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "networkContainsSection",
+      "source": "LocalAuthorityNetwork",
+      "target": "TrialRouteSection",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "engineerBenchmarkAppliesToSection",
+      "source": "EngineerBenchmark",
+      "target": "TrialRouteSection",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "providerBenchmarkAppliesToSection",
+      "source": "ProviderBenchmark",
+      "target": "TrialRouteSection",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "mainSubmissionProducedByTechnology",
+      "source": "TechnologyMainSubmission",
+      "target": "Technology",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "repeatSubmissionProducedByTechnology",
+      "source": "TechnologyRepeatSubmission",
+      "target": "Technology",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "repeatSubmissionRepeatsMainSubmission",
+      "source": "TechnologyRepeatSubmission",
+      "target": "TechnologyMainSubmission",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "qaFormAppliesToTechnology",
+      "source": "QualityAssuranceForm",
+      "target": "Technology",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "gapReportAppliesToSubmission",
+      "source": "GapReport",
+      "target": "TechnologyMainSubmission",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "assessmentEvaluatesTechnology",
+      "source": "TechnologyAssessmentReport",
+      "target": "Technology",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "assessmentUsesEngineerBenchmark",
+      "source": "TechnologyAssessmentReport",
+      "target": "EngineerBenchmark",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "assessmentUsesProviderBenchmark",
+      "source": "TechnologyAssessmentReport",
+      "target": "ProviderBenchmark",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "assessmentUsesMainSubmission",
+      "source": "TechnologyAssessmentReport",
+      "target": "TechnologyMainSubmission",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "assessmentUsesRepeatSubmission",
+      "source": "TechnologyAssessmentReport",
+      "target": "TechnologyRepeatSubmission",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "certificateAppliesToTechnology",
+      "source": "DemonstrationCertificate",
+      "target": "Technology",
+      "oredLayer": "relation"
+    },
+    {
+      "name": "certificateDerivedFromAssessment",
+      "source": "DemonstrationCertificate",
+      "target": "TechnologyAssessmentReport",
+      "oredLayer": "relation"
+    }
+  ],
+  "evidence": {
+    "admissionRequires": [
+      "technology identity matches all submissions and assessment artifacts",
+      "route/network identity matches the frozen 2026 trial definition",
+      "benchmark identity and assessment version are explicit",
+      "QA/method identity is present and bound to the technology",
+      "assessment metrics are from the official technology-level assessment package"
+    ],
+    "metrics": [
+      {
+        "benchmark": "engineer",
+        "metric": "Precision0",
+        "required": true,
+        "op": ">=",
+        "value": 0.6
+      },
+      {
+        "benchmark": "engineer",
+        "metric": "Precision1",
+        "required": true,
+        "op": ">=",
+        "value": 0.9
+      },
+      {
+        "benchmark": "engineer",
+        "metric": "ChiSquared",
+        "required": false,
+        "op": "<=",
+        "value": 250
+      },
+      {
+        "benchmark": "engineer",
+        "metric": "MacroRecall",
+        "required": false,
+        "op": ">=",
+        "value": 0.4
+      },
+      {
+        "benchmark": "provider",
+        "metric": "Precision0",
+        "required": true,
+        "op": ">=",
+        "value": 0.6
+      },
+      {
+        "benchmark": "provider",
+        "metric": "Precision1",
+        "required": true,
+        "op": ">=",
+        "value": 0.9
+      },
+      {
+        "benchmark": "provider",
+        "metric": "ChiSquared",
+        "required": false,
+        "op": "<=",
+        "value": 250
+      },
+      {
+        "benchmark": "provider",
+        "metric": "MacroRecall",
+        "required": false,
+        "op": ">=",
+        "value": 0.4
+      },
+      {
+        "benchmark": "repeat",
+        "metric": "ConsistencyAllMatch",
+        "required": true,
+        "op": ">=",
+        "value": 0.5
+      },
+      {
+        "benchmark": "repeat",
+        "metric": "ConsistencyNoneMatch",
+        "required": true,
+        "op": "<=",
+        "value": 0.05
+      }
+    ],
+    "staleTriggers": [
+      "technology method/configuration identity changes",
+      "contractual arrangement covered by approval changes",
+      "QA state no longer establishes consistency/calibration of the approved method",
+      "approval expires or is withdrawn",
+      "assessment/protocol version no longer matches the decision rule in force"
+    ]
+  },
+  "decision": {
+    "outcomes": [
+      "demonstrated",
+      "not-demonstrated"
+    ],
+    "frozenRuleFrom2025PendingFinal2026Confirmation": {
+      "allRequiredMetricsMustPass": true,
+      "minimumOptionalPasses": 2,
+      "optionalMetricCount": 4
+    },
+    "ruleHandling": "Before opening any selected technology outcome, replace this precedent only if TRL/DfT publishes an official 2026 criteria change. Record the criteria-version change; do not alter ORED architecture."
+  },
+  "negativeControls": [
+    "missing-benchmark-relation",
+    "cross-technology-contamination",
+    "assessment-version-mismatch",
+    "incomplete-QA-or-method-identity"
+  ],
+  "coreChangePolicy": {
+    "allowed": [
+      "external vocabulary adapter",
+      "external artifact parser",
+      "external evidence import manifest"
+    ],
+    "forbidden": [
+      "PAS2161-specific branch in ORED resolver",
+      "PAS2161-specific branch in evidence admission core",
+      "PAS2161-specific branch in governed decision core",
+      "new top-level governance layer"
+    ]
+  }
+}
