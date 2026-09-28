@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<meta name="color-scheme" content="dark light" />
+<title>DTEP ORED v2.4 研究全景 · Governance Architecture & External Validation</title>
+<style>
+:root{
+  --bg:#07111f;--bg2:#0b1627;--panel:#0e1c30cc;--panel2:#12233b;
+  --line:#26405e;--text:#edf5ff;--muted:#91a7c0;--cyan:#4dd7ff;
+  --blue:#6c9cff;--violet:#a78bfa;--green:#5ee0a0;--amber:#ffc857;
+  --red:#ff7b7b;--white:#fff;--shadow:0 24px 70px rgba(0,0,0,.32);
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{margin:0;background:
+  radial-gradient(circle at 12% 0%,rgba(77,215,255,.10),transparent 26%),
+  radial-gradient(circle at 90% 12%,rgba(167,139,250,.11),transparent 24%),
+  linear-gradient(180deg,#06101c 0%,#081321 42%,#07111f 100%);
+  color:var(--text);font-family:Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.65}
+a{color:inherit}
+button{font:inherit}
+.wrap{width:min(1240px,calc(100% - 34px));margin:auto}
+.topbar{position:sticky;top:0;z-index:30;backdrop-filter:blur(18px);background:rgba(5,13,24,.78);border-bottom:1px solid rgba(130,170,210,.15)}
+.topbar .inner{height:64px;display:flex;align-items:center;gap:16px}
+.brand{font-weight:800;letter-spacing:.3px;white-space:nowrap}
+.brand span{color:var(--cyan)}
+.nav{display:flex;gap:4px;overflow:auto;scrollbar-width:none;flex:1}
+.nav::-webkit-scrollbar{display:none}
+.nav a{font-size:12px;color:var(--muted);text-decoration:none;padding:8px 10px;border-radius:10px;white-space:nowrap}
+.nav a.active,.nav a:hover{background:#14253d;color:#fff}
+.controls{display:flex;gap:8px;align-items:center}
+.pillbtn{border:1px solid #2b4665;background:#0c1b2e;color:#bad0e8;padding:7px 10px;border-radius:999px;font-size:11px;cursor:pointer}
+.pillbtn:hover{border-color:#4f7094;color:#fff}
+.hero{padding:78px 0 34px}
+.kicker{display:flex;align-items:center;gap:10px;color:#acd9e8;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:1.7px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--green);box-shadow:0 0 18px var(--green)}
+h1{font-size:clamp(38px,6vw,72px);line-height:1.03;letter-spacing:-2.7px;margin:20px 0 20px;max-width:1020px}
+h1 .grad{background:linear-gradient(100deg,var(--cyan),#8bb8ff 45%,#c6a6ff);-webkit-background-clip:text;background-clip:text;color:transparent}
+.hero p.lead{max-width:900px;font-size:18px;color:#b7c9dc;margin:0 0 28px}
+.hero-grid{display:grid;grid-template-columns:1.35fr .65fr;gap:18px}
+@media(max-width:900px){.hero-grid{grid-template-columns:1fr}.controls .mode-text{display:none}}
+.hero-card,.panel{background:linear-gradient(180deg,rgba(18,35,59,.83),rgba(10,24,42,.9));border:1px solid rgba(106,151,198,.22);border-radius:22px;box-shadow:var(--shadow)}
+.hero-card{padding:22px}
+.hero-status{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+@media(max-width:700px){.hero-status{grid-template-columns:repeat(2,1fr)}}
+.metric{padding:16px;border-radius:16px;background:#0a1729;border:1px solid #1c3350}
+.metric .n{font-size:26px;font-weight:800;line-height:1}
+.metric .l{font-size:11px;color:var(--muted);margin-top:7px}
+.statusbox{padding:20px;display:flex;flex-direction:column;justify-content:space-between}
+.badge{display:inline-flex;align-items:center;gap:6px;border-radius:999px;border:1px solid #29435f;background:#0a182a;padding:5px 9px;font-size:10px;font-weight:700;color:#c2d5e8}
+.badge.ok{border-color:rgba(94,224,160,.38);color:#91f0bd;background:rgba(94,224,160,.08)}
+.badge.warn{border-color:rgba(255,200,87,.38);color:#ffdc8d;background:rgba(255,200,87,.08)}
+.badge.block{border-color:rgba(255,123,123,.38);color:#ffaaa8;background:rgba(255,123,123,.07)}
+.section{padding:58px 0 0;scroll-margin-top:80px}
+.section-head{display:flex;justify-content:space-between;gap:24px;align-items:end;margin-bottom:22px}
+.section h2{font-size:30px;letter-spacing:-1px;margin:0}
+.section .sub{color:var(--muted);max-width:700px;font-size:14px}
+.panel{padding:24px}
+.story{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:880px){.story{grid-template-columns:1fr}}
+.story-card{border:1px solid #213a58;background:#0a1729;border-radius:18px;padding:20px;position:relative;overflow:hidden}
+.story-card:before{content:"";position:absolute;inset:0 0 auto 0;height:3px;background:linear-gradient(90deg,var(--cyan),var(--violet));opacity:.8}
+.story-card h3{margin:0 0 8px;font-size:16px}
+.story-card p{margin:0;color:#9fb4ca;font-size:13px}
+.callout{margin-top:16px;border-left:3px solid var(--cyan);background:#081729;padding:16px 18px;border-radius:0 14px 14px 0;color:#cfe7f4}
+.ored-flow{display:grid;grid-template-columns:repeat(7,1fr);align-items:stretch;gap:8px}
+.layer{appearance:none;color:inherit;text-align:left;font:inherit;cursor:pointer;grid-column:span 1;min-width:0;border-radius:18px;padding:18px 14px;border:1px solid #2b4967;background:linear-gradient(180deg,#0c1d32,#091727);position:relative}
+.layer strong{font-size:17px;display:block}
+.layer .q{display:block;font-size:11px;color:#b7cde0;margin:8px 0}
+.layer .desc{display:block;font-size:11px;color:#849cb5}
+.layer .num{position:absolute;right:12px;top:10px;font:800 30px/1 ui-monospace;color:#203b59}
+.arrow{display:flex;align-items:center;justify-content:center;color:#4f6f8d;font-size:27px}
+.layer.object{border-color:#52708e}.layer.relation{border-color:#388fc0}.layer.evidence{border-color:#7869c7}.layer.decision{border-color:#4d9c72}
+@media(max-width:900px){.ored-flow{grid-template-columns:1fr}.arrow{transform:rotate(90deg);height:28px}.layer{grid-column:auto}}
+.formula{margin-top:20px;padding:16px;border-radius:14px;background:#071321;border:1px dashed #2f4d6b;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;color:#c4dcf1;font-size:13px;overflow:auto}
+.expert-only{display:none}
+body.expert .expert-only{display:block}
+body.expert .novice-only{display:none}
+.timeline{position:relative;padding-left:32px}
+.timeline:before{content:"";position:absolute;left:10px;top:7px;bottom:10px;width:2px;background:linear-gradient(var(--cyan),var(--violet),var(--green))}
+.titem{position:relative;margin-bottom:18px;padding:18px;border:1px solid #213b59;background:#091728;border-radius:16px}
+.titem:before{content:"";position:absolute;left:-28px;top:23px;width:12px;height:12px;border-radius:50%;background:#0b1627;border:3px solid var(--cyan)}
+.titem:nth-child(2):before{border-color:#7bb7ff}.titem:nth-child(3):before{border-color:#b99bff}.titem:nth-child(4):before{border-color:#65dda1}.titem:nth-child(5):before{border-color:#ffd166}
+.titem .top{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.titem h3{margin:0;font-size:16px}
+.titem p{margin:8px 0 0;color:#98afc5;font-size:12px}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.matrix{width:100%;border-collapse:separate;border-spacing:0;font-size:12px;overflow:hidden;border-radius:14px;border:1px solid #223c59}
+.matrix th{background:#102139;color:#d8e8f8;text-align:left;padding:11px}
+.matrix td{border-top:1px solid #1d354f;padding:11px;color:#9fb5cb;vertical-align:top}
+.matrix tr:hover td{background:#0c1b2e}
+.tier{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:18px 0}
+.tier-card{border-radius:16px;padding:17px;border:1px solid #233d59;background:#091727}
+.tier-card.active{border-color:#e0aa36;background:rgba(255,200,87,.07);box-shadow:0 0 0 1px rgba(255,200,87,.07)}
+.tier-card h4{margin:0 0 6px}
+.tier-card p{margin:0;color:#91a8bf;font-size:11px}
+.schedule{display:flex;gap:10px;align-items:stretch;margin:16px 0;overflow:auto}
+.milestone{min-width:180px;flex:1;border-radius:15px;border:1px solid #253f5c;background:#091727;padding:15px}
+.milestone .date{font-size:18px;font-weight:800;color:#fff}
+.milestone .txt{font-size:11px;color:#90a8c0;margin-top:5px}
+.milestone.now{border-color:#4ea3cc}
+.milestone.future{border-style:dashed}
+.endpoint{display:flex;justify-content:space-between;gap:14px;border-bottom:1px solid #1c334c;padding:12px 0}
+.endpoint:last-child{border-bottom:0}
+.endpoint .name{font-size:12px;color:#d7e6f5}.endpoint .reason{font-size:10px;color:#7f98b1;margin-top:3px}
+.holdout{padding:20px;border-radius:17px;background:linear-gradient(135deg,rgba(77,215,255,.07),rgba(167,139,250,.08));border:1px solid #315270}
+.holdout h3{margin:0 0 8px}
+.lock{display:inline-grid;place-items:center;width:30px;height:30px;border-radius:10px;background:#132943;margin-right:9px}
+.thresholds{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+@media(max-width:900px){.thresholds{grid-template-columns:repeat(2,1fr)}}
+.th{padding:12px;border:1px solid #263f5c;border-radius:13px;background:#091727}
+.th .name{font-size:10px;color:#91a8bf}.th .val{font-size:17px;font-weight:800;margin-top:4px}.th .req{font-size:9px;margin-top:4px}
+.frozen{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+@media(max-width:800px){.frozen{grid-template-columns:1fr}}
+.rule{border-radius:14px;padding:14px;border:1px solid #263e59;background:#091727;font-size:11px}
+.rule.good{border-left:3px solid var(--green)}.rule.bad{border-left:3px solid var(--red)}
+.paper-flow{display:grid;grid-template-columns:repeat(5,1fr);gap:8px}
+.paper-step{padding:15px;border-radius:14px;border:1px solid #24405e;background:#091727}
+.paper-step strong{display:block;font-size:12px}.paper-step span{font-size:10px;color:#91a8c0}
+@media(max-width:850px){.paper-flow{grid-template-columns:1fr 1fr}}
+.files{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+@media(max-width:720px){.files{grid-template-columns:1fr}}
+.file{padding:14px;border:1px solid #223b57;background:#081625;border-radius:14px}
+.file code{color:#a9dff2;font-size:10px;word-break:break-all}.file p{margin:6px 0 0;color:#839bb3;font-size:10px}
+.legend{display:flex;gap:10px;flex-wrap:wrap;margin-top:12px;color:#879fb7;font-size:10px}
+.legend span:before{content:"";display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px;background:#777}
+.legend .lg-ok:before{background:var(--green)}.legend .lg-warn:before{background:var(--amber)}.legend .lg-block:before{background:var(--red)}
+footer{padding:60px 0 42px;color:#6f879f;font-size:11px}
+.reveal{opacity:0;transform:translateY(12px);transition:.55s ease}
+.reveal.show{opacity:1;transform:none}
+.source-link{display:inline-block;color:#83dfff;text-decoration:none;border-bottom:1px dotted rgba(131,223,255,.4)}
+.source-link:hover{color:white}
+.small-note{font-size:10px;color:#738ca5;margin-top:8px}
+.progress{height:8px;border-radius:999px;background:#152a42;overflow:hidden;margin-top:8px}
+.progress > span{display:block;height:100%;border-radius:999px;background:linear-gradient(90deg,var(--cyan),var(--green))}
+.kpi-line{display:flex;gap:10px;flex-wrap:wrap;margin-top:10px}
+.kpi{font:700 11px/1 ui-monospace,SFMono-Regular,Menlo,monospace;background:#10233a;border:1px solid #294966;padding:7px 9px;border-radius:10px;color:#cfe8fa}
+hr.sep{border:0;border-top:1px solid #17304a;margin:22px 0}
+.print-only{display:none}
+@media print{
+  .topbar,.controls{display:none!important}.wrap{width:100%;max-width:none}.section{page-break-inside:avoid}
+  body{background:#fff;color:#111}.panel,.hero-card,.story-card,.titem,.file,.tier-card,.milestone,.th,.rule,.paper-step,.layer{box-shadow:none;background:#fff;color:#111;border-color:#ccc}
+  .muted,.sub,.story-card p,.titem p,.file p,.tier-card p,.milestone .txt,.th .name,.paper-step span{color:#555!important}
+  .print-only{display:block}
+}
+
+/* v2.4.1 interaction layer */
+.read-progress{position:fixed;left:0;top:64px;right:0;height:3px;z-index:40;background:transparent;pointer-events:none}
+.read-progress span{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--cyan),var(--violet),var(--green));transition:width .08s linear}
+.section-head{position:relative}
+.collapse-btn{flex:none;border:1px solid #2a4664;background:#0a182a;color:#a9bfd5;border-radius:10px;padding:7px 10px;font-size:10px;cursor:pointer;min-height:34px}
+.collapse-btn:hover,.collapse-btn:focus-visible{border-color:#5c7fa4;color:white;outline:none}
+.section .wrap.is-collapsed>:not(.section-head){display:none!important}
+.section .wrap.is-collapsed .section-head{margin-bottom:0}
+.route-toolbar{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-bottom:16px;padding:10px 12px;border:1px solid #243e5b;border-radius:14px;background:#081624}
+.route-toolbar button{border:1px solid #315170;background:#0c1d31;color:#bfd3e7;border-radius:10px;padding:8px 11px;font-size:10px;cursor:pointer;min-height:36px}
+.route-toolbar button:hover,.route-toolbar button:focus-visible{border-color:#6d91b7;color:#fff;outline:none}
+.route-toolbar .route-status{font:600 10px/1.4 ui-monospace,SFMono-Regular,Menlo,monospace;color:#8ea9c3;margin-left:auto}
+.layer,.arrow,.titem,.evidence-bar,.paper-hotspot{transition:opacity .25s ease,transform .25s ease,border-color .25s ease,background .25s ease,box-shadow .25s ease}
+.layer.route-muted,.titem.route-muted{opacity:.34}
+.layer.route-active,.titem.route-active{opacity:1;transform:translateY(-3px);border-color:#93dcff;box-shadow:0 0 0 2px rgba(77,215,255,.11)}
+.layer.route-done,.titem.route-done{opacity:.75}
+.arrow.route-active{color:#7fe4ff;animation:routePulse 1s ease-in-out infinite}
+@keyframes routePulse{0%,100%{transform:scale(1);opacity:.45}50%{transform:scale(1.24);opacity:1}}
+.route-detail{margin-top:14px;padding:14px;border:1px solid #294763;border-radius:14px;background:#071522;min-height:78px}
+.route-detail .eyebrow{font-size:9px;text-transform:uppercase;letter-spacing:1.3px;color:#6e8ba8}
+.route-detail strong{display:block;margin-top:4px}
+.route-detail p{margin:5px 0 0;color:#8fa8c0;font-size:11px}
+.evidence-dashboard{display:grid;grid-template-columns:1.05fr .95fr;gap:16px;margin-top:16px}
+@media(max-width:900px){.evidence-dashboard{grid-template-columns:1fr}}
+.chart-card{border:1px solid #223c59;border-radius:16px;background:#081625;padding:16px}
+.chart-title{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:12px}
+.chart-title h3{margin:0;font-size:14px}
+.chart-title span{font-size:9px;color:#7892ab}
+.evidence-bars{display:grid;gap:9px}
+.evidence-bar{display:grid;grid-template-columns:126px 1fr 64px;align-items:center;gap:10px;border:0;background:transparent;color:inherit;text-align:left;padding:4px;border-radius:9px;cursor:pointer}
+.evidence-bar:hover,.evidence-bar:focus-visible{background:#0d1e31;outline:none}
+.evidence-bar.selected{background:#10243a;box-shadow:inset 0 0 0 1px #345777}
+.bar-label{font-size:10px;color:#c5d8e9}
+.bar-track{height:10px;border-radius:999px;background:#152a42;overflow:hidden}
+.bar-fill{height:100%;border-radius:999px;background:var(--green);transform-origin:left center}
+.bar-fill.partial{background:var(--amber)}
+.bar-fill.blocked{background:var(--red)}
+.bar-value{font:700 9px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#91aac2;text-align:right}
+.linked-inspector{border:1px solid #243f5b;border-radius:15px;background:#091827;padding:15px;min-height:210px}
+.linked-inspector .tag{font-size:9px;color:#7892aa;text-transform:uppercase;letter-spacing:1.2px}
+.linked-inspector h4{margin:5px 0 6px;font-size:15px}
+.linked-inspector p{margin:0;color:#91aac1;font-size:11px}
+.linked-inspector .jump{margin-top:13px;border:1px solid #335574;background:#0b1d31;color:#cbe0f3;border-radius:9px;padding:7px 10px;font-size:10px;cursor:pointer}
+.link-flash{animation:linkFlash 1.4s ease}
+@keyframes linkFlash{0%,100%{box-shadow:none}25%,70%{box-shadow:0 0 0 3px rgba(77,215,255,.18)}}
+.figure-lab{margin-top:18px;display:grid;grid-template-columns:minmax(0,1.6fr) minmax(240px,.7fr);gap:16px;align-items:start}
+@media(max-width:900px){.figure-lab{grid-template-columns:1fr}}
+.paper-figure{position:relative;border:1px solid #263f5b;border-radius:16px;background:white;overflow:hidden;min-height:300px}
+.paper-figure img{display:block;width:100%;height:auto}
+.paper-hotspot{position:absolute;border:1px solid transparent;background:rgba(7,17,31,.04);border-radius:12px;cursor:pointer}
+.paper-hotspot:hover,.paper-hotspot:focus-visible,.paper-hotspot.selected{border-color:#48b7e8;background:rgba(77,215,255,.11);outline:none;box-shadow:0 0 0 2px rgba(77,215,255,.12)}
+.paper-hotspot span{position:absolute;left:8px;top:7px;background:#071522dd;color:white;padding:3px 6px;border-radius:8px;font-size:9px;opacity:0;transition:opacity .2s}
+.paper-hotspot:hover span,.paper-hotspot:focus-visible span,.paper-hotspot.selected span{opacity:1}
+.hot-object{left:4.5%;top:18%;width:20%;height:42%}.hot-relation{left:28%;top:18%;width:20%;height:42%}.hot-evidence{left:51.5%;top:18%;width:20%;height:42%}.hot-decision{left:75%;top:18%;width:20%;height:42%}
+.figure-explain{border:1px solid #243f5b;border-radius:15px;background:#091827;padding:16px;min-height:190px}
+.figure-explain .n{font:800 28px/1 ui-monospace,SFMono-Regular,Menlo,monospace;color:#34516f}
+.figure-explain h4{margin:7px 0 7px}.figure-explain p{margin:0;color:#91aac1;font-size:11px}
+.figure-explain ul{padding-left:18px;color:#89a2ba;font-size:10px;margin:10px 0 0}
+.figure-caption{margin-top:8px;color:#6f889f;font-size:9px}
+.chapter-tools{display:flex;gap:8px;flex-wrap:wrap;margin-left:auto}
+.chapter-tools button{border:1px solid #2b4665;background:#0c1b2e;color:#aac1d8;padding:7px 9px;border-radius:9px;font-size:9px;cursor:pointer}
+body.focus-mode .section:not(.focus-target){opacity:.18;filter:saturate(.6)}
+body.focus-mode .section.focus-target{opacity:1}
+@media(prefers-reduced-motion:reduce){
+  *,*::before,*::after{animation:none!important;transition:none!important;scroll-behavior:auto!important}
+}
+
+</style>
+</head>
+<body>
+<div class="read-progress" aria-hidden="true"><span id="readProgress"></span></div>
+<header class="topbar">
+  <div class="wrap inner">
+    <div class="brand">DTEP <span>ORED v2.4</span></div>
+    <nav class="nav" id="nav">
+      <a href="#story">主故事</a><a href="#ored">ORED</a><a href="#gates">证据链</a>
+      <a href="#external">外部验证</a><a href="#paper">论文</a><a href="#boundaries">边界</a><a href="#artifacts">工件</a>
+    </nav>
+    <div class="controls">
+      <button class="pillbtn" id="modeBtn">切换：专家模式</button>
+      <button class="pillbtn" id="chapterBtn">折叠全部</button>
+      <button class="pillbtn" id="printBtn">打印 / PDF</button>
+    </div>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+<div class="wrap">
+  <div class="kicker"><span class="dot"></span>Research panorama · snapshot 2026-09-28</div>
+  <h1>从“数字线程”走向<br><span class="grad">可治理的证据与决策</span></h1>
+  <p class="lead">当前研究的核心已从“平台能管理多少数字资产”收紧为一个更基础的问题：<b>一个数字对象什么时候有资格成为当前试验鉴定决策的证据？它的资格在来源变化后是否会自动失效？</b></p>
+  <div class="hero-grid">
+    <div class="hero-card">
+      <div class="hero-status">
+        <div class="metric"><div class="n">4</div><div class="l">ORED 治理层</div></div>
+        <div class="metric"><div class="n">8/8</div><div class="l">内部 gate 组已通过</div></div>
+        <div class="metric"><div class="n">12/12</div><div class="l">PAS 2161 artifact classes 已映射</div></div>
+        <div class="metric"><div class="n">0</div><div class="l">协议冻结后 ORED core 改动</div></div>
+      </div>
+      <div class="callout novice-only"><b>一句话：</b>先确定“这是谁的证据”，再检查“关系对不对”，再判断“现在还能不能信”，最后才允许它影响鉴定动作。</div>
+      <div class="formula expert-only">G<sub>c</sub> → R(e) → A(v,c,t) → T<sub>c</sub>(t) → C<sub>k</sub>(t) → Allowed<sub>j</sub>(t)</div>
+    </div>
+    <div class="hero-card statusbox">
+      <div>
+        <span class="badge ok">● Internal CI PASS</span>
+        <span class="badge ok">● Browser E2E PASS</span>
+        <h3 style="margin:14px 0 6px">外部验证：Tier C / Prospective</h3>
+        <p style="margin:0;color:#91a8c0;font-size:12px">PAS 2161 2026 technology-level Tier-A package 尚未公开，因此 decision reconstruction、4 个 negative controls 和 change propagation 均按协议保持 blocked。</p>
+      </div>
+      <div style="margin-top:18px">
+        <span class="badge warn">Holdout frozen before outcome</span>
+        <div class="small-note">Primary: WDM Type S / RAV-based method</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="story">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>研究主故事</h2><div class="sub">不是再造一个更大的试验平台，而是在数字线程和正式决策之间增加一个明确、可审计、可失效的证据治理边界。</div></div>
+  </div>
+  <div class="story">
+    <div class="story-card">
+      <span class="badge">Problem</span>
+      <h3>“数据存在” ≠ “可以用于当前决策”</h3>
+      <p>模型、试验、报告、指标即使都可追溯，也可能属于另一个 Case、承担错误角色、超出验证域，或已经因来源变化而失效。</p>
+    </div>
+    <div class="story-card">
+      <span class="badge">Mechanism</span>
+      <h3>ORED：四层治理编译器</h3>
+      <p>把 Case-scoped objects 编译为 typed relations，再变成 admissible evidence，最后才进入 governed decisions。</p>
+    </div>
+    <div class="story-card">
+      <span class="badge">Evidence</span>
+      <h3>四个边界 gate，而非四项功能</h3>
+      <p>v2.3.1–v2.3.4 分别验证跨 Case 迁移、关系隔离、受控复用和来源变化后的自动撤销/传播。</p>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="ored">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>ORED Governance Compiler</h2><div class="sub">Object → Relation → Evidence → Decision。最重要的顺序约束：证据准入发生在 criterion 计算之前。</div></div>
+    <span class="badge ok">Architecture frozen · v2.4</span>
+  </div>
+  <div class="panel">
+    <div class="route-toolbar" aria-label="ORED 研究路线动画控制">
+      <button type="button" id="routePlay">▶ 播放治理链</button>
+      <button type="button" id="routePause">Ⅱ 暂停</button>
+      <button type="button" id="routeReset">↺ 重置</button>
+      <span class="route-status" id="routeStatus">READY · 点击任一层也可单步解释</span>
+    </div>
+    <div class="ored-flow" id="oredFlow">
+      <button type="button" class="layer object" data-route-step="0" data-layer="object"><span class="num">1</span><strong>Object</strong><span class="q">治理对象是谁？</span><span class="desc">DigitalTestCase(caseId) 作为根；场景、事件、指标、模型、报告、缺陷等均为一等对象。</span></button>
+      <div class="arrow">→</div>
+      <button type="button" class="layer relation" data-route-step="1" data-layer="relation"><span class="num">2</span><strong>Relation</strong><span class="q">对象如何参与当前 Case？</span><span class="desc">typed LinkEntry + governanceRole；检查 target type、角色合法性、冲突与 cross-case ownership。</span></button>
+      <div class="arrow">→</div>
+      <button type="button" class="layer evidence" data-route-step="2" data-layer="evidence"><span class="num">3</span><strong>Evidence</strong><span class="q">现在可以信什么？</span><span class="desc">准入、provenance、授权复用、适用域、来源摘要、撤销/过期/stale ledger。</span></button>
+      <div class="arrow">→</div>
+      <button type="button" class="layer decision" data-route-step="3" data-layer="decision"><span class="num">4</span><strong>Decision</strong><span class="q">系统现在允许做什么？</span><span class="desc">只消费 admitted evidence；criterion → blocker → governed action，且 hard prerequisite 不能被“覆盖率”平均掉。</span></button>
+    </div>
+    <div class="route-detail" id="routeDetail" aria-live="polite"><div class="eyebrow">Interactive route</div><strong>Object → Relation → Evidence → Decision</strong><p>点击任一层，或播放路线，观察治理语义如何逐层收紧；错误在进入 Decision 前被隔离或撤销。</p></div>
+    <div class="formula expert-only">
+      R(e)=1：关系类型、语义角色、ownership 均合法<br>
+      A(v,c,t)=1：证据在当前 Case、当前时间满足准入/复用/有效性合同<br>
+      T<sub>c</sub>(t)={v∈V<sub>c</sub> : R(e<sub>v</sub>)=1 ∧ A(v,c,t)=1}<br>
+      C<sub>k</sub>(t)=f<sub>k</sub>(T<sub>c</sub>(t),P<sub>k</sub>)<br>
+      Allowed<sub>j</sub>(t)=Authority<sub>j</sub> ∧ ∧¬Blocking(C<sub>k</sub>) ∧ NoHardIntegrityError
+    </div>
+    <div class="novice-only legend">
+      <span class="lg-ok">能进入下一层</span><span class="lg-warn">证据不完整 / 待补</span><span class="lg-block">结构错误、未授权或 stale：fail closed</span>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="gates">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>内部证据链：v2.3.1 → v2.4</h2><div class="sub">研究已停止继续堆内部 Case / failure type。现有链条已经覆盖“迁移—隔离—合法复用—失效传播—统一架构收口”。</div></div>
+    <span class="badge ok">8/8 internal gate groups PASS</span>
+  </div>
+  <div class="route-toolbar" aria-label="研究版本路线动画控制">
+    <button type="button" id="gatePlay">▶ 播放研究路线</button>
+    <button type="button" id="gatePause">Ⅱ 暂停</button>
+    <button type="button" id="gateReset">↺ 重置</button>
+    <span class="route-status" id="gateStatus">READY · v2.3.1 → v2.4 → external holdout</span>
+  </div>
+  <div class="grid2">
+    <div class="panel">
+      <div class="timeline">
+        <div class="titem" data-gate="transport" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.1</span><h3>Second-Case Transportability</h3><span class="badge ok">PASS</span></div><p>CASE-02 使用完全不同的可靠性/维修性任务类型，但复用同一治理 resolver / action vocabulary；核心代码静态检查不含 CASE 专属证据 ID。</p></div>
+        <div class="titem" data-gate="integrity" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.2</span><h3>Relation Completeness & Negative Transport</h3><span class="badge ok">PASS</span></div><p>缺关系只导致相应 criterion 不完整；错类型、非法角色、角色冲突、跨 Case 污染作为结构错误，在进入可信证据桶之前 fail closed。</p></div>
+        <div class="titem" data-gate="reuse" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.3</span><h3>Governed Cross-Case Evidence Reuse</h3><span class="badge ok">PASS</span></div><p>跨 Case 证据必须有匹配来源/目标/对象/角色/适用域/provenance/双侧批准的授权。允许复用 ≠ 继承来源 Case 结论。</p></div>
+        <div class="titem" data-gate="change" role="button" tabindex="0"><div class="top"><span class="badge">v2.3.4</span><h3>Reuse Revocation & Change Propagation</h3><span class="badge ok">PASS</span></div><p>授权撤销、过期、source digest 漂移、validationDomain 漂移 → stale ledger → 证据移除 → criterion 降级 → action blocker。</p></div>
+        <div class="titem" data-gate="consolidation" role="button" tabindex="0"><div class="top"><span class="badge">v2.4</span><h3>Governance Architecture Consolidation</h3><span class="badge ok">PASS</span></div><p>后端、前端、runtime counts、criteria/actions 和论文故事统一为 ORED 四层架构，不新增平行治理实现。</p></div>
+      </div>
+    </div>
+    <div class="panel">
+      <h3 style="margin-top:0">Claim → Evidence → Boundary</h3>
+      <table class="matrix">
+        <thead><tr><th>主张</th><th>直接证据</th><th>边界</th></tr></thead>
+        <tbody>
+          <tr><td>治理逻辑可与 CASE 专属 ID 解耦</td><td>CASE-01/02 transport gate + static source audit</td><td>仅两个人工 demo Case</td></tr>
+          <tr><td>typed relations 可阻止静默证据污染</td><td>type mismatch / role conflict / cross-case injections</td><td>已测试 failure classes，不代表所有 ontology 缺陷</td></tr>
+          <tr><td>跨 Case 证据可以有界复用</td><td>authorization-backed reject/accept matrix</td><td>原型授权语义，非正式机构制度</td></tr>
+          <tr><td>来源变化可撤销既有证据影响</td><td>revocation / expiry / digest / domain drift</td><td>同步原型，不含分布式事件一致性</td></tr>
+          <tr><td>ORED 架构内部一致</td><td>v2.4 consolidation gate + product runtime</td><td>内部一致性 ≠ 外部效度</td></tr>
+          <tr><td>ORED 对独立工程流程可迁移</td><td><span class="badge warn">尚未建立</span></td><td>PAS 2161 Tier-A 外部验证待执行</td></tr>
+        </tbody>
+      </table>
+      <hr class="sep">
+      <h3>工程回归状态</h3>
+      <div class="kpi-line">
+        <span class="kpi">DTEP CI · success</span>
+        <span class="kpi">Browser E2E · success</span>
+        <span class="kpi">TypeScript · pass</span>
+        <span class="kpi">ESLint · pass</span>
+        <span class="kpi">Next.js build · pass</span>
+      </div>
+    </div>
+  </div>
+    <div class="evidence-dashboard">
+      <div class="chart-card">
+        <div class="chart-title"><h3>研究证据状态 · 点击联动</h3><span>bar length = endpoint completion state, not performance</span></div>
+        <div class="evidence-bars" id="evidenceBars">
+          <button type="button" class="evidence-bar" data-link="transport"><span class="bar-label">v2.3.1 Transport</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">PASS</span></button>
+          <button type="button" class="evidence-bar" data-link="integrity"><span class="bar-label">v2.3.2 Integrity</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">PASS</span></button>
+          <button type="button" class="evidence-bar" data-link="reuse"><span class="bar-label">v2.3.3 Reuse</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">PASS</span></button>
+          <button type="button" class="evidence-bar" data-link="change"><span class="bar-label">v2.3.4 Change</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">PASS</span></button>
+          <button type="button" class="evidence-bar" data-link="consolidation"><span class="bar-label">v2.4 Consolidation</span><span class="bar-track"><span class="bar-fill" style="width:100%"></span></span><span class="bar-value">PASS</span></button>
+          <button type="button" class="evidence-bar" data-link="external-map"><span class="bar-label">PAS2161 Mapping</span><span class="bar-track"><span class="bar-fill partial" style="width:55%"></span></span><span class="bar-value">PARTIAL</span></button>
+          <button type="button" class="evidence-bar" data-link="external-full"><span class="bar-label">PAS2161 Tier-A</span><span class="bar-track"><span class="bar-fill blocked" style="width:8%"></span></span><span class="bar-value">BLOCKED</span></button>
+        </div>
+      </div>
+      <div class="linked-inspector" id="linkedInspector" aria-live="polite">
+        <div class="tag">Linked evidence inspector</div>
+        <h4>选择左侧任一条证据状态</h4>
+        <p>系统会联动高亮对应 gate，并提供“跳转到相关章节”。外部验证条目会跳转到 PAS 2161 面板，而不是内部 timeline。</p>
+        <button type="button" class="jump" id="linkedJump" disabled>跳转到对应章节</button>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="external">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>真正独立的外部验证：PAS 2161</h2><div class="sub">不是 CASE-03。外部流程由英国 DfT / TRL 独立设计与运行，用来检验 ORED 四层合同是否能在团队之外仍成立。</div></div>
+    <span class="badge warn">Current tier · C</span>
+  </div>
+
+  <div class="grid2">
+    <div class="panel">
+      <h3 style="margin-top:0">证据等级</h3>
+      <div class="tier">
+        <div class="tier-card"><h4>Tier A</h4><p>技术级完整 metrics + 官方 outcome + method/QA identity。可执行完整 external gate。</p></div>
+        <div class="tier-card"><h4>Tier B</h4><p>有官方 outcome，但 metrics 不完整。只能做结构 mapping / change governance。</p></div>
+        <div class="tier-card active"><h4>Tier C · 当前</h4><p>只有公开流程、routes、QA templates、criteria 等。只能声明 prospective feasibility。</p></div>
+      </div>
+      <div class="endpoint"><div><div class="name">Architecture sufficiency / mapping</div><div class="reason">12/12 artifact classes 已映射，未增加第五层</div></div><span class="badge warn">PARTIAL PASS</span></div>
+      <div class="endpoint"><div><div class="name">Exact decision reconstruction</div><div class="reason">缺官方 2026 technology-level metrics + outcome</div></div><span class="badge block">BLOCKED</span></div>
+      <div class="endpoint"><div><div class="name">NC1–NC4 negative controls</div><div class="reason">缺实例化 external technology graph</div></div><span class="badge block">BLOCKED</span></div>
+      <div class="endpoint"><div><div class="name">Change propagation</div><div class="reason">缺 Tier-A method/QA state 与正式 approval evidence</div></div><span class="badge block">BLOCKED</span></div>
+    </div>
+
+    <div class="panel">
+      <div class="holdout">
+        <h3><span class="lock">🔒</span>Prospective holdout 已冻结</h3>
+        <p style="color:#a7bed3;font-size:12px">Primary candidate：<b>WDM Limited · Type S / Road Assessment Vehicle (RAV)-based PAS 2161 method</b></p>
+        <p style="color:#819ab2;font-size:11px">选择发生在 2026 outcome 公布之前。若主候选不参赛或无法获得完整 Tier-A，则使用 TRL/DfT 按时间最先公开的完整 Tier-A package；同时发布时按 provider → technology 字典序，不允许按结果挑样本。</p>
+        <div class="kpi-line"><span class="kpi">Outcome known at selection = false</span><span class="kpi">No outcome-based selection</span></div>
+      </div>
+      <h3>2026 时间轴</h3>
+      <div class="schedule">
+        <div class="milestone now"><div class="date">09·28</div><div class="txt">Protocol / mapping / holdout 冻结</div></div>
+        <div class="milestone future"><div class="date">10·02</div><div class="txt">TRL benchmark calibration data</div></div>
+        <div class="milestone future"><div class="date">11·06</div><div class="txt">校准后 technology submissions + QA deadline</div></div>
+        <div class="milestone future"><div class="date">12·18</div><div class="txt">计划公布 demonstrated / not-demonstrated</div></div>
+      </div>
+      <div class="small-note">重要：2025 数据只用于冻结 2026 protocol，不替代 prospective 2026 primary endpoint。</div>
+    </div>
+  </div>
+
+  <div class="panel" style="margin-top:16px">
+    <div class="grid2">
+      <div>
+        <h3 style="margin-top:0">Frozen PAS 2161 decision policy</h3>
+        <div class="thresholds">
+          <div class="th"><div class="name">Engineer P0</div><div class="val">≥60%</div><div class="req">Required</div></div>
+          <div class="th"><div class="name">Engineer P1</div><div class="val">≥90%</div><div class="req">Required</div></div>
+          <div class="th"><div class="name">Engineer χ²</div><div class="val">≤250</div><div class="req">Optional</div></div>
+          <div class="th"><div class="name">Engineer Macro R</div><div class="val">≥40%</div><div class="req">Optional</div></div>
+          <div class="th"><div class="name">Provider P0</div><div class="val">≥60%</div><div class="req">Required</div></div>
+          <div class="th"><div class="name">Provider P1</div><div class="val">≥90%</div><div class="req">Required</div></div>
+          <div class="th"><div class="name">Provider χ²</div><div class="val">≤250</div><div class="req">Optional</div></div>
+          <div class="th"><div class="name">Provider Macro R</div><div class="val">≥40%</div><div class="req">Optional</div></div>
+          <div class="th"><div class="name">Repeat All Match</div><div class="val">≥50%</div><div class="req">Required</div></div>
+          <div class="th"><div class="name">Repeat None Match</div><div class="val">≤5%</div><div class="req">Required</div></div>
+        </div>
+        <div class="callout" style="margin-top:12px">规则：<b>全部 required tests 通过 + 至少 2/4 optional tests 通过</b>。如果 TRL/DfT 在打开选定 technology outcome 之前正式发布 2026 criteria 变化，只记录“外部流程演化”，不改 ORED architecture。</div>
+      </div>
+      <div>
+        <h3 style="margin-top:0">Tier-A 到位后固定执行顺序</h3>
+        <ol style="padding-left:18px;color:#9fb6cd;font-size:12px">
+          <li>验证 package identity 与 completeness</li>
+          <li>实例化 external ORED graph</li>
+          <li>Exact decision reconstruction</li>
+          <li>NC1 missing benchmark relation</li>
+          <li>NC2 cross-technology contamination</li>
+          <li>NC3 assessment-version mismatch</li>
+          <li>NC4 incomplete QA / method identity</li>
+          <li>method / QA change-propagation test</li>
+          <li>逐 endpoint 报告；禁止 composite score 掩盖失败</li>
+        </ol>
+        <div class="progress"><span style="width:25%"></span></div>
+        <div class="small-note">当前仅完成 protocol + mapping + holdout freeze；不是 25% “性能分数”，只是执行阶段示意。</div>
+      </div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="paper">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>投稿主稿已经收紧</h2><div class="sub">论文不再以“平台功能大全”为故事，而围绕一个问题展开：digital thread 如何被安全地编译为 governed evidence。</div></div>
+    <span class="badge">Manuscript v1.0 · Markdown</span>
+  </div>
+  <div class="panel">
+    <div class="paper-flow">
+      <div class="paper-step"><strong>Abstract</strong><span>问题、ORED、四个 gate、边界、prospective holdout</span></div>
+      <div class="paper-step"><strong>Introduction</strong><span>digital thread ≠ evidentiary admissibility；提出 RQ1–RQ4</span></div>
+      <div class="paper-step"><strong>Architecture</strong><span>四层合同 + 形式化定义 + fail-closed 顺序</span></div>
+      <div class="paper-step"><strong>Evaluation</strong><span>transport / negative relation / reuse / change propagation</span></div>
+      <div class="paper-step"><strong>Discussion</strong><span>主张边界、外部效度、PAS 2161 prospective validation</span></div>
+    </div>
+    <div class="callout expert-only"><b>投稿核心判断：</b>最强证据不是“模块数很多”，而是 decision admissibility 在 case transfer、malformed relations、bounded reuse 和 subsequent source change 下能够被保持或自动撤销。</div>
+    <div class="figure-lab">
+      <div>
+        <div class="paper-figure" id="paperFigure">
+          <img src="figures/Fig1_ORED_Governance_Compiler.svg" alt="论文 Figure 1：ORED Object–Relation–Evidence–Decision 治理编译器">
+          <button type="button" class="paper-hotspot hot-object" data-figure="object" aria-label="解释 Object layer"><span>Object</span></button>
+          <button type="button" class="paper-hotspot hot-relation" data-figure="relation" aria-label="解释 Relation layer"><span>Relation</span></button>
+          <button type="button" class="paper-hotspot hot-evidence" data-figure="evidence" aria-label="解释 Evidence layer"><span>Evidence</span></button>
+          <button type="button" class="paper-hotspot hot-decision" data-figure="decision" aria-label="解释 Decision layer"><span>Decision</span></button>
+        </div>
+        <div class="figure-caption">Figure 1 · 鼠标悬停可预览；点击可锁定解释。移动端直接点击热点。</div>
+      </div>
+      <aside class="figure-explain" id="figureExplain" aria-live="polite">
+        <div class="n">Fig.1</div>
+        <h4>点击图中任一层</h4>
+        <p>这里解释该层在论文中的“概念含义、可验证合同、对应 gate 与 fail-closed 行为”。</p>
+        <ul><li>热点不会改变研究数据，只改变解释视图。</li><li>点击后保持选中；再次点击其他层即可切换。</li></ul>
+      </aside>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="boundaries">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>冻结规则与研究边界</h2><div class="sub">这一块决定研究是否可信：哪些事情现在允许做，哪些事情即使能做也不能做。</div></div>
+  </div>
+  <div class="frozen">
+    <div class="rule good"><b>允许：</b>外部 vocabulary adapter、artifact parser、evidence import manifest、source-specific field normalization。</div>
+    <div class="rule bad"><b>禁止：</b>看到 PAS 2161 outcome 后给 resolver / evidence admission / decision core 增加 PAS2161-specific branch。</div>
+    <div class="rule good"><b>允许：</b>如果官方在 outcome 打开前发布 2026 criteria 变化，更新外部 policy version 并留痕。</div>
+    <div class="rule bad"><b>禁止：</b>按最终 demonstrated / not-demonstrated 结果重新选择 holdout、改 negative controls、改成功标准。</div>
+    <div class="rule good"><b>允许：</b>Tier B/C 如实报告 mapping 或可行性子集。</div>
+    <div class="rule bad"><b>禁止：</b>没有完整 technology-level metrics 时，用 2025 汇总结果或 certificate 冒充 independent decision reconstruction。</div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3 style="margin-top:0">当前可以说什么 / 不能说什么</h3>
+    <div class="grid2">
+      <div><span class="badge ok">Supported now</span><ul style="font-size:12px;color:#9fb6cd"><li>ORED 四层在两个内部 demo Case 上可执行并 fail closed。</li><li>跨 Case 复用与 stale propagation 已通过内部 deterministic gates。</li><li>PAS 2161 公开 artifact classes 可映射到现有四层，不需第五层。</li></ul></div>
+      <div><span class="badge block">Not supported yet</span><ul style="font-size:12px;color:#9fb6cd"><li>不能声称 ORED 已通过独立外部工程验证。</li><li>不能声称 decision reconstruction 已成功。</li><li>不能声称适用于所有组织、监管制度或复杂等效性判断。</li></ul></div>
+    </div>
+  </div>
+</div>
+</section>
+
+<section class="section" id="artifacts">
+<div class="wrap reveal">
+  <div class="section-head">
+    <div><h2>当前研究工件</h2><div class="sub">所有关键判断都有对应的冻结文件；HTML 只是展示层，不是新的事实来源。</div></div>
+  </div>
+  <div class="files">
+    <div class="file"><code>docs/paper/ORED_Governance_Manuscript_v1.md</code><p>投稿级 Abstract–Introduction–Architecture–Evaluation–Discussion 主稿。</p></div>
+    <div class="file"><code>docs/figures/Fig1_ORED_Governance_Compiler.svg</code><p>论文核心 ORED 架构图。</p></div>
+    <div class="file"><code>docs/paper/EXTERNAL_VALIDATION_PAS2161_PROTOCOL.md</code><p>2026-09-28 冻结的 prospective external validation protocol。</p></div>
+    <div class="file"><code>docs/paper/PAS2161_EXTERNAL_EXECUTION_LOG.md</code><p>当前 Tier-C 执行状态、blocked endpoints 与下一 admissible step。</p></div>
+    <div class="file"><code>external/pas2161/2026_TIER_A_ACQUISITION_MANIFEST.json</code><p>Tier-A 需求、holdout、fallback rule、artifact gaps。</p></div>
+    <div class="file"><code>external/pas2161/2026_ORED_MAPPING_LOCK.json</code><p>PAS 2161 → ORED 四层映射、阈值、negative controls、core-change policy。</p></div>
+  </div>
+  <div class="panel" style="margin-top:16px">
+    <h3 style="margin-top:0">外部公开来源</h3>
+    <p style="font-size:11px;color:#8fa7bf">
+      <a class="source-link" href="https://pas2161.trl.co.uk/pas-2161-faqs/" target="_blank" rel="noopener">TRL PAS 2161 FAQs</a> ·
+      <a class="source-link" href="https://pas2161.trl.co.uk/demonstration-trial-routes/" target="_blank" rel="noopener">2026 Demonstration Trial Routes</a> ·
+      <a class="source-link" href="https://pas2161.trl.co.uk/quality-assurance-forms/" target="_blank" rel="noopener">Quality Assurance Forms</a> ·
+      <a class="source-link" href="https://www.trl.co.uk/uploads/trl/documents/TRL-PAS2161-2025-RCM-Trials-Final-Report.pdf" target="_blank" rel="noopener">PPR2083 2025 Final Report</a> ·
+      <a class="source-link" href="https://www.wdm.co.uk/insights/pas-2161-compliance-and-2026-27-road-condition-surveying/" target="_blank" rel="noopener">WDM 2026 participation context</a>
+    </p>
+  </div>
+</div>
+</section>
+</main>
+
+<footer>
+<div class="wrap">
+  <div>DTEP · ORED Governance Compiler · Research Panorama v2.4</div>
+  <div style="margin-top:4px">Snapshot based on research branch <code>research/v2.4-paper-external-validation</code> · 2026-09-28</div>
+  <div class="print-only">Printed from the standalone research panorama HTML.</div>
+</div>
+</footer>
+
+<script>
+(function(){
+  if(window.__oredPanoramaInit) return;
+  window.__oredPanoramaInit=true;
+
+  var body=document.body;
+  var prefersReduced=window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  // Existing mode + print
+  var modeBtn=document.getElementById('modeBtn');
+  modeBtn.addEventListener('click',function(){
+    body.classList.toggle('expert');
+    modeBtn.textContent=body.classList.contains('expert')?'切换：小白模式':'切换：专家模式';
+  });
+  document.getElementById('printBtn').addEventListener('click',function(){window.print();});
+
+  // Reading progress
+  var readProgress=document.getElementById('readProgress');
+  function updateProgress(){
+    var doc=document.documentElement;
+    var max=Math.max(1,doc.scrollHeight-doc.clientHeight);
+    var pct=Math.max(0,Math.min(100,(doc.scrollTop/max)*100));
+    readProgress.style.width=pct+'%';
+  }
+  document.addEventListener('scroll',updateProgress,{passive:true});
+  window.addEventListener('resize',updateProgress);
+  updateProgress();
+
+  // Section collapse controls
+  var sectionWraps=[].slice.call(document.querySelectorAll('.section > .wrap'));
+  sectionWraps.forEach(function(wrap,index){
+    var head=wrap.querySelector(':scope > .section-head');
+    if(!head) return;
+    var tools=document.createElement('div');
+    tools.className='chapter-tools';
+    var btn=document.createElement('button');
+    btn.type='button';btn.className='collapse-btn';btn.textContent='收起本章';
+    btn.setAttribute('aria-expanded','true');
+    btn.addEventListener('click',function(){
+      var collapsed=wrap.classList.toggle('is-collapsed');
+      btn.textContent=collapsed?'展开本章':'收起本章';
+      btn.setAttribute('aria-expanded',String(!collapsed));
+    });
+    tools.appendChild(btn);
+    head.appendChild(tools);
+  });
+  var chapterBtn=document.getElementById('chapterBtn');
+  var allCollapsed=false;
+  chapterBtn.addEventListener('click',function(){
+    allCollapsed=!allCollapsed;
+    sectionWraps.forEach(function(wrap){
+      wrap.classList.toggle('is-collapsed',allCollapsed);
+      var b=wrap.querySelector('.collapse-btn');
+      if(b){b.textContent=allCollapsed?'展开本章':'收起本章';b.setAttribute('aria-expanded',String(!allCollapsed));}
+    });
+    chapterBtn.textContent=allCollapsed?'展开全部':'折叠全部';
+  });
+
+  // Sticky nav
+  var sections=[].slice.call(document.querySelectorAll('.section'));
+  var links=[].slice.call(document.querySelectorAll('#nav a'));
+  var obs=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(e.isIntersecting){
+        links.forEach(function(a){a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id);});
+      }
+    });
+  },{rootMargin:'-25% 0px -65% 0px',threshold:0});
+  sections.forEach(function(sec){obs.observe(sec);});
+
+  // Reveal
+  if(!prefersReduced){
+    var revealObs=new IntersectionObserver(function(entries){
+      entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('show');revealObs.unobserve(e.target);}});
+    },{threshold:.08});
+    document.querySelectorAll('.reveal').forEach(function(el){revealObs.observe(el);});
+  }else{
+    document.querySelectorAll('.reveal').forEach(function(el){el.classList.add('show');});
+  }
+
+  // ORED route animation
+  var routeLayers=[].slice.call(document.querySelectorAll('[data-route-step]'));
+  var routeArrows=[].slice.call(document.querySelectorAll('#oredFlow .arrow'));
+  var routeDetail=document.getElementById('routeDetail');
+  var routeStatus=document.getElementById('routeStatus');
+  var routeTimer=null,routeIndex=-1,routePlaying=false;
+  var routeCopy={
+    object:{title:'1 · Object — 先确定治理边界',text:'DigitalTestCase(caseId) 是根。此层只回答“谁属于当前 Case”，不提前判断它是不是可采信证据。'},
+    relation:{title:'2 · Relation — 再解释参与语义',text:'typed LinkEntry 与 governanceRole 决定对象承担什么治理角色；错类型、非法角色、冲突与未授权跨 Case 污染在这里被截断。'},
+    evidence:{title:'3 · Evidence — 只有通过准入的对象才能被信任',text:'授权、provenance、适用域、source snapshot、有效期和 stale 状态共同决定对象能否进入 trusted evidence buckets。'},
+    decision:{title:'4 · Decision — 最后才计算 criteria 与 actions',text:'Decision layer 不访问“所有数字资产”，只消费 admitted evidence；证据失效后 criterion 自动重算并传播为 action blocker。'}
+  };
+  function showRoute(idx){
+    routeIndex=Math.max(0,Math.min(routeLayers.length-1,idx));
+    routeLayers.forEach(function(el,i){
+      el.classList.toggle('route-active',i===routeIndex);
+      el.classList.toggle('route-done',i<routeIndex);
+      el.classList.toggle('route-muted',i>routeIndex);
+    });
+    routeArrows.forEach(function(el,i){el.classList.toggle('route-active',i===routeIndex-1 || i===routeIndex);});
+    var key=routeLayers[routeIndex].getAttribute('data-layer'),c=routeCopy[key];
+    routeDetail.innerHTML='<div class="eyebrow">Step '+(routeIndex+1)+' / 4</div><strong>'+c.title+'</strong><p>'+c.text+'</p>';
+    routeStatus.textContent='STEP '+(routeIndex+1)+' / 4 · '+key.toUpperCase();
+  }
+  function stopRoute(){if(routeTimer){clearInterval(routeTimer);routeTimer=null;}routePlaying=false;}
+  function playRoute(){
+    stopRoute();routePlaying=true;
+    if(routeIndex>=routeLayers.length-1) routeIndex=-1;
+    function tick(){showRoute(routeIndex+1);if(routeIndex>=routeLayers.length-1) stopRoute();}
+    tick();
+    if(!prefersReduced) routeTimer=setInterval(tick,1500);
+  }
+  document.getElementById('routePlay').addEventListener('click',playRoute);
+  document.getElementById('routePause').addEventListener('click',function(){stopRoute();routeStatus.textContent='PAUSED · STEP '+(routeIndex+1)+' / 4';});
+  document.getElementById('routeReset').addEventListener('click',function(){
+    stopRoute();routeIndex=-1;
+    routeLayers.forEach(function(el){el.classList.remove('route-active','route-done','route-muted');});
+    routeArrows.forEach(function(el){el.classList.remove('route-active');});
+    routeDetail.innerHTML='<div class="eyebrow">Interactive route</div><strong>Object → Relation → Evidence → Decision</strong><p>点击任一层，或播放路线，观察治理语义如何逐层收紧；错误在进入 Decision 前被隔离或撤销。</p>';
+    routeStatus.textContent='READY · 点击任一层也可单步解释';
+  });
+  routeLayers.forEach(function(el,i){el.addEventListener('click',function(){stopRoute();showRoute(i);});});
+
+  // Timeline click -> linked chart selection
+  var gateDetails={
+    transport:{title:'v2.3.1 · Second-Case Transportability',text:'验证 Object → Relation：不同任务类型通过 caseId + ontology relations 运行同一治理代码。',target:'gates'},
+    integrity:{title:'v2.3.2 · Relation Integrity',text:'验证 Relation → Evidence：错类型、跨 Case 污染和角色冲突不能进入 trusted evidence。',target:'gates'},
+    reuse:{title:'v2.3.3 · Governed Reuse',text:'验证跨 Case 证据只有在授权、provenance、适用域与双方批准完整时才能准入。',target:'gates'},
+    change:{title:'v2.3.4 · Change Propagation',text:'验证 Evidence → Decision：撤销、过期和 source/domain drift 使证据 stale，并沿 criterion/action 传播。',target:'gates'},
+    consolidation:{title:'v2.4 · Architecture Consolidation',text:'把 v2.3.x 收敛为统一 ORED compiler；runtime、UI、criteria/actions 与论文叙事共享同一状态模型。',target:'gates'},
+    'external-map':{title:'PAS 2161 · Architecture Mapping',text:'12/12 公开 artifact classes 可映射到现有四层，未增加第五层；这只是 Tier-C mapping，不是 external validation pass。',target:'external'},
+    'external-full':{title:'PAS 2161 · Tier-A Full Gate',text:'当前 BLOCKED：缺 technology-level metrics、官方 outcome 与 method/QA identity，因此不能执行 exact reconstruction、NC1–NC4 与 change propagation。',target:'external'}
+  };
+  var linkedInspector=document.getElementById('linkedInspector'),linkedJump=document.getElementById('linkedJumpDynamic');
+  var selectedLink=null;
+  function selectEvidence(key,sourceEl){
+    selectedLink=key;
+    document.querySelectorAll('.evidence-bar').forEach(function(el){el.classList.toggle('selected',el.getAttribute('data-link')===key);});
+    document.querySelectorAll('.titem').forEach(function(el){
+      var match=el.getAttribute('data-gate')===key;
+      el.classList.toggle('route-active',match);
+      el.classList.toggle('route-muted',!match && ['transport','integrity','reuse','change','consolidation'].indexOf(key)>=0);
+    });
+    var d=gateDetails[key];
+    linkedInspector.innerHTML='<div class="tag">Linked evidence inspector</div><h4>'+d.title+'</h4><p>'+d.text+'</p><button type="button" class="jump" id="linkedJumpDynamic">跳转到对应章节</button>';
+    linkedJump=document.getElementById('linkedJump');
+    linkedJump.addEventListener('click',function(){jumpEvidence(key);});
+    if(sourceEl){sourceEl.classList.add('link-flash');setTimeout(function(){sourceEl.classList.remove('link-flash');},1500);}
+  }
+  var researchRoute=['transport','integrity','reuse','change','consolidation','external-map','external-full'];
+  var gateRouteTimer=null,gateRouteIndex=-1;
+  function stopGateRoute(){if(gateRouteTimer){clearInterval(gateRouteTimer);gateRouteTimer=null;}}
+  function showGateRoute(index){
+    gateRouteIndex=Math.max(0,Math.min(researchRoute.length-1,index));
+    var key=researchRoute[gateRouteIndex];
+    var bar=document.querySelector('.evidence-bar[data-link="'+key+'"]');
+    selectEvidence(key,bar);
+    var d=gateDetails[key];
+    document.getElementById('gateStatus').textContent='STEP '+(gateRouteIndex+1)+' / '+researchRoute.length+' · '+d.title;
+  }
+  function playGateRoute(){
+    stopGateRoute();
+    if(gateRouteIndex>=researchRoute.length-1) gateRouteIndex=-1;
+    function tick(){
+      showGateRoute(gateRouteIndex+1);
+      if(gateRouteIndex>=researchRoute.length-1) stopGateRoute();
+    }
+    tick();
+    if(!prefersReduced) gateRouteTimer=setInterval(tick,1650);
+  }
+  document.getElementById('gatePlay').addEventListener('click',playGateRoute);
+  document.getElementById('gatePause').addEventListener('click',function(){
+    stopGateRoute();
+    document.getElementById('gateStatus').textContent='PAUSED · STEP '+(gateRouteIndex+1)+' / '+researchRoute.length;
+  });
+  document.getElementById('gateReset').addEventListener('click',function(){
+    stopGateRoute();gateRouteIndex=-1;
+    document.querySelectorAll('.evidence-bar').forEach(function(el){el.classList.remove('selected','link-flash');});
+    document.querySelectorAll('.titem').forEach(function(el){el.classList.remove('route-active','route-muted','route-done');});
+    linkedInspector.innerHTML='<div class="tag">Linked evidence inspector</div><h4>选择左侧任一条证据状态</h4><p>系统会联动高亮对应 gate，并提供“跳转到相关章节”。外部验证条目会跳转到 PAS 2161 面板，而不是内部 timeline。</p><button type="button" class="jump" disabled>跳转到对应章节</button>';
+    document.getElementById('gateStatus').textContent='READY · v2.3.1 → v2.4 → external holdout';
+  });
+
+  function jumpEvidence(key){
+    var d=gateDetails[key],target=document.getElementById(d.target);
+    if(target){
+      var wrap=target.querySelector(':scope > .wrap'); if(wrap) wrap.classList.remove('is-collapsed');
+      target.scrollIntoView({behavior:prefersReduced?'auto':'smooth',block:'start'});
+      target.classList.add('link-flash');setTimeout(function(){target.classList.remove('link-flash');},1500);
+    }
+  }
+  document.querySelectorAll('.evidence-bar').forEach(function(el){
+    el.addEventListener('click',function(){selectEvidence(el.getAttribute('data-link'),el);});
+  });
+  document.querySelectorAll('.titem').forEach(function(el){
+    function activate(){selectEvidence(el.getAttribute('data-gate'),el);}
+    el.addEventListener('click',activate);
+    el.addEventListener('keydown',function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();activate();}});
+  });
+
+  // Paper figure explanations: hover previews, click locks
+  var figureExplain=document.getElementById('figureExplain');
+  var figureLocked=null;
+  var figureCopy={
+    object:{n:'01',title:'Object layer',text:'论文中的作用是定义“治理对象与 Case 边界”。它刻意不回答是否可采信。',items:['根：DigitalTestCase(caseId)','一等对象：event / measure / model / report / deficiency','Gate 对应：v2.3.1 transportability']},
+    relation:{n:'02',title:'Relation layer',text:'把“对象存在”转换为“对象在当前 Case 中承担什么语义角色”。',items:['typed endpoint contract','governanceRole legality / conflict','cross-case ownership isolation','Gate 对应：v2.3.2 negative transport']},
+    evidence:{n:'03',title:'Evidence layer',text:'这是 ORED 的核心控制点：只有通过准入的对象才能影响 decision。',items:['authorization-backed reuse','provenance + source snapshot','task/domain applicability','revocation / expiry / drift','Gate 对应：v2.3.3 + v2.3.4']},
+    decision:{n:'04',title:'Decision layer',text:'criteria 与 actions 只消费 trusted evidence；证据 stale 后从集合移除，决策自然回退。',items:['state qualification / operational test / finalization','hard prerequisites cannot be averaged away','explicit blocker reasons','Gate 对应：v2.3.4 propagation + v2.4 consolidation']}
+  };
+  function renderFigure(key){
+    var d=figureCopy[key];
+    figureExplain.innerHTML='<div class="n">'+d.n+'</div><h4>'+d.title+'</h4><p>'+d.text+'</p><ul>'+d.items.map(function(x){return '<li>'+x+'</li>';}).join('')+'</ul>';
+    document.querySelectorAll('.paper-hotspot').forEach(function(el){el.classList.toggle('selected',el.getAttribute('data-figure')===key && figureLocked===key);});
+  }
+  document.querySelectorAll('.paper-hotspot').forEach(function(el){
+    var key=el.getAttribute('data-figure');
+    el.addEventListener('mouseenter',function(){if(!figureLocked) renderFigure(key);});
+    el.addEventListener('focus',function(){if(!figureLocked) renderFigure(key);});
+    el.addEventListener('click',function(){
+      figureLocked=(figureLocked===key)?null:key;
+      renderFigure(key);
+      if(!figureLocked) document.querySelectorAll('.paper-hotspot').forEach(function(h){h.classList.remove('selected');});
+    });
+  });
+})();
+</script>
+</body>
+</html>
