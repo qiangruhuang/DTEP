@@ -2,7 +2,9 @@
 
 Digital Test & Evaluation Platform engineering baseline.
 
-The v2.1 A–H business architecture is frozen. The v2.1.x line is engineering hardening only: identity, cryptographic signatures, FMI/SAL/LVC adapters, deployment, CI/E2E, performance qualification, and release provenance.
+The v2.1 A–H business architecture is frozen. The v2.1.x line remains the engineering baseline for identity, cryptographic signatures, FMI/SAL/LVC adapters, deployment, CI/E2E, performance qualification, and release provenance.
+
+The v2.4 governance research overlay does not add a new top-level business module. It consolidates the v2.3.1–v2.3.4 transport, relation-integrity, governed-reuse, and change-propagation work into one Object–Relation–Evidence–Decision (ORED) governance compiler. See `docs/V2.4_GOVERNANCE_ARCHITECTURE_CONSOLIDATION.md`.
 
 ## Reproducible build
 

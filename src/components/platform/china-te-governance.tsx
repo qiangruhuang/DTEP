@@ -17,7 +17,6 @@ import {
   Gavel,
   GitBranch,
   Link2,
-  LockKeyhole,
   Network,
   Scale,
   ShieldCheck,
@@ -37,9 +36,61 @@ type Criterion = {
 }
 type Summary = { evidenceCoverage: number; ready: number; partial: number; blocked: number; missing: number }
 type Action = { apiName: string; label: string; stage: string; allowed: boolean; requiredAuthority: string; blockers: string[] }
+type ArchitectureLayer = {
+  id: 'object' | 'relation' | 'evidence' | 'decision'
+  label: string
+  question: string
+  responsibility: string
+  coreContracts: readonly string[]
+  failClosedRule: string
+}
+type ArchitectureMechanism = {
+  id: string
+  label: string
+  transition: string
+  guarantee: string
+}
 type Snapshot = {
   version: string
-  rootObject: { pk: string; title: string; status: string } | null
+  rootObject: { pk: string; title: string; status: string; taskType?: string | null } | null
+  governanceArchitecture: {
+    name: string
+    shortName: string
+    thesis: string
+    layers: readonly ArchitectureLayer[]
+    mechanisms: readonly ArchitectureMechanism[]
+    invariants: readonly string[]
+    paperStory: {
+      problem: string
+      method: string
+      evidence: string
+      claimBoundary: string
+    }
+    runtime: {
+      caseId: string
+      objectCount: number
+      relationCount: number
+      acceptedRelationCount: number
+      rejectedRelationCount: number
+      hardErrorCount: number
+      trustedEvidenceRoleCount: number
+      acceptedReuseCount: number
+      staleReuseCount: number
+      criterionCount: number
+      blockingCriterionCount: number
+      governedActionCount: number
+      blockedActionCount: number
+    }
+  }
+  transportability: {
+    integrity: { status: 'valid' | 'invalid'; hardErrors: { code: string; detail: string }[] }
+    crossCaseReuse: {
+      acceptedReuseCount: number
+      staleReuseCount: number
+      accepted: { authorizationRef: string; targetPk: string; sourceCaseId: string; governanceRole: string | null }[]
+      stale: { authorizationRef: string; code: string; targetPk: string; detail: string }[]
+    }
+  }
   authoritativeContext: {
     regulation: string
     programMainline: string
@@ -174,7 +225,7 @@ export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: Module
     <div className="space-y-5">
       <ModuleHeader
         title="试验鉴定治理工作台"
-        desc="把中国装备试验鉴定的流程、审查标准、技术状态、数据采信、数字化模型与审批权限绑定到同一 Ontology Case：不是再做一张看板，而是让系统解释当前证据能支撑什么、还缺什么、为什么某个业务动作现在不能提交。"
+        desc="把试验鉴定治理收敛为一条可执行链：Case 对象确定边界，typed relations 解释语义，证据层决定哪些信息可被信任和复用，决策层只消费已准入证据并生成可解释的 criteria 与 governed actions。"
         actions={
           <div className="flex flex-wrap gap-2">
             <Button size="sm" variant="outline" onClick={() => onNavigate('ontology')}><Network className="mr-1.5 h-3.5 w-3.5" />对象与关系</Button>
@@ -207,11 +258,60 @@ export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: Module
               )}
             </div>
 
-            <div className="mt-4 grid gap-2 md:grid-cols-4">
-              <PatternCard icon={<Waypoints className="h-4 w-4" />} title="Object View" text="一个 CASE 聚合全部对象与关系" />
-              <PatternCard icon={<GitBranch className="h-4 w-4" />} title="Function Logic" text="服务端派生业务门控与缺口" />
-              <PatternCard icon={<Gavel className="h-4 w-4" />} title="Action Criteria" text="动作是否可提交 + 明确 blocker" />
-              <PatternCard icon={<LockKeyhole className="h-4 w-4" />} title="Security & Lineage" text="OIDC 身份 + 证据引用 + 决策留痕" />
+            <div className="mt-4 rounded-md border border-zinc-200 bg-zinc-50 p-3">
+              <div className="flex items-start gap-2">
+                <GitBranch className="mt-0.5 h-4 w-4 text-emerald-700" />
+                <div>
+                  <p className="text-xs font-semibold text-zinc-900">{data.governanceArchitecture.shortName}</p>
+                  <p className="mt-1 text-[11px] leading-5 text-zinc-600">{data.governanceArchitecture.thesis}</p>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-4 overflow-x-auto">
+              <div className="flex min-w-[980px] items-stretch gap-2">
+                {data.governanceArchitecture.layers.map((layer, index) => (
+                  <div key={layer.id} className="flex flex-1 items-center gap-2">
+                    <ArchitectureLayerCard layer={layer} index={index} />
+                    {index < data.governanceArchitecture.layers.length - 1 && <ArrowRight className="h-4 w-4 shrink-0 text-zinc-300" />}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            <div className="mt-3 grid gap-2 sm:grid-cols-2 xl:grid-cols-4">
+              <RuntimeMetric label="对象" value={data.governanceArchitecture.runtime.objectCount} detail={data.governanceArchitecture.runtime.caseId} />
+              <RuntimeMetric label="关系" value={data.governanceArchitecture.runtime.acceptedRelationCount} detail={`拒绝 ${data.governanceArchitecture.runtime.rejectedRelationCount}`} />
+              <RuntimeMetric label="可信治理证据角色" value={data.governanceArchitecture.runtime.trustedEvidenceRoleCount} detail={`复用 ${data.governanceArchitecture.runtime.acceptedReuseCount} · stale ${data.governanceArchitecture.runtime.staleReuseCount}`} />
+              <RuntimeMetric label="决策门控" value={data.governanceArchitecture.runtime.criterionCount} detail={`阻塞 criteria ${data.governanceArchitecture.runtime.blockingCriterionCount} · actions ${data.governanceArchitecture.runtime.blockedActionCount}/${data.governanceArchitecture.runtime.governedActionCount}`} />
+            </div>
+          </section>
+
+          <section className="rounded-lg border border-zinc-200 bg-white p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <div className="flex items-center gap-2"><ShieldCheck className="h-4 w-4 text-sky-700" /><h2 className="text-sm font-semibold text-zinc-900">治理边界验证 · v2.3.1–v2.3.4</h2></div>
+                <p className="mt-1 text-xs leading-5 text-zinc-500">四个版本不是四套功能，而是依次验证四层编译链的边界：可迁移、关系隔离、受控复用、变更传播。</p>
+              </div>
+              <div className="flex gap-2">
+                <Badge variant="outline" className={data.transportability.integrity.status === 'valid' ? 'border-emerald-200 bg-emerald-50 text-emerald-700' : 'border-red-200 bg-red-50 text-red-700'}>
+                  Relation graph · {data.transportability.integrity.status}
+                </Badge>
+                <Badge variant="outline">Reuse {data.transportability.crossCaseReuse.acceptedReuseCount}</Badge>
+                <Badge variant="outline" className={data.transportability.crossCaseReuse.staleReuseCount ? 'border-amber-200 bg-amber-50 text-amber-700' : ''}>Stale {data.transportability.crossCaseReuse.staleReuseCount}</Badge>
+              </div>
+            </div>
+            <div className="mt-3 grid gap-2 lg:grid-cols-4">
+              {data.governanceArchitecture.mechanisms.map((mechanism) => (
+                <div key={mechanism.id} className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
+                  <div className="flex items-center justify-between gap-2">
+                    <Badge variant="outline" className="font-mono text-[9px]">{mechanism.id}</Badge>
+                    <span className="text-[9px] text-zinc-400">{mechanism.transition}</span>
+                  </div>
+                  <p className="mt-2 text-[11px] font-medium text-zinc-800">{mechanism.label}</p>
+                  <p className="mt-1 text-[10px] leading-4 text-zinc-500">{mechanism.guarantee}</p>
+                </div>
+              ))}
             </div>
           </section>
 
@@ -335,12 +435,15 @@ export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: Module
           </section>
 
           <section className="rounded-lg border border-zinc-200 bg-zinc-950 p-4 text-zinc-100">
-            <div className="flex items-center gap-2"><Fingerprint className="h-4 w-4 text-emerald-400" /><h2 className="text-sm font-semibold">这次升级解决的不是“显示更多”，而是“决策语义不再丢失”</h2></div>
-            <div className="mt-3 grid gap-3 md:grid-cols-3">
-              <DarkPoint title="文件 → 对象" text="报告、底数、模型、缺陷、审查意见不再只是附件，而应成为可链接、可查询、可授权的业务对象。" />
-              <DarkPoint title="流程 → 动作" text="申请、提交审查、审批、备案、数据采信等动作必须由对象状态和角色共同约束，并留下决策日志。" />
-              <DarkPoint title="结论 → 血缘" text="任何鉴定结论都应能反查到适用标准、技术状态、模型版本、数据采信、试验事件、指标和责任主体。" />
+            <div className="flex items-center gap-2"><Fingerprint className="h-4 w-4 text-emerald-400" /><h2 className="text-sm font-semibold">系统主故事：从“数字资产管理”收紧到“可执行的证据治理”</h2></div>
+            <p className="mt-2 max-w-5xl text-[11px] leading-5 text-zinc-400">{data.governanceArchitecture.paperStory.problem}</p>
+            <div className="mt-3 grid gap-3 md:grid-cols-4">
+              <DarkPoint title="1 · Object" text="Case 给每个任务一个明确治理根，模型、试验、指标、报告和缺陷成为可寻址对象。" />
+              <DarkPoint title="2 · Relation" text="typed relations 与 governance roles 把对象连接成可验证语义，而不是依赖页面或文件目录推断含义。" />
+              <DarkPoint title="3 · Evidence" text="只有通过完整性、复用授权、适用域与变更检查的对象才进入可信证据集合。" />
+              <DarkPoint title="4 · Decision" text="criteria 和 action blockers 只消费已准入证据，因此结论能追溯，也能在证据失效时自动回退。" />
             </div>
+            <p className="mt-3 border-t border-zinc-800 pt-3 text-[10px] leading-5 text-zinc-500">研究边界：{data.governanceArchitecture.paperStory.claimBoundary}</p>
           </section>
         </>
       ) : null}
@@ -348,11 +451,28 @@ export function ChinaTeGovernanceModule({ onNavigate }: { onNavigate: (m: Module
   )
 }
 
-function PatternCard({ icon, title, text }: { icon: React.ReactNode; title: string; text: string }) {
+function ArchitectureLayerCard({ layer, index }: { layer: ArchitectureLayer; index: number }) {
   return (
-    <div className="rounded-md border border-zinc-200 bg-zinc-50 p-3">
-      <div className="flex items-center gap-1.5 text-zinc-800">{icon}<p className="text-xs font-medium">{title}</p></div>
-      <p className="mt-1 text-[10px] leading-4 text-zinc-500">{text}</p>
+    <div className="h-full flex-1 rounded-md border border-zinc-200 bg-zinc-50 p-3">
+      <div className="flex items-center gap-2">
+        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-zinc-900 text-[9px] font-semibold text-white">{index + 1}</span>
+        <p className="text-xs font-semibold text-zinc-900">{layer.label}</p>
+      </div>
+      <p className="mt-2 text-[11px] font-medium leading-5 text-zinc-700">{layer.question}</p>
+      <p className="mt-1 text-[10px] leading-4 text-zinc-500">{layer.responsibility}</p>
+      <p className="mt-2 border-t border-zinc-200 pt-2 text-[9px] leading-4 text-red-600/80">Fail closed：{layer.failClosedRule}</p>
+    </div>
+  )
+}
+
+function RuntimeMetric({ label, value, detail }: { label: string; value: number; detail: string }) {
+  return (
+    <div className="rounded-md border border-zinc-200 bg-white p-3">
+      <div className="flex items-end justify-between gap-2">
+        <p className="text-[10px] text-zinc-500">{label}</p>
+        <p className="font-mono text-lg font-semibold text-zinc-900">{value}</p>
+      </div>
+      <p className="mt-1 text-[9px] leading-4 text-zinc-400">{detail}</p>
     </div>
   )
 }

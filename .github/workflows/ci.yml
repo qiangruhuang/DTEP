@@ -69,6 +69,10 @@ jobs:
         env:
           DATABASE_URL: file:${{ github.workspace }}/db/custom.db
         run: bun scripts/validate_v234_reuse_propagation.ts
+      - name: Governance architecture consolidation gate
+        env:
+          DATABASE_URL: file:${{ github.workspace }}/db/custom.db
+        run: bun scripts/validate_v24_architecture.ts
       - name: TypeScript typecheck
         run: bunx tsc --noEmit
       - name: ESLint
