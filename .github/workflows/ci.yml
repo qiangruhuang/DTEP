@@ -47,6 +47,8 @@ jobs:
         run: python scripts/migrate_v231.py
       - name: Apply v2.3.3 cross-case reuse ontology
         run: python scripts/migrate_v233.py
+      - name: Apply v2.3.4 reuse change-propagation ontology
+        run: python scripts/migrate_v234.py
       - name: China T&E governance semantic validation
         env:
           DATABASE_URL: file:${{ github.workspace }}/db/custom.db
@@ -63,6 +65,10 @@ jobs:
         env:
           DATABASE_URL: file:${{ github.workspace }}/db/custom.db
         run: bun scripts/validate_v233_cross_case_reuse.ts
+      - name: Reuse revocation / change-propagation gate
+        env:
+          DATABASE_URL: file:${{ github.workspace }}/db/custom.db
+        run: bun scripts/validate_v234_reuse_propagation.ts
       - name: TypeScript typecheck
         run: bunx tsc --noEmit
       - name: ESLint
