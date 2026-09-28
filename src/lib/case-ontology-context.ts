@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { db } from '@/lib/db'
 
 export type CaseRelationEntry = {
@@ -37,7 +38,22 @@ export type CrossCaseReuseTrace = {
   governanceRole: string | null
   provenanceRef: string
   sourceSnapshotRef: string
+  sourceSnapshotDigest: string
+  sourceValidationDomain: string
   requalificationTriggers: string[]
+}
+
+export type CrossCaseReuseInvalidation = {
+  authorizationRef: string
+  code:
+    | 'REUSE-AUTH-REVOKED'
+    | 'REUSE-AUTH-EXPIRED'
+    | 'REUSE-SOURCE-SNAPSHOT-CHANGED'
+    | 'REUSE-SOURCE-DOMAIN-CHANGED'
+  relationApiName: string
+  targetPk: string
+  governanceRole: string | null
+  detail: string
 }
 
 export type CaseOntologyContext = {
@@ -57,7 +73,9 @@ export type CaseOntologyContext = {
   crossCaseReuse: {
     authorizationCount: number
     acceptedReuseCount: number
+    staleReuseCount: number
     accepted: CrossCaseReuseTrace[]
+    stale: CrossCaseReuseInvalidation[]
   }
   missionThreads: CaseRelationEntry[]
   scenarios: CaseRelationEntry[]
@@ -131,6 +149,24 @@ function stringArray(value: unknown): string[] {
 
 function nonEmptyString(value: unknown): value is string {
   return typeof value === 'string' && value.trim().length > 0
+}
+
+function canonicalize(value: unknown): unknown {
+  if (Array.isArray(value)) return value.map(canonicalize)
+  if (value && typeof value === 'object') {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>)
+        .sort(([a], [b]) => a.localeCompare(b))
+        .map(([key, nested]) => [key, canonicalize(nested)]),
+    )
+  }
+  return value
+}
+
+export function sourceSnapshotDigest(data: Record<string, any>) {
+  return createHash('sha256')
+    .update(JSON.stringify(canonicalize(data)))
+    .digest('hex')
 }
 
 function serializeRelated(row: any, properties: Record<string, any>): CaseRelationEntry {
@@ -230,6 +266,7 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
   const hardErrors: CaseRelationIntegrityIssue[] = []
   const accepted: Array<{ bucket: RelationBucket; item: CaseRelationEntry }> = []
   const acceptedReuse: CrossCaseReuseTrace[] = []
+  const staleReuse: CrossCaseReuseInvalidation[] = []
   const now = Date.now()
 
   for (const row of rows) {
@@ -331,6 +368,28 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
 
         const validFrom = Date.parse(String(authorization.validFrom ?? ''))
         const validTo = Date.parse(String(authorization.validTo ?? ''))
+        if (authorization.status === 'revoked' || authorization.decision === 'reject') {
+          staleReuse.push({
+            authorizationRef,
+            code: 'REUSE-AUTH-REVOKED',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            governanceRole: nonEmptyString(role) ? role : null,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 已撤销或拒绝继续复用`,
+          })
+          continue
+        }
+        if (Number.isFinite(validTo) && now > validTo) {
+          staleReuse.push({
+            authorizationRef,
+            code: 'REUSE-AUTH-EXPIRED',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            governanceRole: nonEmptyString(role) ? role : null,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 已超过有效期 ${authorization.validTo}`,
+          })
+          continue
+        }
         const activeWindow =
           Number.isFinite(validFrom)
           && Number.isFinite(validTo)
@@ -345,7 +404,7 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
             code: 'REL-REUSE-AUTH-INACTIVE',
             relationApiName: apiName,
             targetPk: row.targetObject.pk,
-            detail: `EvidenceReuseAuthorization/${authorizationRef} 未批准、已撤销/过期或尚未生效`,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 未批准或尚未生效`,
           })
           continue
         }
@@ -367,6 +426,8 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
           nonEmptyString(authorization.equivalenceBasis)
           && nonEmptyString(authorization.provenanceRef)
           && nonEmptyString(authorization.sourceSnapshotRef)
+          && nonEmptyString(authorization.sourceSnapshotDigest)
+          && nonEmptyString(authorization.sourceValidationDomain)
           && nonEmptyString(authorization.sourceApprovedBy)
           && nonEmptyString(authorization.targetApprovedBy)
           && nonEmptyString(authorization.approvedAt)
@@ -376,7 +437,33 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
             code: 'REL-REUSE-PROVENANCE-INCOMPLETE',
             relationApiName: apiName,
             targetPk: row.targetObject.pk,
-            detail: `EvidenceReuseAuthorization/${authorizationRef} 缺少等效性依据、来源快照、双侧批准或重新鉴定触发条件`,
+            detail: `EvidenceReuseAuthorization/${authorizationRef} 缺少等效性依据、来源快照摘要/适用域、双侧批准或重新鉴定触发条件`,
+          })
+          continue
+        }
+
+        const currentValidationDomain = String(targetData.validationDomain ?? '')
+        if (currentValidationDomain !== authorization.sourceValidationDomain) {
+          staleReuse.push({
+            authorizationRef,
+            code: 'REUSE-SOURCE-DOMAIN-CHANGED',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            governanceRole: nonEmptyString(role) ? role : null,
+            detail: `${row.targetObject.pk} 的 validationDomain 已偏离授权快照，必须重新评估复用适用性`,
+          })
+          continue
+        }
+
+        const currentSnapshotDigest = sourceSnapshotDigest(targetData)
+        if (currentSnapshotDigest !== authorization.sourceSnapshotDigest) {
+          staleReuse.push({
+            authorizationRef,
+            code: 'REUSE-SOURCE-SNAPSHOT-CHANGED',
+            relationApiName: apiName,
+            targetPk: row.targetObject.pk,
+            governanceRole: nonEmptyString(role) ? role : null,
+            detail: `${row.targetObject.pk} 的来源对象内容摘要已变化，触发重新鉴定边界`,
           })
           continue
         }
@@ -390,6 +477,8 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
           governanceRole: nonEmptyString(role) ? role : null,
           provenanceRef: authorization.provenanceRef,
           sourceSnapshotRef: authorization.sourceSnapshotRef,
+          sourceSnapshotDigest: authorization.sourceSnapshotDigest,
+          sourceValidationDomain: authorization.sourceValidationDomain,
           requalificationTriggers,
         })
       }
@@ -472,7 +561,9 @@ export async function resolveCaseOntologyContext(caseId: string): Promise<CaseOn
     crossCaseReuse: {
       authorizationCount: rawReuseAuthorizations.size,
       acceptedReuseCount: acceptedReuse.length,
+      staleReuseCount: staleReuse.length,
       accepted: acceptedReuse,
+      stale: staleReuse,
     },
     ...buckets,
     datasets,
