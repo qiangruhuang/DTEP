@@ -17,7 +17,6 @@ import {
   Gavel,
   GitBranch,
   Link2,
-  LockKeyhole,
   Network,
   Scale,
   ShieldCheck,
