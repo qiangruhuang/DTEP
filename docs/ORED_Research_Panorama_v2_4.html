@@ -340,6 +340,12 @@ body.focus-mode .section.focus-target{opacity:1}
     <div><h2>内部证据链：v2.3.1 → v2.4</h2><div class="sub">研究已停止继续堆内部 Case / failure type。现有链条已经覆盖“迁移—隔离—合法复用—失效传播—统一架构收口”。</div></div>
     <span class="badge ok">8/8 internal gate groups PASS</span>
   </div>
+  <div class="route-toolbar" aria-label="研究版本路线动画控制">
+    <button type="button" id="gatePlay">▶ 播放研究路线</button>
+    <button type="button" id="gatePause">Ⅱ 暂停</button>
+    <button type="button" id="gateReset">↺ 重置</button>
+    <span class="route-status" id="gateStatus">READY · v2.3.1 → v2.4 → external holdout</span>
+  </div>
   <div class="grid2">
     <div class="panel">
       <div class="timeline">
@@ -720,6 +726,40 @@ body.focus-mode .section.focus-target{opacity:1}
     linkedJump.addEventListener('click',function(){jumpEvidence(key);});
     if(sourceEl){sourceEl.classList.add('link-flash');setTimeout(function(){sourceEl.classList.remove('link-flash');},1500);}
   }
+  var researchRoute=['transport','integrity','reuse','change','consolidation','external-map','external-full'];
+  var gateRouteTimer=null,gateRouteIndex=-1;
+  function stopGateRoute(){if(gateRouteTimer){clearInterval(gateRouteTimer);gateRouteTimer=null;}}
+  function showGateRoute(index){
+    gateRouteIndex=Math.max(0,Math.min(researchRoute.length-1,index));
+    var key=researchRoute[gateRouteIndex];
+    var bar=document.querySelector('.evidence-bar[data-link="'+key+'"]');
+    selectEvidence(key,bar);
+    var d=gateDetails[key];
+    document.getElementById('gateStatus').textContent='STEP '+(gateRouteIndex+1)+' / '+researchRoute.length+' · '+d.title;
+  }
+  function playGateRoute(){
+    stopGateRoute();
+    if(gateRouteIndex>=researchRoute.length-1) gateRouteIndex=-1;
+    function tick(){
+      showGateRoute(gateRouteIndex+1);
+      if(gateRouteIndex>=researchRoute.length-1) stopGateRoute();
+    }
+    tick();
+    if(!prefersReduced) gateRouteTimer=setInterval(tick,1650);
+  }
+  document.getElementById('gatePlay').addEventListener('click',playGateRoute);
+  document.getElementById('gatePause').addEventListener('click',function(){
+    stopGateRoute();
+    document.getElementById('gateStatus').textContent='PAUSED · STEP '+(gateRouteIndex+1)+' / '+researchRoute.length;
+  });
+  document.getElementById('gateReset').addEventListener('click',function(){
+    stopGateRoute();gateRouteIndex=-1;
+    document.querySelectorAll('.evidence-bar').forEach(function(el){el.classList.remove('selected','link-flash');});
+    document.querySelectorAll('.titem').forEach(function(el){el.classList.remove('route-active','route-muted','route-done');});
+    linkedInspector.innerHTML='<div class="tag">Linked evidence inspector</div><h4>选择左侧任一条证据状态</h4><p>系统会联动高亮对应 gate，并提供“跳转到相关章节”。外部验证条目会跳转到 PAS 2161 面板，而不是内部 timeline。</p><button type="button" class="jump" disabled>跳转到对应章节</button>';
+    document.getElementById('gateStatus').textContent='READY · v2.3.1 → v2.4 → external holdout';
+  });
+
   function jumpEvidence(key){
     var d=gateDetails[key],target=document.getElementById(d.target);
     if(target){
