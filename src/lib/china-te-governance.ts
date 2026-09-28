@@ -135,6 +135,22 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
   const formalCaseFrozen = currentCase.data.status === '正式结论已冻结'
   const qualificationEvidenceReady = allCompleted(qualificationEvents) && allQualified(qualificationMeasures)
   const operationalEvidenceReady = allCompleted(operationalEvents) && allQualified(operationalMeasures)
+  const staleReuseForRole = (role: string) =>
+    context.crossCaseReuse.stale.filter((item) => item.governanceRole === role)
+  const staleReuseDetail = (roles: string[]) => {
+    const stale = roles.flatMap(staleReuseForRole)
+    if (!stale.length) return null
+    return `跨 Case 复用证据已失效：${stale.map((item) => `${item.code}(${item.targetPk})`).join('；')}。失效证据已从可信证据集合移除，须重新授权/重新鉴定。`
+  }
+  const qualificationReuseStale = staleReuseDetail([
+    'qualification-performance-anchor',
+    'qualification-performance-measure',
+  ])
+  const operationalReuseStale = staleReuseDetail([
+    'operational-evidence-anchor',
+    'operational-effectiveness-measure',
+  ])
+  const digitalModelReuseStale = staleReuseDetail(['formal-digital-model-review-input'])
 
   const stateQualificationCriteria: GovernanceCriterion[] = [
     criterion(
@@ -144,7 +160,8 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       qualificationEvidenceReady ? 'partial' : 'blocked',
       qualificationEvidenceReady
         ? 'Case 关系图中的性能试验锚点与性能指标已形成可用数字证据，但尚需正式“性能鉴定试验报告 + 性能底数报告”对象身份确认。'
-        : 'Case 关系图中的性能试验锚点尚未完成，或至少一项绑定的性能指标未达到要求。',
+        : qualificationReuseStale
+          ?? 'Case 关系图中的性能试验锚点尚未完成，或至少一项绑定的性能指标未达到要求。',
       [...refs(qualificationEvents), ...refs(qualificationMeasures)],
     ),
     criterion(
@@ -205,7 +222,8 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       allAccredited(digitalReviewModels) ? 'partial' : 'blocked',
       allAccredited(digitalReviewModels)
         ? '当前 Case 通过 relation 标注的正式数字模型审验输入均已有 VV&A 认可；VV&A 仍不等同于正式“装备数字化模型审验”结论。'
-        : '当前 Case 缺少已认可的正式数字模型审验输入，或绑定模型尚未全部完成当前 intended use 下的 VV&A 认可。',
+        : digitalModelReuseStale
+          ?? '当前 Case 缺少已认可的正式数字模型审验输入，或绑定模型尚未全部完成当前 intended use 下的 VV&A 认可。',
       refs(recognizedDigitalModels),
     ),
   ]
@@ -252,7 +270,8 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
       operationalEvidenceReady ? 'partial' : 'blocked',
       operationalEvidenceReady
         ? '当前 Case 绑定的使用/效能试验锚点与效能指标已有结果，但尚未建立“作战试验报告 + 效能底数报告 + 试验部队独立评价”正式对象链。'
-        : '当前 Case 的使用/效能试验锚点尚未完成，或绑定的效能指标尚未达到要求。',
+        : operationalReuseStale
+          ?? '当前 Case 的使用/效能试验锚点尚未完成，或绑定的效能指标尚未达到要求。',
       [...refs(operationalEvents), ...refs(operationalMeasures)],
     ),
   ]
@@ -437,7 +456,7 @@ export async function buildChinaTeGovernanceSnapshot(caseId: string) {
   }
 
   return {
-    version: 'v2.3.3-prototype',
+    version: 'v2.3.4-prototype',
     rootObject: {
       pk: currentCase.pk,
       title: currentCase.title,
